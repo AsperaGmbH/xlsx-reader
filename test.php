@@ -1,4 +1,6 @@
 <?php
+use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
+
 /**
  * XLS parsing uses php-excel-reader from http://code.google.com/p/php-excel-reader/
  */
@@ -26,8 +28,7 @@
 	}
 
 	// Excel reader from http://code.google.com/p/php-excel-reader/
-	require('php-excel-reader/excel_reader2.php');
-	require('SpreadsheetReader_XLSX.php');
+	require('lib/Reader.php');
 
 	date_default_timezone_set('UTC');
 
@@ -38,7 +39,7 @@
 
 	try
 	{
-		$Spreadsheet = new SpreadsheetReader_XLSX($Filepath);
+		$Spreadsheet = new XLSXReader($Filepath);
 		$BaseMem = memory_get_usage();
 
 		$Sheets = $Spreadsheet->sheets();

@@ -1,11 +1,13 @@
 <?php
+namespace Aspera\Spreadsheet\XLSX;
+use Iterator, Countable, ZipArchive, SimpleXMLElement, XMLReader, DateTime, DateTimeZone, DateInterval, Exception;
 
 /**
  * Class for parsing XLSX files specifically
  *
  * @author Martins Pilsetnieks
  */
-class SpreadsheetReader_XLSX implements Iterator, Countable
+class Reader implements Iterator, Countable
 {
     const CELL_TYPE_BOOL = 'b';
     const CELL_TYPE_NUMBER = 'n';
@@ -802,6 +804,7 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
      *
      * @param string Cell value
      * @param int Format index
+     * @throws Exception
      *
      * @return string Formatted cell value
      */
