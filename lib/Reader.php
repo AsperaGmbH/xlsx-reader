@@ -2,6 +2,8 @@
 namespace Aspera\Spreadsheet\XLSX;
 use Iterator, Countable, ZipArchive, SimpleXMLElement, XMLReader, DateTime, DateTimeZone, DateInterval, Exception;
 
+require_once('SharedStrings.php');
+
 /**
  * Class for parsing XLSX files specifically
  *
@@ -15,15 +17,6 @@ class Reader implements Iterator, Countable
     const CELL_TYPE_SHARED_STR = 's';
     const CELL_TYPE_STR = 'str';
     const CELL_TYPE_INLINE_STR = 'inlineStr';
-
-    /**
-     * Number of shared strings that can be reasonably cached, i.e., that aren't read from file but stored in memory.
-     *    If the total number of shared strings is higher than this, caching is not used.
-     *    If this value is null, shared strings are cached regardless of amount.
-     *    With large shared string caches there are huge performance gains, however a lot of memory could be used which
-     *    can be a problem, especially on shared hosting.
-     */
-    const SHARED_STRING_CACHE_LIMIT = 50000;
 
     private $Options = array(
         'TempDir'               => '',
@@ -46,25 +39,16 @@ class Reader implements Iterator, Countable
      */
     private $Worksheet = false;
 
-    // Shared strings file
-    /**
-     * @var string Path to shared strings XML file
-     */
-    private $SharedStringsPath = false;
-    /**
-     * @var XMLReader XML reader object for the shared strings XML file
-     */
-    private $SharedStrings = false;
-    /**
-     * @var array Shared strings cache, if the number of shared strings is low enough
-     */
-    private $SharedStringCache = array();
-
     // Workbook data
     /**
      * @var SimpleXMLElement XML object for the workbook XML file
      */
     private $WorkbookXML = false;
+
+    /**
+     * @var bool|SharedStrings
+     */
+    private $SharedStrings = false;
 
     // Style data
     /**
@@ -92,14 +76,7 @@ class Reader implements Iterator, Countable
      */
     private $Sheets = false;
 
-    private $SharedStringCount = 0;
-    private $SharedStringIndex = 0;
-    private $LastSharedStringValue = null;
-
     private $RowOpen = false;
-
-    private $SSOpen = false;
-    private $SSForwarded = false;
 
     private static $BuiltinFormats = array(
         0 => '',
@@ -198,6 +175,7 @@ class Reader implements Iterator, Countable
      *    TempDir => string Temporary directory path
      *    ReturnDateTimeObjects => bool True => dates and times will be returned as PHP DateTime objects, false => as
      *    strings
+     *
      * @throws  Exception
      */
     public function __construct($Filepath, array $Options = null)
@@ -227,15 +205,11 @@ class Reader implements Iterator, Countable
 
         // Extracting the XMLs from the XLSX zip file
         if ($Zip->locateName('xl/sharedStrings.xml') !== false) {
-            $this->SharedStringsPath = $this->TempDir.'xl'.DIRECTORY_SEPARATOR.'sharedStrings.xml';
             $Zip->extractTo($this->TempDir, 'xl/sharedStrings.xml');
             $this->TempFiles[] = $this->TempDir.'xl'.DIRECTORY_SEPARATOR.'sharedStrings.xml';
-
-            if (is_readable($this->SharedStringsPath)) {
-                $this->SharedStrings = new XMLReader;
-                $this->SharedStrings->open($this->SharedStringsPath);
-                $this->prepareSharedStringCache();
-            }
+            $this->SharedStrings = new SharedStrings(
+                $this->TempDir.'xl'.DIRECTORY_SEPARATOR.'sharedStrings.xml'
+            );
         }
 
         $this->sheets();
@@ -320,11 +294,7 @@ class Reader implements Iterator, Countable
         }
         unset($this->WorksheetPath);
 
-        if ($this->SharedStrings && $this->SharedStrings instanceof XMLReader) {
-            $this->SharedStrings->close();
-            unset($this->SharedStrings);
-        }
-        unset($this->SharedStringsPath);
+        $this->SharedStrings->close();
 
         if (isset($this->StylesXML)) {
             unset($this->StylesXML);
@@ -345,6 +315,7 @@ class Reader implements Iterator, Countable
             $this->Sheets = array();
             foreach ($this->WorkbookXML->sheets->sheet as $Index => $Sheet) {
                 $Attributes = $Sheet->attributes('r', true);
+                $SheetID = null;
                 foreach ($Attributes as $Name => $Value) {
                     if ($Name == 'id') {
                         $SheetID = (int)str_replace('rId', '', (string)$Value);
@@ -437,6 +408,8 @@ class Reader implements Iterator, Countable
      * Similar to the current() function for arrays in PHP
      *
      * @return mixed current element from the collection
+     *
+     * @throws Exception
      */
     public function current()
     {
@@ -451,6 +424,8 @@ class Reader implements Iterator, Countable
     /**
      * Move forward to next element.
      * Similar to the next() function for arrays in PHP
+     *
+     * @throws Exception
      */
     public function next()
     {
@@ -537,7 +512,7 @@ class Reader implements Iterator, Countable
                         $Value = $this->Worksheet->readString();
 
                         if ($CellHasSharedString) {
-                            $Value = $this->getSharedString($Value);
+                            $Value = $this->SharedStrings->getSharedString($Value);
                         }
 
                         // Format value if necessary
@@ -645,158 +620,6 @@ class Reader implements Iterator, Countable
 
             return $C;
         }
-    }
-
-    /**
-     * Creating shared string cache if the number of shared strings is acceptably low (or there is no limit on the
-     * amount
-     */
-    private function prepareSharedStringCache()
-    {
-        while ($this->SharedStrings->read()) {
-            if ($this->SharedStrings->name == 'sst') {
-                $this->SharedStringCount = $this->SharedStrings->getAttribute('count');
-                break;
-            }
-        }
-
-        if (!$this->SharedStringCount || (self::SHARED_STRING_CACHE_LIMIT < $this->SharedStringCount && self::SHARED_STRING_CACHE_LIMIT !== null)) {
-            return false;
-        }
-
-        $CacheIndex = 0;
-        $CacheValue = '';
-        while ($this->SharedStrings->read()) {
-            switch ($this->SharedStrings->name) {
-                case 'si':
-                    if ($this->SharedStrings->nodeType == XMLReader::END_ELEMENT) {
-                        $this->SharedStringCache[$CacheIndex] = $CacheValue;
-                        $CacheIndex++;
-                        $CacheValue = '';
-                    }
-                    break;
-                case 't':
-                    if ($this->SharedStrings->nodeType == XMLReader::END_ELEMENT) {
-                        continue;
-                    }
-                    $CacheValue .= $this->SharedStrings->readString();
-                    break;
-            }
-        }
-
-        $this->SharedStrings->close();
-
-        return true;
-    }
-
-    /**
-     * Retrieves a shared string value by its index
-     *
-     * @param int Shared string index
-     *
-     * @return string Value
-     */
-    private function getSharedString($Index)
-    {
-        if ((self::SHARED_STRING_CACHE_LIMIT === null || self::SHARED_STRING_CACHE_LIMIT > 0) && !empty($this->SharedStringCache)) {
-            if (isset($this->SharedStringCache[$Index])) {
-                return $this->SharedStringCache[$Index];
-            } else {
-                return '';
-            }
-        }
-
-        // If the desired index is before the current, rewind the XML
-        if ($this->SharedStringIndex > $Index) {
-            $this->SSOpen = false;
-            $this->SharedStrings->close();
-            $this->SharedStrings->open($this->SharedStringsPath);
-            $this->SharedStringIndex = 0;
-            $this->LastSharedStringValue = null;
-            $this->SSForwarded = false;
-        }
-
-        // Finding the unique string count (if not already read)
-        if ($this->SharedStringIndex == 0 && !$this->SharedStringCount) {
-            while ($this->SharedStrings->read()) {
-                if ($this->SharedStrings->name == 'sst') {
-                    $this->SharedStringCount = $this->SharedStrings->getAttribute('uniqueCount');
-                    break;
-                }
-            }
-        }
-
-        // If index of the desired string is larger than possible, don't even bother.
-        if ($this->SharedStringCount && ($Index >= $this->SharedStringCount)) {
-            return '';
-        }
-
-        // If an index with the same value as the last already fetched is requested
-        // (any further traversing the tree would get us further away from the node)
-        if (($Index == $this->SharedStringIndex) && ($this->LastSharedStringValue !== null)) {
-            return $this->LastSharedStringValue;
-        }
-
-        // Find the correct <si> node with the desired index
-        while ($this->SharedStringIndex <= $Index) {
-            // SSForwarded is set further to avoid double reading in case nodes are skipped.
-            if ($this->SSForwarded) {
-                $this->SSForwarded = false;
-            } else {
-                $ReadStatus = $this->SharedStrings->read();
-                if (!$ReadStatus) {
-                    break;
-                }
-            }
-
-            if ($this->SharedStrings->name == 'si') {
-                if ($this->SharedStrings->nodeType == XMLReader::END_ELEMENT) {
-                    $this->SSOpen = false;
-                    $this->SharedStringIndex++;
-                } else {
-                    $this->SSOpen = true;
-
-                    if ($this->SharedStringIndex < $Index) {
-                        $this->SSOpen = false;
-                        $this->SharedStrings->next('si');
-                        $this->SSForwarded = true;
-                        $this->SharedStringIndex++;
-                        continue;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-
-        $Value = '';
-
-        // Extract the value from the shared string
-        if ($this->SSOpen && ($this->SharedStringIndex == $Index)) {
-            while ($this->SharedStrings->read()) {
-                switch ($this->SharedStrings->name) {
-                    case 't':
-                        if ($this->SharedStrings->nodeType == XMLReader::END_ELEMENT) {
-                            continue;
-                        }
-                        $Value .= $this->SharedStrings->readString();
-                        break;
-                    case 'si':
-                        if ($this->SharedStrings->nodeType == XMLReader::END_ELEMENT) {
-                            $this->SSOpen = false;
-                            $this->SSForwarded = true;
-                            break 2;
-                        }
-                        break;
-                }
-            }
-        }
-
-        if ($Value) {
-            $this->LastSharedStringValue = $Value;
-        }
-
-        return $Value;
     }
 
     /**
@@ -932,7 +755,6 @@ class Reader implements Iterator, Countable
 
                 $Matches = array();
                 if (preg_match('{\[\$(.*)\]}u', $Format['Code'], $Matches)) {
-                    $CurrFormat = $Matches[0];
                     $CurrCode = $Matches[1];
                     $CurrCode = explode('-', $CurrCode);
                     if ($CurrCode) {
@@ -984,9 +806,7 @@ class Reader implements Iterator, Countable
 
                 if (!$this->Options['ReturnDateTimeObjects']) {
                     $Value = $Value->format($Format['Code']);
-                } else {
-                    // A DateTime object is returned
-                }
+                } // else: A DateTime object is returned
             } elseif ($Format['Type'] == 'Euro') {
                 $Value = 'EUR '.sprintf('%1.2f', $Value);
             } else {
@@ -1051,5 +871,3 @@ class Reader implements Iterator, Countable
         return $Value;
     }
 }
-
-?>

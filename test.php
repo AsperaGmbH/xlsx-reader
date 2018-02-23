@@ -98,4 +98,3 @@ use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 	{
 		echo $E->getMessage();
 	}
-?>
