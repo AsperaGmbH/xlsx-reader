@@ -27,7 +27,7 @@
 
 	// Excel reader from http://code.google.com/p/php-excel-reader/
 	require('php-excel-reader/excel_reader2.php');
-	require('SpreadsheetReader.php');
+	require('SpreadsheetReader_XLSX.php');
 
 	date_default_timezone_set('UTC');
 
@@ -38,10 +38,10 @@
 
 	try
 	{
-		$Spreadsheet = new SpreadsheetReader($Filepath);
+		$Spreadsheet = new SpreadsheetReader_XLSX($Filepath);
 		$BaseMem = memory_get_usage();
 
-		$Sheets = $Spreadsheet -> Sheets();
+		$Sheets = $Spreadsheet->sheets();
 
 		echo '---------------------------------'.PHP_EOL;
 		echo 'Spreadsheets:'.PHP_EOL;
@@ -57,7 +57,7 @@
 
 			$Time = microtime(true);
 
-			$Spreadsheet -> ChangeSheet($Index);
+			$Spreadsheet->changeSheet($Index);
 
 			foreach ($Spreadsheet as $Key => $Row)
 			{
@@ -95,6 +95,6 @@
 	}
 	catch (Exception $E)
 	{
-		echo $E -> getMessage();
+		echo $E->getMessage();
 	}
 ?>

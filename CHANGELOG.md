@@ -16,7 +16,7 @@
 - [Issue #50](https://github.com/nuovo/spreadsheet-reader/issues/50): Fixed an XLSX rewind issue. (Thanks to [osuwariboy](https://github.com/osuwariboy))
 - [Issue #52](https://github.com/nuovo/spreadsheet-reader/issues/52), [#53](https://github.com/nuovo/spreadsheet-reader/issues/53): Apache POI compatibility for XLSX. (Thanks to [dimapashkov](https://github.com/dimapashkov))
 - [Issue #61](https://github.com/nuovo/spreadsheet-reader/issues/61): Autoload fix in the main class. (Thanks to [i-bash](https://github.com/i-bash))
-- [Issue #60](https://github.com/nuovo/spreadsheet-reader/issues/60), [#69](https://github.com/nuovo/spreadsheet-reader/issues/69), [#72](https://github.com/nuovo/spreadsheet-reader/issues/72): Fixed an issue where XLSX ChangeSheet may not work. (Thanks to [jtresponse](https://github.com/jtresponse), [osuwariboy](https://github.com/osuwariboy))
+- [Issue #60](https://github.com/nuovo/spreadsheet-reader/issues/60), [#69](https://github.com/nuovo/spreadsheet-reader/issues/69), [#72](https://github.com/nuovo/spreadsheet-reader/issues/72): Fixed an issue where XLSX changeSheet may not work. (Thanks to [jtresponse](https://github.com/jtresponse), [osuwariboy](https://github.com/osuwariboy))
 - [Issue #70](https://github.com/nuovo/spreadsheet-reader/issues/70): Added a check for constructor parameter correctness.
 
 
@@ -59,8 +59,8 @@ with each call. (Thanks to [osuwariboy](https://github.com/osuwariboy))
 ### v.0.5.0  2013-06-17
 
 - Multiple sheet reading is now supported:
-	- The `Sheets()` method lets you retrieve a list of all sheets present in the file.
-	- `ChangeSheet($Index)` method changes the sheet in the reader to the one specified.
+	- The `sheets()` method lets you retrieve a list of all sheets present in the file.
+	- `changeSheet($Index)` method changes the sheet in the reader to the one specified.
 
 - Previously temporary files that were extracted, were deleted after the SpreadsheetReader  
 was destroyed but the empty directories remained. Now those are cleaned up as well.  

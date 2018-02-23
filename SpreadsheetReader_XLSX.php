@@ -232,9 +232,11 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
             if (is_readable($this->SharedStringsPath)) {
                 $this->SharedStrings = new XMLReader;
                 $this->SharedStrings->open($this->SharedStringsPath);
-                $this->PrepareSharedStringCache();
+                $this->prepareSharedStringCache();
             }
         }
+
+        $this->sheets();
 
         foreach ($this->Sheets as $Index => $Name) {
             if ($Zip->locateName('xl/worksheets/sheet'.$Index.'.xml') !== false) {
@@ -243,7 +245,7 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
             }
         }
 
-        $this->ChangeSheet(0);
+        $this->changeSheet(0);
 
         // If worksheet is present and is OK, parse the styles already
         if ($Zip->locateName('xl/styles.xml') !== false) {
@@ -335,7 +337,7 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
      *
      * @return array List of sheets (key is sheet index, value is name)
      */
-    public function Sheets()
+    public function sheets()
     {
         if ($this->Sheets === false) {
             $this->Sheets = array();
@@ -363,10 +365,10 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
      *
      * @return bool True if sheet was successfully changed, false otherwise.
      */
-    public function ChangeSheet($Index)
+    public function changeSheet($Index)
     {
         $RealSheetIndex = false;
-        $Sheets = $this->Sheets();
+        $Sheets = $this->sheets();
         if (isset($Sheets[$Index])) {
             $SheetIndexes = array_keys($this->Sheets);
             $RealSheetIndex = $SheetIndexes[$Index];
@@ -386,10 +388,268 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
     }
 
     /**
+     * Attempts to approximate Excel's "general" format.
+     *
+     * @param mixed Value
+     *
+     * @return mixed Result
+     */
+    public function generalFormat($Value)
+    {
+        // Numeric format
+        if (is_numeric($Value)) {
+            $Value = (float)$Value;
+        }
+
+        return $Value;
+    }
+
+    // !Iterator interface methods
+
+    /**
+     * Rewind the Iterator to the first element.
+     * Similar to the reset() function for arrays in PHP
+     */
+    public function rewind()
+    {
+        // Removed the check whether $this -> Index == 0 otherwise changeSheet doesn't work properly
+
+        // If the worksheet was already iterated, XML file is reopened.
+        // Otherwise it should be at the beginning anyway
+        if ($this->Worksheet instanceof XMLReader) {
+            $this->Worksheet->close();
+        } else {
+            $this->Worksheet = new XMLReader;
+        }
+
+        $this->Worksheet->open($this->WorksheetPath);
+
+        $this->Valid = true;
+        $this->RowOpen = false;
+        $this->CurrentRow = false;
+        $this->Index = 0;
+    }
+
+    /**
+     * Return the current element.
+     * Similar to the current() function for arrays in PHP
+     *
+     * @return mixed current element from the collection
+     */
+    public function current()
+    {
+        if ($this->Index == 0 && $this->CurrentRow === false) {
+            $this->next();
+            $this->Index--;
+        }
+
+        return $this->CurrentRow;
+    }
+
+    /**
+     * Move forward to next element.
+     * Similar to the next() function for arrays in PHP
+     */
+    public function next()
+    {
+        $this->Index++;
+
+        $this->CurrentRow = array();
+
+        if (!$this->RowOpen) {
+            while ($this->Valid = $this->Worksheet->read()) {
+                if ($this->Worksheet->name == 'row') {
+                    // Getting the row spanning area (stored as e.g., 1:12)
+                    // so that the last cells will be present, even if empty
+                    $RowSpans = $this->Worksheet->getAttribute('spans');
+                    if ($RowSpans) {
+                        $RowSpans = explode(':', $RowSpans);
+                        $CurrentRowColumnCount = $RowSpans[1];
+                    } else {
+                        $CurrentRowColumnCount = 0;
+                    }
+
+                    if ($CurrentRowColumnCount > 0) {
+                        $this->CurrentRow = array_fill(0, $CurrentRowColumnCount, '');
+                    }
+
+                    $this->RowOpen = true;
+                    break;
+                }
+            }
+        }
+
+        // Reading the necessary row, if found
+        if ($this->RowOpen) {
+            // These two are needed to control for empty cells
+            $MaxIndex = 0;
+            $CellCount = 0;
+
+            $CellHasSharedString = false;
+
+            while ($this->Valid = $this->Worksheet->read()) {
+                switch ($this->Worksheet->name) {
+                    // End of row
+                    case 'row':
+                        if ($this->Worksheet->nodeType == XMLReader::END_ELEMENT) {
+                            $this->RowOpen = false;
+                            break 2;
+                        }
+                        break;
+                    // Cell
+                    case 'c':
+                        // If it is a closing tag, skip it
+                        if ($this->Worksheet->nodeType == XMLReader::END_ELEMENT) {
+                            continue;
+                        }
+
+                        $StyleId = (int)$this->Worksheet->getAttribute('s');
+
+                        // Get the index of the cell
+                        $Index = $this->Worksheet->getAttribute('r');
+                        $Letter = preg_replace('{[^[:alpha:]]}S', '', $Index);
+                        $Index = self::indexFromColumnLetter($Letter);
+
+                        // Determine cell type
+                        if ($this->Worksheet->getAttribute('t') == self::CELL_TYPE_SHARED_STR) {
+                            $CellHasSharedString = true;
+                        } else {
+                            $CellHasSharedString = false;
+                        }
+
+                        $this->CurrentRow[$Index] = '';
+
+                        $CellCount++;
+                        if ($Index > $MaxIndex) {
+                            $MaxIndex = $Index;
+                        }
+
+                        break;
+                    // Cell value
+                    case 'v':
+                    case 'is':
+                        if ($this->Worksheet->nodeType == XMLReader::END_ELEMENT) {
+                            continue;
+                        }
+
+                        $Value = $this->Worksheet->readString();
+
+                        if ($CellHasSharedString) {
+                            $Value = $this->getSharedString($Value);
+                        }
+
+                        // Format value if necessary
+                        if ($Value !== '' && $StyleId && isset($this->Styles[$StyleId])) {
+                            $Value = $this->formatValue($Value, $StyleId);
+                        } elseif ($Value) {
+                            $Value = $this->generalFormat($Value);
+                        }
+
+                        $this->CurrentRow[$Index] = $Value;
+                        break;
+                }
+            }
+
+            // Adding empty cells, if necessary
+            // Only empty cells inbetween and on the left side are added
+            if ($MaxIndex + 1 > $CellCount) {
+                $this->CurrentRow = $this->CurrentRow + array_fill(0, $MaxIndex + 1, '');
+                ksort($this->CurrentRow);
+            }
+        }
+
+        return $this->CurrentRow;
+    }
+
+    /**
+     * Return the identifying key of the current element.
+     * Similar to the key() function for arrays in PHP
+     *
+     * @return mixed either an integer or a string
+     */
+    public function key()
+    {
+        return $this->Index;
+    }
+
+    /**
+     * Check if there is a current element after calls to rewind() or next().
+     * Used to check if we've iterated to the end of the collection
+     *
+     * @return boolean FALSE if there's nothing more to iterate over
+     */
+    public function valid()
+    {
+        return $this->Valid;
+    }
+
+    // !Countable interface method
+
+    /**
+     * Ostensibly should return the count of the contained items but this just returns the number
+     * of rows read so far. It's not really correct but at least coherent.
+     */
+    public function count()
+    {
+        return $this->Index + 1;
+    }
+
+    /**
+     * Takes the column letter and converts it to a numerical index (0-based)
+     *
+     * @param string Letter(s) to convert
+     *
+     * @return mixed Numeric index (0-based) or boolean false if it cannot be calculated
+     */
+    public static function indexFromColumnLetter($Letter)
+    {
+        $Letter = strtoupper($Letter);
+
+        $Result = 0;
+        for ($i = strlen($Letter) - 1, $j = 0; $i >= 0; $i--, $j++) {
+            $Ord = ord($Letter[$i]) - 64;
+            if ($Ord > 26) {
+                // Something is very, very wrong
+                return false;
+            }
+            $Result += $Ord * pow(26, $j);
+        }
+
+        return $Result - 1;
+    }
+
+    /**
+     * Helper function for greatest common divisor calculation in case GMP extension is not enabled
+     *
+     * @param int Number #1
+     * @param int Number #2
+     *
+     * @return int Greatest common divisor
+     */
+    public static function GCD($A, $B)
+    {
+        $A = abs($A);
+        $B = abs($B);
+        if ($A + $B == 0) {
+            return 0;
+        } else {
+            $C = 1;
+
+            while ($A > 0) {
+                $C = $A;
+                $A = $B % $A;
+                $B = $C;
+            }
+
+            return $C;
+        }
+    }
+
+    /**
      * Creating shared string cache if the number of shared strings is acceptably low (or there is no limit on the
      * amount
      */
-    private function PrepareSharedStringCache()
+    private function prepareSharedStringCache()
     {
         while ($this->SharedStrings->read()) {
             if ($this->SharedStrings->name == 'sst') {
@@ -434,7 +694,7 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
      *
      * @return string Value
      */
-    private function GetSharedString($Index)
+    private function getSharedString($Index)
     {
         if ((self::SHARED_STRING_CACHE_LIMIT === null || self::SHARED_STRING_CACHE_LIMIT > 0) && !empty($this->SharedStringCache)) {
             if (isset($this->SharedStringCache[$Index])) {
@@ -545,7 +805,7 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
      *
      * @return string Formatted cell value
      */
-    private function FormatValue($Value, $Index)
+    private function formatValue($Value, $Index)
     {
         if (!is_numeric($Value)) {
             return $Value;
@@ -559,7 +819,7 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
 
         // A special case for the "General" format
         if ($Index == 0) {
-            return $this->GeneralFormat($Value);
+            return $this->generalFormat($Value);
         }
 
         $Format = array();
@@ -669,6 +929,7 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
 
                 $Matches = array();
                 if (preg_match('{\[\$(.*)\]}u', $Format['Code'], $Matches)) {
+                    $CurrFormat = $Matches[0];
                     $CurrCode = $Matches[1];
                     $CurrCode = explode('-', $CurrCode);
                     if ($CurrCode) {
@@ -785,265 +1046,6 @@ class SpreadsheetReader_XLSX implements Iterator, Countable
         }
 
         return $Value;
-    }
-
-    /**
-     * Attempts to approximate Excel's "general" format.
-     *
-     * @param mixed Value
-     *
-     * @return mixed Result
-     */
-    public function GeneralFormat($Value)
-    {
-        // Numeric format
-        if (is_numeric($Value)) {
-            $Value = (float)$Value;
-        }
-
-        return $Value;
-    }
-
-    // !Iterator interface methods
-
-    /**
-     * Rewind the Iterator to the first element.
-     * Similar to the reset() function for arrays in PHP
-     */
-    public function rewind()
-    {
-        // Removed the check whether $this -> Index == 0 otherwise ChangeSheet doesn't work properly
-
-        // If the worksheet was already iterated, XML file is reopened.
-        // Otherwise it should be at the beginning anyway
-        if ($this->Worksheet instanceof XMLReader) {
-            $this->Worksheet->close();
-        } else {
-            $this->Worksheet = new XMLReader;
-        }
-
-        $this->Worksheet->open($this->WorksheetPath);
-
-        $this->Valid = true;
-        $this->RowOpen = false;
-        $this->CurrentRow = false;
-        $this->Index = 0;
-    }
-
-    /**
-     * Return the current element.
-     * Similar to the current() function for arrays in PHP
-     *
-     * @return mixed current element from the collection
-     */
-    public function current()
-    {
-        if ($this->Index == 0 && $this->CurrentRow === false) {
-            $this->next();
-            $this->Index--;
-        }
-
-        return $this->CurrentRow;
-    }
-
-    /**
-     * Move forward to next element.
-     * Similar to the next() function for arrays in PHP
-     */
-    public function next()
-    {
-        $this->Index++;
-
-        $this->CurrentRow = array();
-
-        if (!$this->RowOpen) {
-            while ($this->Valid = $this->Worksheet->read()) {
-                if ($this->Worksheet->name == 'row') {
-                    // Getting the row spanning area (stored as e.g., 1:12)
-                    // so that the last cells will be present, even if empty
-                    $RowSpans = $this->Worksheet->getAttribute('spans');
-                    if ($RowSpans) {
-                        $RowSpans = explode(':', $RowSpans);
-                        $CurrentRowColumnCount = $RowSpans[1];
-                    } else {
-                        $CurrentRowColumnCount = 0;
-                    }
-
-                    if ($CurrentRowColumnCount > 0) {
-                        $this->CurrentRow = array_fill(0, $CurrentRowColumnCount, '');
-                    }
-
-                    $this->RowOpen = true;
-                    break;
-                }
-            }
-        }
-
-        // Reading the necessary row, if found
-        if ($this->RowOpen) {
-            // These two are needed to control for empty cells
-            $MaxIndex = 0;
-            $CellCount = 0;
-
-            $CellHasSharedString = false;
-
-            while ($this->Valid = $this->Worksheet->read()) {
-                switch ($this->Worksheet->name) {
-                    // End of row
-                    case 'row':
-                        if ($this->Worksheet->nodeType == XMLReader::END_ELEMENT) {
-                            $this->RowOpen = false;
-                            break 2;
-                        }
-                        break;
-                    // Cell
-                    case 'c':
-                        // If it is a closing tag, skip it
-                        if ($this->Worksheet->nodeType == XMLReader::END_ELEMENT) {
-                            continue;
-                        }
-
-                        $StyleId = (int)$this->Worksheet->getAttribute('s');
-
-                        // Get the index of the cell
-                        $Index = $this->Worksheet->getAttribute('r');
-                        $Letter = preg_replace('{[^[:alpha:]]}S', '', $Index);
-                        $Index = self::IndexFromColumnLetter($Letter);
-
-                        // Determine cell type
-                        if ($this->Worksheet->getAttribute('t') == self::CELL_TYPE_SHARED_STR) {
-                            $CellHasSharedString = true;
-                        } else {
-                            $CellHasSharedString = false;
-                        }
-
-                        $this->CurrentRow[$Index] = '';
-
-                        $CellCount++;
-                        if ($Index > $MaxIndex) {
-                            $MaxIndex = $Index;
-                        }
-
-                        break;
-                    // Cell value
-                    case 'v':
-                    case 'is':
-                        if ($this->Worksheet->nodeType == XMLReader::END_ELEMENT) {
-                            continue;
-                        }
-
-                        $Value = $this->Worksheet->readString();
-
-                        if ($CellHasSharedString) {
-                            $Value = $this->GetSharedString($Value);
-                        }
-
-                        // Format value if necessary
-                        if ($Value !== '' && $StyleId && isset($this->Styles[$StyleId])) {
-                            $Value = $this->FormatValue($Value, $StyleId);
-                        } elseif ($Value) {
-                            $Value = $this->GeneralFormat($Value);
-                        }
-
-                        $this->CurrentRow[$Index] = $Value;
-                        break;
-                }
-            }
-
-            // Adding empty cells, if necessary
-            // Only empty cells inbetween and on the left side are added
-            if ($MaxIndex + 1 > $CellCount) {
-                $this->CurrentRow = $this->CurrentRow + array_fill(0, $MaxIndex + 1, '');
-                ksort($this->CurrentRow);
-            }
-        }
-
-        return $this->CurrentRow;
-    }
-
-    /**
-     * Return the identifying key of the current element.
-     * Similar to the key() function for arrays in PHP
-     *
-     * @return mixed either an integer or a string
-     */
-    public function key()
-    {
-        return $this->Index;
-    }
-
-    /**
-     * Check if there is a current element after calls to rewind() or next().
-     * Used to check if we've iterated to the end of the collection
-     *
-     * @return boolean FALSE if there's nothing more to iterate over
-     */
-    public function valid()
-    {
-        return $this->Valid;
-    }
-
-    // !Countable interface method
-
-    /**
-     * Ostensibly should return the count of the contained items but this just returns the number
-     * of rows read so far. It's not really correct but at least coherent.
-     */
-    public function count()
-    {
-        return $this->Index + 1;
-    }
-
-    /**
-     * Takes the column letter and converts it to a numerical index (0-based)
-     *
-     * @param string Letter(s) to convert
-     *
-     * @return mixed Numeric index (0-based) or boolean false if it cannot be calculated
-     */
-    public static function IndexFromColumnLetter($Letter)
-    {
-        $Letter = strtoupper($Letter);
-
-        $Result = 0;
-        for ($i = strlen($Letter) - 1, $j = 0; $i >= 0; $i--, $j++) {
-            $Ord = ord($Letter[$i]) - 64;
-            if ($Ord > 26) {
-                // Something is very, very wrong
-                return false;
-            }
-            $Result += $Ord * pow(26, $j);
-        }
-
-        return $Result - 1;
-    }
-
-    /**
-     * Helper function for greatest common divisor calculation in case GMP extension is
-     *    not enabled
-     *
-     * @param int Number #1
-     * @param int Number #2
-     *
-     * @param int Greatest common divisor
-     */
-    public static function GCD($A, $B)
-    {
-        $A = abs($A);
-        $B = abs($B);
-        if ($A + $B == 0) {
-            return 0;
-        } else {
-            $C = 1;
-
-            while ($A > 0) {
-                $C = $A;
-                $A = $B % $A;
-                $B = $C;
-            }
-
-            return $C;
-        }
     }
 }
 
