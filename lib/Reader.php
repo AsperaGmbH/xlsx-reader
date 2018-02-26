@@ -598,28 +598,25 @@ class Reader implements Iterator, Countable
     /**
      * Helper function for greatest common divisor calculation in case GMP extension is not enabled
      *
-     * @param int Number #1
-     * @param int Number #2
-     *
+     * @param int $int_1 Number #1
+     * @param int $int_2 Number #2
      * @return int Greatest common divisor
      */
-    public static function GCD($A, $B)
+    public static function GCD($int_1, $int_2)
     {
-        $A = abs($A);
-        $B = abs($B);
-        if ($A + $B == 0) {
+        $int_1 = abs($int_1);
+        $int_2 = abs($int_2);
+        if ($int_1 + $int_2 == 0) {
             return 0;
-        } else {
-            $C = 1;
-
-            while ($A > 0) {
-                $C = $A;
-                $A = $B % $A;
-                $B = $C;
-            }
-
-            return $C;
         }
+
+        $divisor = 1;
+        while ($int_1 > 0) {
+            $divisor = $int_1;
+            $int_1 = $int_2 % $int_1;
+            $int_2 = $divisor;
+        }
+        return $divisor;
     }
 
     /**
@@ -777,15 +774,15 @@ class Reader implements Iterator, Countable
         if ($Format) {
             if ($Format['Code'] == '@') {
                 return (string)$Value;
-            } // Percentages
-            elseif ($Format['Type'] == 'Percentage') {
+            } elseif ($Format['Type'] == 'Percentage') {
+                // Percentages
                 if ($Format['Code'] === '0%') {
                     $Value = round(100 * $Value, 0).'%';
                 } else {
                     $Value = sprintf('%.2f%%', round(100 * $Value, 2));
                 }
-            } // Dates and times
-            elseif ($Format['Type'] == 'DateTime') {
+            } elseif ($Format['Type'] == 'DateTime') {
+                // Dates and times
                 $Days = (int)$Value;
                 // Correcting for Feb 29, 1900
                 if ($Days > 60) {
@@ -810,21 +807,27 @@ class Reader implements Iterator, Countable
             } elseif ($Format['Type'] == 'Euro') {
                 $Value = 'EUR '.sprintf('%1.2f', $Value);
             } else {
-                // Fractional numbers
+                // Fractional numbers; We get "0.25" and have to turn that into "1/4".
                 if ($Format['Type'] == 'Fraction' && ($Value != (int)$Value)) {
+                    // Split fraction from integer value (2.25 => 2 and 0.25)
                     $Integer = floor(abs($Value));
                     $Decimal = fmod(abs($Value), 1);
-                    // Removing the integer part and decimal point
+
+                    // Turn fraction into non-decimal value (0.25 => 25)
                     $Decimal *= pow(10, strlen($Decimal) - 2);
+
+                    // Obtain biggest divisor for the fraction part (25 => 100 => 25/100)
                     $DecimalDivisor = pow(10, strlen($Decimal));
 
+                    // Determine greatest common divisor for fraction optimization (so that 25/100 => 1/4)
                     if (self::$RuntimeInfo['GMPSupported']) {
                         $GCD = gmp_strval(gmp_gcd($Decimal, $DecimalDivisor));
                     } else {
                         $GCD = self::GCD($Decimal, $DecimalDivisor);
                     }
 
-                    $AdjDecimal = $DecimalPart / $GCD;
+                    // Determine fraction parts (1 and 4 => 1/4)
+                    $AdjDecimal = $Decimal / $GCD;
                     $AdjDecimalDivisor = $DecimalDivisor / $GCD;
 
                     if (
@@ -832,13 +835,13 @@ class Reader implements Iterator, Countable
                         strpos($Format['Code'], '#') !== false ||
                         substr($Format['Code'], 0, 3) == '? ?'
                     ) {
-                        // The integer part is shown separately apart from the fraction
+                        // Extract whole values from fraction (2.25 => "2 1/4")
                         $Value = ($Value < 0 ? '-' : '').
-                        $Integer ? $Integer.' ' : ''.
+                            ($Integer ? $Integer.' ' : '').
                             $AdjDecimal.'/'.
                             $AdjDecimalDivisor;
                     } else {
-                        // The fraction includes the integer part
+                        // Show entire value as fraction (2.25 => "9/4")
                         $AdjDecimal += $Integer * $AdjDecimalDivisor;
                         $Value = ($Value < 0 ? '-' : '').
                             $AdjDecimal.'/'.
