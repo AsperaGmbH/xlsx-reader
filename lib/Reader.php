@@ -1,6 +1,15 @@
 <?php
 namespace Aspera\Spreadsheet\XLSX;
-use Iterator, Countable, ZipArchive, SimpleXMLElement, XMLReader, DateTime, DateTimeZone, DateInterval, Exception;
+
+use Iterator;
+use Countable;
+use ZipArchive;
+use SimpleXMLElement;
+use XMLReader;
+use DateTime;
+use DateTimeZone;
+use DateInterval;
+use Exception;
 
 require_once('SharedStrings.php');
 
