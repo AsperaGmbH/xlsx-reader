@@ -1,4 +1,5 @@
 <?php
+
 namespace Aspera\Spreadsheet\XLSX;
 
 use Iterator;
@@ -27,67 +28,67 @@ class Reader implements Iterator, Countable
     const CELL_TYPE_STR = 'str';
     const CELL_TYPE_INLINE_STR = 'inlineStr';
 
-    private $Options = array(
+    private $options = array(
         'TempDir'               => '',
         'ReturnDateTimeObjects' => false
     );
 
-    private static $RuntimeInfo = array(
+    private static $runtime_info = array(
         'GMPSupported' => false
     );
 
-    private $Valid = false;
+    private $valid = false;
 
     // Worksheet file
     /**
      * @var string Path to the worksheet XML file
      */
-    private $WorksheetPath = false;
+    private $worksheet_path = false;
     /**
      * @var XMLReader XML reader object for the worksheet XML file
      */
-    private $Worksheet = false;
+    private $worksheet = false;
 
     // Workbook data
     /**
      * @var SimpleXMLElement XML object for the workbook XML file
      */
-    private $WorkbookXML = false;
+    private $workbook_XML = false;
 
     /**
      * @var bool|SharedStrings
      */
-    private $SharedStrings = false;
+    private $shared_strings = false;
 
     // Style data
     /**
      * @var SimpleXMLElement XML object for the styles XML file
      */
-    private $StylesXML = false;
+    private $styles_XML = false;
     /**
      * @var array Container for cell value style data
      */
-    private $Styles = array();
+    private $styles = array();
 
-    private $TempDir = '';
-    private $TempFiles = array();
+    private $temp_dir = '';
+    private $temp_files = array();
 
-    private $CurrentRow = false;
+    private $current_row = false;
 
     // Runtime parsing data
     /**
-     * @var int Current row in the file
+     * @var int Current row number in the file
      */
-    private $Index = 0;
+    private $row_number = 0;
 
     /**
      * @var array Data about separate sheets in the file
      */
-    private $Sheets = false;
+    private $sheets = false;
 
-    private $RowOpen = false;
+    private $row_open = false;
 
-    private static $BuiltinFormats = array(
+    private static $builtin_formats = array(
         0 => '',
         1 => '0',
         2 => '0.00',
@@ -137,9 +138,9 @@ class Reader implements Iterator, Countable
         69 => 't# ?/?',
         70 => 't# ??/??'
     );
-    private $Formats = array();
+    private $formats = array();
 
-    private static $DateReplacements = array(
+    private static $date_replacements = array(
         'All' => array(
             '\\'    => '',
             'am/pm' => 'A',
@@ -168,15 +169,15 @@ class Reader implements Iterator, Countable
         )
     );
 
-    private static $BaseDate = false;
-    private static $DecimalSeparator = '.';
-    private static $ThousandSeparator = '';
-    private static $CurrencyCode = '';
+    private static $base_date = false;
+    private static $decimal_separator = '.';
+    private static $thousand_separator = '';
+    private static $currency_code = '';
 
     /**
      * @var array Cache for already processed format strings
      */
-    private $ParsedFormatCache = array();
+    private $parsed_format_cache = array();
 
     /**
      * @param string Path to file
@@ -187,97 +188,97 @@ class Reader implements Iterator, Countable
      *
      * @throws  Exception
      */
-    public function __construct($Filepath, array $Options = null)
+    public function __construct($filepath, array $options = null)
     {
-        if (!is_readable($Filepath)) {
-            throw new Exception('SpreadsheetReader_XLSX: File not readable ('.$Filepath.')');
+        if (!is_readable($filepath)) {
+            throw new Exception('SpreadsheetReader_XLSX: File not readable ('.$filepath.')');
         }
 
-        $this->TempDir = isset($Options['TempDir']) && is_writable($Options['TempDir']) ?
-            $Options['TempDir'] :
+        $this->temp_dir = isset($options['TempDir']) && is_writable($options['TempDir']) ?
+            $options['TempDir'] :
             sys_get_temp_dir();
 
-        $this->TempDir = rtrim($this->TempDir, DIRECTORY_SEPARATOR);
-        $this->TempDir = $this->TempDir.DIRECTORY_SEPARATOR.uniqid().DIRECTORY_SEPARATOR;
+        $this->temp_dir = rtrim($this->temp_dir, DIRECTORY_SEPARATOR);
+        $this->temp_dir = $this->temp_dir.DIRECTORY_SEPARATOR.uniqid().DIRECTORY_SEPARATOR;
 
-        $Zip = new ZipArchive;
-        $Status = $Zip->open($Filepath);
+        $zip = new ZipArchive;
+        $status = $zip->open($filepath);
 
-        if ($Status !== true) {
-            throw new Exception('SpreadsheetReader_XLSX: File not readable ('.$Filepath.') (Error '.$Status.')');
+        if ($status !== true) {
+            throw new Exception('SpreadsheetReader_XLSX: File not readable ('.$filepath.') (Error '.$status.')');
         }
 
         // Getting the general workbook information
-        if ($Zip->locateName('xl/workbook.xml') !== false) {
-            $this->WorkbookXML = new SimpleXMLElement($Zip->getFromName('xl/workbook.xml'));
+        if ($zip->locateName('xl/workbook.xml') !== false) {
+            $this->workbook_XML = new SimpleXMLElement($zip->getFromName('xl/workbook.xml'));
         }
 
         // Extracting the XMLs from the XLSX zip file
-        if ($Zip->locateName('xl/sharedStrings.xml') !== false) {
-            $Zip->extractTo($this->TempDir, 'xl/sharedStrings.xml');
-            $this->TempFiles[] = $this->TempDir.'xl'.DIRECTORY_SEPARATOR.'sharedStrings.xml';
-            $this->SharedStrings = new SharedStrings(
-                $this->TempDir.'xl'.DIRECTORY_SEPARATOR.'sharedStrings.xml'
+        if ($zip->locateName('xl/sharedStrings.xml') !== false) {
+            $zip->extractTo($this->temp_dir, 'xl/sharedStrings.xml');
+            $this->temp_files[] = $this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'sharedStrings.xml';
+            $this->shared_strings = new SharedStrings(
+                $this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'sharedStrings.xml'
             );
         }
 
         $this->sheets();
 
-        foreach ($this->Sheets as $Index => $Name) {
-            if ($Zip->locateName('xl/worksheets/sheet'.$Index.'.xml') !== false) {
-                $Zip->extractTo($this->TempDir, 'xl/worksheets/sheet'.$Index.'.xml');
-                $this->TempFiles[] = $this->TempDir.'xl'.DIRECTORY_SEPARATOR.'worksheets'.DIRECTORY_SEPARATOR.'sheet'.$Index.'.xml';
+        foreach ($this->sheets as $row_number => $name) {
+            if ($zip->locateName('xl/worksheets/sheet'.$row_number.'.xml') !== false) {
+                $zip->extractTo($this->temp_dir, 'xl/worksheets/sheet'.$row_number.'.xml');
+                $this->temp_files[] = $this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'worksheets'.DIRECTORY_SEPARATOR.'sheet'.$row_number.'.xml';
             }
         }
 
         $this->changeSheet(0);
 
         // If worksheet is present and is OK, parse the styles already
-        if ($Zip->locateName('xl/styles.xml') !== false) {
-            $this->StylesXML = new SimpleXMLElement($Zip->getFromName('xl/styles.xml'));
-            if ($this->StylesXML && $this->StylesXML->cellXfs && $this->StylesXML->cellXfs->xf) {
-                foreach ($this->StylesXML->cellXfs->xf as $Index => $XF) {
+        if ($zip->locateName('xl/styles.xml') !== false) {
+            $this->styles_XML = new SimpleXMLElement($zip->getFromName('xl/styles.xml'));
+            if ($this->styles_XML && $this->styles_XML->cellXfs && $this->styles_XML->cellXfs->xf) {
+                foreach ($this->styles_XML->cellXfs->xf as $row_number => $xf) {
                     // Format #0 is a special case - it is the "General" format that is applied regardless of applyNumberFormat
-                    if ($XF->attributes()->applyNumberFormat || (0 == (int)$XF->attributes()->numFmtId)) {
-                        $FormatId = (int)$XF->attributes()->numFmtId;
+                    if ($xf->attributes()->applyNumberFormat || (0 == (int)$xf->attributes()->numFmtId)) {
+                        $format_id = (int)$xf->attributes()->numFmtId;
                         // If format ID >= 164, it is a custom format and should be read from styleSheet\numFmts
-                        $this->Styles[] = $FormatId;
+                        $this->styles[] = $format_id;
                     } else {
                         // 0 for "General" format
-                        $this->Styles[] = 0;
+                        $this->styles[] = 0;
                     }
                 }
             }
 
-            if ($this->StylesXML->numFmts && $this->StylesXML->numFmts->numFmt) {
-                foreach ($this->StylesXML->numFmts->numFmt as $Index => $NumFmt) {
-                    $this->Formats[(int)$NumFmt->attributes()->numFmtId] = (string)$NumFmt->attributes()->formatCode;
+            if ($this->styles_XML->numFmts && $this->styles_XML->numFmts->numFmt) {
+                foreach ($this->styles_XML->numFmts->numFmt as $row_number => $num_ft) {
+                    $this->formats[(int)$num_ft->attributes()->numFmtId] = (string)$num_ft->attributes()->formatCode;
                 }
             }
 
-            unset($this->StylesXML);
+            unset($this->styles_XML);
         }
 
-        $Zip->close();
+        $zip->close();
 
         // Setting base date
-        if (!self::$BaseDate) {
-            self::$BaseDate = new DateTime;
-            self::$BaseDate->setTimezone(new DateTimeZone('UTC'));
-            self::$BaseDate->setDate(1900, 1, 0);
-            self::$BaseDate->setTime(0, 0, 0);
+        if (!self::$base_date) {
+            self::$base_date = new DateTime;
+            self::$base_date->setTimezone(new DateTimeZone('UTC'));
+            self::$base_date->setDate(1900, 1, 0);
+            self::$base_date->setTime(0, 0, 0);
         }
 
         // Decimal and thousand separators
-        if (!self::$DecimalSeparator && !self::$ThousandSeparator && !self::$CurrencyCode) {
-            $Locale = localeconv();
-            self::$DecimalSeparator = $Locale['decimal_point'];
-            self::$ThousandSeparator = $Locale['thousands_sep'];
-            self::$CurrencyCode = $Locale['int_curr_symbol'];
+        if (!self::$decimal_separator && !self::$thousand_separator && !self::$currency_code) {
+            $locale = localeconv();
+            self::$decimal_separator = $locale['decimal_point'];
+            self::$thousand_separator = $locale['thousands_sep'];
+            self::$currency_code = $locale['int_curr_symbol'];
         }
 
         if (function_exists('gmp_gcd')) {
-            self::$RuntimeInfo['GMPSupported'] = true;
+            self::$runtime_info['GMPSupported'] = true;
         }
     }
 
@@ -286,30 +287,30 @@ class Reader implements Iterator, Countable
      */
     public function __destruct()
     {
-        foreach ($this->TempFiles as $TempFile) {
-            @unlink($TempFile);
+        foreach ($this->temp_files as $temp_file) {
+            @unlink($temp_file);
         }
 
         // Better safe than sorry - shouldn't try deleting '.' or '/', or '..'.
-        if (strlen($this->TempDir) > 2) {
-            @rmdir($this->TempDir.'xl'.DIRECTORY_SEPARATOR.'worksheets');
-            @rmdir($this->TempDir.'xl');
-            @rmdir($this->TempDir);
+        if (strlen($this->temp_dir) > 2) {
+            @rmdir($this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'worksheets');
+            @rmdir($this->temp_dir.'xl');
+            @rmdir($this->temp_dir);
         }
 
-        if ($this->Worksheet && $this->Worksheet instanceof XMLReader) {
-            $this->Worksheet->close();
-            unset($this->Worksheet);
+        if ($this->worksheet && $this->worksheet instanceof XMLReader) {
+            $this->worksheet->close();
+            unset($this->worksheet);
         }
-        unset($this->WorksheetPath);
+        unset($this->worksheet_path);
 
-        $this->SharedStrings->close();
+        $this->shared_strings->close();
 
-        if (isset($this->StylesXML)) {
-            unset($this->StylesXML);
+        if (isset($this->styles_XML)) {
+            unset($this->styles_XML);
         }
-        if ($this->WorkbookXML) {
-            unset($this->WorkbookXML);
+        if ($this->workbook_XML) {
+            unset($this->workbook_XML);
         }
     }
 
@@ -320,24 +321,24 @@ class Reader implements Iterator, Countable
      */
     public function sheets()
     {
-        if ($this->Sheets === false) {
-            $this->Sheets = array();
-            foreach ($this->WorkbookXML->sheets->sheet as $Index => $Sheet) {
-                $Attributes = $Sheet->attributes('r', true);
-                $SheetID = null;
-                foreach ($Attributes as $Name => $Value) {
-                    if ($Name == 'id') {
-                        $SheetID = (int)str_replace('rId', '', (string)$Value);
+        if ($this->sheets === false) {
+            $this->sheets = array();
+            foreach ($this->workbook_XML->sheets->sheet as $row_number => $sheet) {
+                $attributes = $sheet->attributes('r', true);
+                $sheet_id = null;
+                foreach ($attributes as $name => $value) {
+                    if ($name == 'id') {
+                        $sheet_id = (int)str_replace('rId', '', (string)$value);
                         break;
                     }
                 }
 
-                $this->Sheets[$SheetID] = (string)$Sheet['name'];
+                $this->sheets[$sheet_id] = (string)$sheet['name'];
             }
-            ksort($this->Sheets);
+            ksort($this->sheets);
         }
 
-        return array_values($this->Sheets);
+        return array_values($this->sheets);
     }
 
     /**
@@ -347,19 +348,19 @@ class Reader implements Iterator, Countable
      *
      * @return bool True if sheet was successfully changed, false otherwise.
      */
-    public function changeSheet($Index)
+    public function changeSheet($row_number)
     {
-        $RealSheetIndex = false;
-        $Sheets = $this->sheets();
-        if (isset($Sheets[$Index])) {
-            $SheetIndexes = array_keys($this->Sheets);
-            $RealSheetIndex = $SheetIndexes[$Index];
+        $real_sheet_index = false;
+        $sheets = $this->sheets();
+        if (isset($sheets[$row_number])) {
+            $sheet_indexes = array_keys($this->sheets);
+            $real_sheet_index = $sheet_indexes[$row_number];
         }
 
-        $TempWorksheetPath = $this->TempDir.'xl/worksheets/sheet'.$RealSheetIndex.'.xml';
+        $temp_worksheet_path = $this->temp_dir.'xl/worksheets/sheet'.$real_sheet_index.'.xml';
 
-        if ($RealSheetIndex !== false && is_readable($TempWorksheetPath)) {
-            $this->WorksheetPath = $TempWorksheetPath;
+        if ($real_sheet_index !== false && is_readable($temp_worksheet_path)) {
+            $this->worksheet_path = $temp_worksheet_path;
 
             $this->rewind();
 
@@ -376,14 +377,14 @@ class Reader implements Iterator, Countable
      *
      * @return mixed Result
      */
-    public function generalFormat($Value)
+    public function generalFormat($value)
     {
         // Numeric format
-        if (is_numeric($Value)) {
-            $Value = (float)$Value;
+        if (is_numeric($value)) {
+            $value = (float)$value;
         }
 
-        return $Value;
+        return $value;
     }
 
     // !Iterator interface methods
@@ -394,22 +395,20 @@ class Reader implements Iterator, Countable
      */
     public function rewind()
     {
-        // Removed the check whether $this -> Index == 0 otherwise changeSheet doesn't work properly
-
         // If the worksheet was already iterated, XML file is reopened.
         // Otherwise it should be at the beginning anyway
-        if ($this->Worksheet instanceof XMLReader) {
-            $this->Worksheet->close();
+        if ($this->worksheet instanceof XMLReader) {
+            $this->worksheet->close();
         } else {
-            $this->Worksheet = new XMLReader;
+            $this->worksheet = new XMLReader;
         }
 
-        $this->Worksheet->open($this->WorksheetPath);
+        $this->worksheet->open($this->worksheet_path);
 
-        $this->Valid = true;
-        $this->RowOpen = false;
-        $this->CurrentRow = false;
-        $this->Index = 0;
+        $this->valid = true;
+        $this->row_open = false;
+        $this->current_row = false;
+        $this->row_number = 0;
     }
 
     /**
@@ -422,12 +421,11 @@ class Reader implements Iterator, Countable
      */
     public function current()
     {
-        if ($this->Index == 0 && $this->CurrentRow === false) {
+        if ($this->row_number == 0 && $this->current_row === false) {
             $this->next();
-            $this->Index--;
         }
 
-        return $this->CurrentRow;
+        return $this->current_row;
     }
 
     /**
@@ -438,113 +436,113 @@ class Reader implements Iterator, Countable
      */
     public function next()
     {
-        $this->Index++;
+        $this->row_number++;
 
-        $this->CurrentRow = array();
+        $this->current_row = array();
 
-        if (!$this->RowOpen) {
-            while ($this->Valid = $this->Worksheet->read()) {
-                if ($this->Worksheet->name == 'row') {
+        if (!$this->row_open) {
+            while ($this->valid = $this->worksheet->read()) {
+                if ($this->worksheet->name == 'row') {
                     // Getting the row spanning area (stored as e.g., 1:12)
                     // so that the last cells will be present, even if empty
-                    $RowSpans = $this->Worksheet->getAttribute('spans');
-                    if ($RowSpans) {
-                        $RowSpans = explode(':', $RowSpans);
-                        $CurrentRowColumnCount = $RowSpans[1];
+                    $row_spans = $this->worksheet->getAttribute('spans');
+                    if ($row_spans) {
+                        $row_spans = explode(':', $row_spans);
+                        $current_row_column_count = $row_spans[1];
                     } else {
-                        $CurrentRowColumnCount = 0;
+                        $current_row_column_count = 0;
                     }
 
-                    if ($CurrentRowColumnCount > 0) {
-                        $this->CurrentRow = array_fill(0, $CurrentRowColumnCount, '');
+                    if ($current_row_column_count > 0) {
+                        $this->current_row = array_fill(0, $current_row_column_count, '');
                     }
 
-                    $this->RowOpen = true;
+                    $this->row_open = true;
                     break;
                 }
             }
         }
 
         // Reading the necessary row, if found
-        if ($this->RowOpen) {
+        if ($this->row_open) {
             // These two are needed to control for empty cells
-            $MaxIndex = 0;
-            $CellCount = 0;
+            $max_index = 0;
+            $cell_count = 0;
 
-            $CellHasSharedString = false;
+            $cell_has_shared_string = false;
 
-            while ($this->Valid = $this->Worksheet->read()) {
-                switch ($this->Worksheet->name) {
+            while ($this->valid = $this->worksheet->read()) {
+                switch ($this->worksheet->name) {
                     // End of row
                     case 'row':
-                        if ($this->Worksheet->nodeType == XMLReader::END_ELEMENT) {
-                            $this->RowOpen = false;
+                        if ($this->worksheet->nodeType == XMLReader::END_ELEMENT) {
+                            $this->row_open = false;
                             break 2;
                         }
                         break;
                     // Cell
                     case 'c':
                         // If it is a closing tag, skip it
-                        if ($this->Worksheet->nodeType == XMLReader::END_ELEMENT) {
+                        if ($this->worksheet->nodeType == XMLReader::END_ELEMENT) {
                             continue;
                         }
 
-                        $StyleId = (int)$this->Worksheet->getAttribute('s');
+                        $style_id = (int)$this->worksheet->getAttribute('s');
 
                         // Get the index of the cell
-                        $Index = $this->Worksheet->getAttribute('r');
-                        $Letter = preg_replace('{[^[:alpha:]]}S', '', $Index);
-                        $Index = self::indexFromColumnLetter($Letter);
+                        $row_number = $this->worksheet->getAttribute('r');
+                        $letter = preg_replace('{[^[:alpha:]]}S', '', $row_number);
+                        $row_number = self::indexFromColumnLetter($letter);
 
                         // Determine cell type
-                        if ($this->Worksheet->getAttribute('t') == self::CELL_TYPE_SHARED_STR) {
-                            $CellHasSharedString = true;
+                        if ($this->worksheet->getAttribute('t') == self::CELL_TYPE_SHARED_STR) {
+                            $cell_has_shared_string = true;
                         } else {
-                            $CellHasSharedString = false;
+                            $cell_has_shared_string = false;
                         }
 
-                        $this->CurrentRow[$Index] = '';
+                        $this->current_row[$row_number] = '';
 
-                        $CellCount++;
-                        if ($Index > $MaxIndex) {
-                            $MaxIndex = $Index;
+                        $cell_count++;
+                        if ($row_number > $max_index) {
+                            $max_index = $row_number;
                         }
 
                         break;
                     // Cell value
                     case 'v':
                     case 'is':
-                        if ($this->Worksheet->nodeType == XMLReader::END_ELEMENT) {
+                        if ($this->worksheet->nodeType == XMLReader::END_ELEMENT) {
                             continue;
                         }
 
-                        $Value = $this->Worksheet->readString();
+                        $value = $this->worksheet->readString();
 
-                        if ($CellHasSharedString) {
-                            $Value = $this->SharedStrings->getSharedString($Value);
+                        if ($cell_has_shared_string) {
+                            $value = $this->shared_strings->getSharedString($value);
                         }
 
                         // Format value if necessary
-                        if ($Value !== '' && $StyleId && isset($this->Styles[$StyleId])) {
-                            $Value = $this->formatValue($Value, $StyleId);
-                        } elseif ($Value) {
-                            $Value = $this->generalFormat($Value);
+                        if ($value !== '' && $style_id && isset($this->styles[$style_id])) {
+                            $value = $this->formatValue($value, $style_id);
+                        } elseif ($value) {
+                            $value = $this->generalFormat($value);
                         }
 
-                        $this->CurrentRow[$Index] = $Value;
+                        $this->current_row[$row_number] = $value;
                         break;
                 }
             }
 
             // Adding empty cells, if necessary
             // Only empty cells inbetween and on the left side are added
-            if ($MaxIndex + 1 > $CellCount) {
-                $this->CurrentRow = $this->CurrentRow + array_fill(0, $MaxIndex + 1, '');
-                ksort($this->CurrentRow);
+            if ($max_index + 1 > $cell_count) {
+                $this->current_row = $this->current_row + array_fill(0, $max_index + 1, '');
+                ksort($this->current_row);
             }
         }
 
-        return $this->CurrentRow;
+        return $this->current_row;
     }
 
     /**
@@ -555,7 +553,7 @@ class Reader implements Iterator, Countable
      */
     public function key()
     {
-        return $this->Index;
+        return $this->row_number;
     }
 
     /**
@@ -566,7 +564,7 @@ class Reader implements Iterator, Countable
      */
     public function valid()
     {
-        return $this->Valid;
+        return $this->valid;
     }
 
     // !Countable interface method
@@ -577,7 +575,7 @@ class Reader implements Iterator, Countable
      */
     public function count()
     {
-        return $this->Index + 1;
+        return $this->row_number;
     }
 
     /**
@@ -587,21 +585,21 @@ class Reader implements Iterator, Countable
      *
      * @return mixed Numeric index (0-based) or boolean false if it cannot be calculated
      */
-    public static function indexFromColumnLetter($Letter)
+    public static function indexFromColumnLetter($letter)
     {
-        $Letter = strtoupper($Letter);
+        $letter = strtoupper($letter);
 
-        $Result = 0;
-        for ($i = strlen($Letter) - 1, $j = 0; $i >= 0; $i--, $j++) {
-            $Ord = ord($Letter[$i]) - 64;
-            if ($Ord > 26) {
+        $result = 0;
+        for ($i = strlen($letter) - 1, $j = 0; $i >= 0; $i--, $j++) {
+            $ord = ord($letter[$i]) - 64;
+            if ($ord > 26) {
                 // Something is very, very wrong
                 return false;
             }
-            $Result += $Ord * pow(26, $j);
+            $result += $ord * pow(26, $j);
         }
 
-        return $Result - 1;
+        return $result - 1;
     }
 
     /**
@@ -625,6 +623,7 @@ class Reader implements Iterator, Countable
             $int_1 = $int_2 % $int_1;
             $int_2 = $divisor;
         }
+
         return $divisor;
     }
 
@@ -637,31 +636,31 @@ class Reader implements Iterator, Countable
      *
      * @return string Formatted cell value
      */
-    private function formatValue($Value, $Index)
+    private function formatValue($value, $format_index)
     {
-        if (!is_numeric($Value)) {
-            return $Value;
+        if (!is_numeric($value)) {
+            return $value;
         }
 
-        if (isset($this->Styles[$Index]) && ($this->Styles[$Index] !== false)) {
-            $Index = $this->Styles[$Index];
+        if (isset($this->styles[$format_index]) && ($this->styles[$format_index] !== false)) {
+            $format_index = $this->styles[$format_index];
         } else {
-            return $Value;
+            return $value;
         }
 
         // A special case for the "General" format
-        if ($Index == 0) {
-            return $this->generalFormat($Value);
+        if ($format_index == 0) {
+            return $this->generalFormat($value);
         }
 
-        $Format = array();
+        $format = array();
 
-        if (isset($this->ParsedFormatCache[$Index])) {
-            $Format = $this->ParsedFormatCache[$Index];
+        if (isset($this->parsed_format_cache[$format_index])) {
+            $format = $this->parsed_format_cache[$format_index];
         }
 
-        if (!$Format) {
-            $Format = array(
+        if (!$format) {
+            $format = array(
                 'Code'      => false,
                 'Type'      => false,
                 'Scale'     => 1,
@@ -669,217 +668,217 @@ class Reader implements Iterator, Countable
                 'Currency'  => false
             );
 
-            if (isset(self::$BuiltinFormats[$Index])) {
-                $Format['Code'] = self::$BuiltinFormats[$Index];
-            } elseif (isset($this->Formats[$Index])) {
-                $Format['Code'] = $this->Formats[$Index];
+            if (isset(self::$builtin_formats[$format_index])) {
+                $format['Code'] = self::$builtin_formats[$format_index];
+            } elseif (isset($this->formats[$format_index])) {
+                $format['Code'] = $this->formats[$format_index];
             }
 
             // Format code found, now parsing the format
-            if ($Format['Code']) {
-                $Sections = explode(';', $Format['Code']);
-                $Format['Code'] = $Sections[0];
+            if ($format['Code']) {
+                $sections = explode(';', $format['Code']);
+                $format['Code'] = $sections[0];
 
-                switch (count($Sections)) {
+                switch (count($sections)) {
                     case 2:
-                        if ($Value < 0) {
-                            $Format['Code'] = $Sections[1];
+                        if ($value < 0) {
+                            $format['Code'] = $sections[1];
                         }
                         break;
                     case 3:
                     case 4:
-                        if ($Value < 0) {
-                            $Format['Code'] = $Sections[1];
-                        } elseif ($Value == 0) {
-                            $Format['Code'] = $Sections[2];
+                        if ($value < 0) {
+                            $format['Code'] = $sections[1];
+                        } elseif ($value == 0) {
+                            $format['Code'] = $sections[2];
                         }
                         break;
                 }
             }
 
             // Stripping colors
-            $Format['Code'] = trim(preg_replace('{^\[[[:alpha:]]+\]}i', '', $Format['Code']));
+            $format['Code'] = trim(preg_replace('{^\[[[:alpha:]]+\]}i', '', $format['Code']));
 
             // Percentages
-            if (substr($Format['Code'], -1) == '%') {
-                $Format['Type'] = 'Percentage';
-            } elseif (preg_match('{^(\[\$[[:alpha:]]*-[0-9A-F]*\])*[hmsdy]}i', $Format['Code'])) {
-                $Format['Type'] = 'DateTime';
+            if (substr($format['Code'], -1) == '%') {
+                $format['Type'] = 'Percentage';
+            } elseif (preg_match('{^(\[\$[[:alpha:]]*-[0-9A-F]*\])*[hmsdy]}i', $format['Code'])) {
+                $format['Type'] = 'DateTime';
 
-                $Format['Code'] = trim(preg_replace('{^(\[\$[[:alpha:]]*-[0-9A-F]*\])}i', '', $Format['Code']));
-                $Format['Code'] = strtolower($Format['Code']);
+                $format['Code'] = trim(preg_replace('{^(\[\$[[:alpha:]]*-[0-9A-F]*\])}i', '', $format['Code']));
+                $format['Code'] = strtolower($format['Code']);
 
-                $Format['Code'] = strtr($Format['Code'], self::$DateReplacements['All']);
-                if (strpos($Format['Code'], 'A') === false) {
-                    $Format['Code'] = strtr($Format['Code'], self::$DateReplacements['24H']);
+                $format['Code'] = strtr($format['Code'], self::$date_replacements['All']);
+                if (strpos($format['Code'], 'A') === false) {
+                    $format['Code'] = strtr($format['Code'], self::$date_replacements['24H']);
                 } else {
-                    $Format['Code'] = strtr($Format['Code'], self::$DateReplacements['12H']);
+                    $format['Code'] = strtr($format['Code'], self::$date_replacements['12H']);
                 }
-            } elseif ($Format['Code'] == '[$EUR ]#,##0.00_-') {
-                $Format['Type'] = 'Euro';
+            } elseif ($format['Code'] == '[$eUR ]#,##0.00_-') {
+                $format['Type'] = 'Euro';
             } else {
                 // Removing skipped characters
-                $Format['Code'] = preg_replace('{_.}', '', $Format['Code']);
+                $format['Code'] = preg_replace('{_.}', '', $format['Code']);
                 // Removing unnecessary escaping
-                $Format['Code'] = preg_replace("{\\\\}", '', $Format['Code']);
+                $format['Code'] = preg_replace("{\\\\}", '', $format['Code']);
                 // Removing string quotes
-                $Format['Code'] = str_replace(array('"', '*'), '', $Format['Code']);
+                $format['Code'] = str_replace(array('"', '*'), '', $format['Code']);
                 // Removing thousands separator
-                if (strpos($Format['Code'], '0,0') !== false || strpos($Format['Code'], '#,#') !== false) {
-                    $Format['Thousands'] = true;
+                if (strpos($format['Code'], '0,0') !== false || strpos($format['Code'], '#,#') !== false) {
+                    $format['Thousands'] = true;
                 }
-                $Format['Code'] = str_replace(array('0,0', '#,#'), array('00', '##'), $Format['Code']);
+                $format['Code'] = str_replace(array('0,0', '#,#'), array('00', '##'), $format['Code']);
 
                 // Scaling (Commas indicate the power)
-                $Scale = 1;
-                $Matches = array();
-                if (preg_match('{(0|#)(,+)}', $Format['Code'], $Matches)) {
-                    $Scale = pow(1000, strlen($Matches[2]));
+                $scale = 1;
+                $matches = array();
+                if (preg_match('{(0|#)(,+)}', $format['Code'], $matches)) {
+                    $scale = pow(1000, strlen($matches[2]));
                     // Removing the commas
-                    $Format['Code'] = preg_replace(array('{0,+}', '{#,+}'), array('0', '#'), $Format['Code']);
+                    $format['Code'] = preg_replace(array('{0,+}', '{#,+}'), array('0', '#'), $format['Code']);
                 }
 
-                $Format['Scale'] = $Scale;
+                $format['Scale'] = $scale;
 
-                if (preg_match('{#?.*\?\/\?}', $Format['Code'])) {
-                    $Format['Type'] = 'Fraction';
+                if (preg_match('{#?.*\?\/\?}', $format['Code'])) {
+                    $format['Type'] = 'Fraction';
                 } else {
-                    $Format['Code'] = str_replace('#', '', $Format['Code']);
+                    $format['Code'] = str_replace('#', '', $format['Code']);
 
-                    $Matches = array();
-                    if (preg_match('{(0+)(\.?)(0*)}', preg_replace('{\[[^\]]+\]}', '', $Format['Code']), $Matches)) {
-                        $Integer = $Matches[1];
-                        $DecimalPoint = $Matches[2];
-                        $Decimals = $Matches[3];
+                    $matches = array();
+                    if (preg_match('{(0+)(\.?)(0*)}', preg_replace('{\[[^\]]+\]}', '', $format['Code']), $matches)) {
+                        $integer = $matches[1];
+                        $decimalPoint = $matches[2];
+                        $decimals = $matches[3];
 
-                        $Format['MinWidth'] = strlen($Integer) + strlen($DecimalPoint) + strlen($Decimals);
-                        $Format['Decimals'] = $Decimals;
-                        $Format['Precision'] = strlen($Format['Decimals']);
-                        $Format['Pattern'] = '%0'.$Format['MinWidth'].'.'.$Format['Precision'].'f';
+                        $format['MinWidth'] = strlen($integer) + strlen($decimalPoint) + strlen($decimals);
+                        $format['Decimals'] = $decimals;
+                        $format['Precision'] = strlen($format['Decimals']);
+                        $format['Pattern'] = '%0'.$format['MinWidth'].'.'.$format['Precision'].'f';
                     }
                 }
 
-                $Matches = array();
-                if (preg_match('{\[\$(.*)\]}u', $Format['Code'], $Matches)) {
-                    $CurrCode = $Matches[1];
-                    $CurrCode = explode('-', $CurrCode);
-                    if ($CurrCode) {
-                        $CurrCode = $CurrCode[0];
+                $matches = array();
+                if (preg_match('{\[\$(.*)\]}u', $format['Code'], $matches)) {
+                    $curr_code = $matches[1];
+                    $curr_code = explode('-', $curr_code);
+                    if ($curr_code) {
+                        $curr_code = $curr_code[0];
                     }
 
-                    if (!$CurrCode) {
-                        $CurrCode = self::$CurrencyCode;
+                    if (!$curr_code) {
+                        $curr_code = self::$currency_code;
                     }
 
-                    $Format['Currency'] = $CurrCode;
+                    $format['Currency'] = $curr_code;
                 }
-                $Format['Code'] = trim($Format['Code']);
+                $format['Code'] = trim($format['Code']);
             }
 
-            $this->ParsedFormatCache[$Index] = $Format;
+            $this->parsed_format_cache[$format_index] = $format;
         }
 
         // Applying format to value
-        if ($Format) {
-            if ($Format['Code'] == '@') {
-                return (string)$Value;
-            } elseif ($Format['Type'] == 'Percentage') {
+        if ($format) {
+            if ($format['Code'] == '@') {
+                return (string)$value;
+            } elseif ($format['Type'] == 'Percentage') {
                 // Percentages
-                if ($Format['Code'] === '0%') {
-                    $Value = round(100 * $Value, 0).'%';
+                if ($format['Code'] === '0%') {
+                    $value = round(100 * $value, 0).'%';
                 } else {
-                    $Value = sprintf('%.2f%%', round(100 * $Value, 2));
+                    $value = sprintf('%.2f%%', round(100 * $value, 2));
                 }
-            } elseif ($Format['Type'] == 'DateTime') {
+            } elseif ($format['Type'] == 'DateTime') {
                 // Dates and times
-                $Days = (int)$Value;
+                $days = (int)$value;
                 // Correcting for Feb 29, 1900
-                if ($Days > 60) {
-                    $Days--;
+                if ($days > 60) {
+                    $days--;
                 }
 
                 // At this point time is a fraction of a day
-                $Time = ($Value - (int)$Value);
-                $Seconds = 0;
-                if ($Time) {
+                $time = ($value - (int)$value);
+                $seconds = 0;
+                if ($time) {
                     // Here time is converted to seconds
                     // Some loss of precision will occur
-                    $Seconds = (int)($Time * 86400);
+                    $seconds = (int)($time * 86400);
                 }
 
-                $Value = clone self::$BaseDate;
-                $Value->add(new DateInterval('P'.$Days.'D'.($Seconds ? 'T'.$Seconds.'S' : '')));
+                $value = clone self::$base_date;
+                $value->add(new DateInterval('P'.$days.'D'.($seconds ? 'T'.$seconds.'S' : '')));
 
-                if (!$this->Options['ReturnDateTimeObjects']) {
-                    $Value = $Value->format($Format['Code']);
+                if (!$this->options['ReturnDateTimeObjects']) {
+                    $value = $value->format($format['Code']);
                 } // else: A DateTime object is returned
-            } elseif ($Format['Type'] == 'Euro') {
-                $Value = 'EUR '.sprintf('%1.2f', $Value);
+            } elseif ($format['Type'] == 'Euro') {
+                $value = 'EUR '.sprintf('%1.2f', $value);
             } else {
                 // Fractional numbers; We get "0.25" and have to turn that into "1/4".
-                if ($Format['Type'] == 'Fraction' && ($Value != (int)$Value)) {
+                if ($format['Type'] == 'Fraction' && ($value != (int)$value)) {
                     // Split fraction from integer value (2.25 => 2 and 0.25)
-                    $Integer = floor(abs($Value));
-                    $Decimal = fmod(abs($Value), 1);
+                    $integer = floor(abs($value));
+                    $decimal = fmod(abs($value), 1);
 
                     // Turn fraction into non-decimal value (0.25 => 25)
-                    $Decimal *= pow(10, strlen($Decimal) - 2);
+                    $decimal *= pow(10, strlen($decimal) - 2);
 
                     // Obtain biggest divisor for the fraction part (25 => 100 => 25/100)
-                    $DecimalDivisor = pow(10, strlen($Decimal));
+                    $decimal_divisor = pow(10, strlen($decimal));
 
                     // Determine greatest common divisor for fraction optimization (so that 25/100 => 1/4)
-                    if (self::$RuntimeInfo['GMPSupported']) {
-                        $GCD = gmp_strval(gmp_gcd($Decimal, $DecimalDivisor));
+                    if (self::$runtime_info['GMPSupported']) {
+                        $gcd = gmp_strval(gmp_gcd($decimal, $decimal_divisor));
                     } else {
-                        $GCD = self::GCD($Decimal, $DecimalDivisor);
+                        $gcd = self::GCD($decimal, $decimal_divisor);
                     }
 
                     // Determine fraction parts (1 and 4 => 1/4)
-                    $AdjDecimal = $Decimal / $GCD;
-                    $AdjDecimalDivisor = $DecimalDivisor / $GCD;
+                    $adj_decimal = $decimal / $gcd;
+                    $adj_decimal_divisor = $decimal_divisor / $gcd;
 
                     if (
-                        strpos($Format['Code'], '0') !== false ||
-                        strpos($Format['Code'], '#') !== false ||
-                        substr($Format['Code'], 0, 3) == '? ?'
+                        strpos($format['Code'], '0') !== false ||
+                        strpos($format['Code'], '#') !== false ||
+                        substr($format['Code'], 0, 3) == '? ?'
                     ) {
                         // Extract whole values from fraction (2.25 => "2 1/4")
-                        $Value = ($Value < 0 ? '-' : '').
-                            ($Integer ? $Integer.' ' : '').
-                            $AdjDecimal.'/'.
-                            $AdjDecimalDivisor;
+                        $value = ($value < 0 ? '-' : '').
+                            ($integer ? $integer.' ' : '').
+                            $adj_decimal.'/'.
+                            $adj_decimal_divisor;
                     } else {
                         // Show entire value as fraction (2.25 => "9/4")
-                        $AdjDecimal += $Integer * $AdjDecimalDivisor;
-                        $Value = ($Value < 0 ? '-' : '').
-                            $AdjDecimal.'/'.
-                            $AdjDecimalDivisor;
+                        $adj_decimal += $integer * $adj_decimal_divisor;
+                        $value = ($value < 0 ? '-' : '').
+                            $adj_decimal.'/'.
+                            $adj_decimal_divisor;
                     }
                 } else {
                     // Scaling
-                    $Value = $Value / $Format['Scale'];
+                    $value = $value / $format['Scale'];
 
-                    if (!empty($Format['MinWidth']) && $Format['Decimals']) {
-                        if ($Format['Thousands']) {
-                            $Value = number_format($Value, $Format['Precision'],
-                                self::$DecimalSeparator, self::$ThousandSeparator);
+                    if (!empty($format['MinWidth']) && $format['Decimals']) {
+                        if ($format['Thousands']) {
+                            $value = number_format($value, $format['Precision'],
+                                self::$decimal_separator, self::$thousand_separator);
                         } else {
-                            $Value = sprintf($Format['Pattern'], $Value);
+                            $value = sprintf($format['Pattern'], $value);
                         }
 
-                        $Value = preg_replace('{(0+)(\.?)(0*)}', $Value, $Format['Code']);
+                        $value = preg_replace('{(0+)(\.?)(0*)}', $value, $format['Code']);
                     }
                 }
 
                 // Currency/Accounting
-                if ($Format['Currency']) {
-                    $Value = preg_replace('', $Format['Currency'], $Value);
+                if ($format['Currency']) {
+                    $value = preg_replace('', $format['Currency'], $value);
                 }
             }
 
         }
 
-        return $Value;
+        return $value;
     }
 }
