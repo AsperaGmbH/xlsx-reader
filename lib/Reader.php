@@ -56,9 +56,9 @@ class Reader implements Iterator, Countable
     private $workbook_XML = false;
 
     /**
-     * @var bool|SharedStrings
+     * @var SharedStrings
      */
-    private $shared_strings = false;
+    private $shared_strings = null;
 
     // Style data
     /**
@@ -348,13 +348,13 @@ class Reader implements Iterator, Countable
      *
      * @return bool True if sheet was successfully changed, false otherwise.
      */
-    public function changeSheet($row_number)
+    public function changeSheet($sheet_index)
     {
         $real_sheet_index = false;
         $sheets = $this->sheets();
-        if (isset($sheets[$row_number])) {
+        if (isset($sheets[$sheet_index])) {
             $sheet_indexes = array_keys($this->sheets);
-            $real_sheet_index = $sheet_indexes[$row_number];
+            $real_sheet_index = $sheet_indexes[$sheet_index];
         }
 
         $temp_worksheet_path = $this->temp_dir.'xl/worksheets/sheet'.$real_sheet_index.'.xml';
@@ -490,9 +490,9 @@ class Reader implements Iterator, Countable
                         $style_id = (int)$this->worksheet->getAttribute('s');
 
                         // Get the index of the cell
-                        $row_number = $this->worksheet->getAttribute('r');
-                        $letter = preg_replace('{[^[:alpha:]]}S', '', $row_number);
-                        $row_number = self::indexFromColumnLetter($letter);
+                        $cell_index = $this->worksheet->getAttribute('r');
+                        $letter = preg_replace('{[^[:alpha:]]}S', '', $cell_index);
+                        $cell_index = self::indexFromColumnLetter($letter);
 
                         // Determine cell type
                         if ($this->worksheet->getAttribute('t') == self::CELL_TYPE_SHARED_STR) {
@@ -501,11 +501,11 @@ class Reader implements Iterator, Countable
                             $cell_has_shared_string = false;
                         }
 
-                        $this->current_row[$row_number] = '';
+                        $this->current_row[$cell_index] = '';
 
                         $cell_count++;
-                        if ($row_number > $max_index) {
-                            $max_index = $row_number;
+                        if ($cell_index > $max_index) {
+                            $max_index = $cell_index;
                         }
 
                         break;
@@ -529,7 +529,7 @@ class Reader implements Iterator, Countable
                             $value = $this->generalFormat($value);
                         }
 
-                        $this->current_row[$row_number] = $value;
+                        $this->current_row[$cell_index] = $value;
                         break;
                 }
             }
