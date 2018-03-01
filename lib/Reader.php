@@ -300,6 +300,12 @@ class Reader implements Iterator, Countable
      */
     public function __destruct()
     {
+        // First close the worksheet, then delete its temporary files
+        if ($this->worksheet && $this->worksheet instanceof XMLReader) {
+            $this->worksheet->close();
+            unset($this->worksheet);
+        }
+
         foreach ($this->temp_files as $temp_file) {
             @unlink($temp_file);
         }
@@ -311,10 +317,6 @@ class Reader implements Iterator, Countable
             @rmdir($this->temp_dir);
         }
 
-        if ($this->worksheet && $this->worksheet instanceof XMLReader) {
-            $this->worksheet->close();
-            unset($this->worksheet);
-        }
         unset($this->worksheet_path);
 
         $this->shared_strings->close();
