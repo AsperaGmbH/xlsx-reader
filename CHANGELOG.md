@@ -59,7 +59,7 @@ with each call. (Thanks to [osuwariboy](https://github.com/osuwariboy))
 ### v.0.5.0  2013-06-17
 
 - Multiple sheet reading is now supported:
-	- The `sheets()` method lets you retrieve a list of all sheets present in the file.
+	- The `getSheets()` method lets you retrieve a list of all sheets present in the file.
 	- `changeSheet($Index)` method changes the sheet in the reader to the one specified.
 
 - Previously temporary files that were extracted, were deleted after the SpreadsheetReader  

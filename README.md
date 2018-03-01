@@ -25,7 +25,7 @@ This is about the easiest way to read a file:
 
 Multiple sheet reading is also supported.
 
-You can retrieve information about sheets contained in the file by calling the `sheets()` method which returns an array with
+You can retrieve information about sheets contained in the file by calling the `getSheets()` method which returns an array with
 sheet indexes as keys and sheet names as values. Then you can change the sheet that's currently being read by passing that index
 to the `changeSheet($Index)` method.
 
@@ -33,7 +33,7 @@ Example:
 
     <?php
         $Reader = new SpreadsheetReader_XLSX('example.xlsx');
-        $Sheets = $Reader -> sheets();
+        $Sheets = $Reader -> getSheets();
     
         foreach ($Sheets as $Index => $Name)
         {

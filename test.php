@@ -42,7 +42,7 @@ use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 		$Spreadsheet = new XLSXReader($Filepath);
 		$BaseMem = memory_get_usage();
 
-		$Sheets = $Spreadsheet->sheets();
+		$Sheets = $Spreadsheet->getSheets();
 
 		echo '---------------------------------'.PHP_EOL;
 		echo 'Spreadsheets:'.PHP_EOL;

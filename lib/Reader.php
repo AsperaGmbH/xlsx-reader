@@ -53,7 +53,7 @@ class Reader implements Iterator, Countable
     /**
      * @var SimpleXMLElement XML object for the workbook XML file
      */
-    private $workbook_XML = false;
+    private $workbook_xml = false;
 
     /**
      * @var SharedStrings
@@ -64,7 +64,7 @@ class Reader implements Iterator, Countable
     /**
      * @var SimpleXMLElement XML object for the styles XML file
      */
-    private $styles_XML = false;
+    private $styles_xml = false;
     /**
      * @var array Container for cell value style data
      */
@@ -210,7 +210,7 @@ class Reader implements Iterator, Countable
 
         // Getting the general workbook information
         if ($zip->locateName('xl/workbook.xml') !== false) {
-            $this->workbook_XML = new SimpleXMLElement($zip->getFromName('xl/workbook.xml'));
+            $this->workbook_xml = new SimpleXMLElement($zip->getFromName('xl/workbook.xml'));
         }
 
         // Extracting the XMLs from the XLSX zip file
@@ -222,12 +222,12 @@ class Reader implements Iterator, Countable
             );
         }
 
-        $this->sheets();
+        $this->getSheets();
 
-        foreach ($this->sheets as $row_number => $name) {
-            if ($zip->locateName('xl/worksheets/sheet'.$row_number.'.xml') !== false) {
-                $zip->extractTo($this->temp_dir, 'xl/worksheets/sheet'.$row_number.'.xml');
-                $this->temp_files[] = $this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'worksheets'.DIRECTORY_SEPARATOR.'sheet'.$row_number.'.xml';
+        foreach ($this->sheets as $sheet_num => $name) {
+            if ($zip->locateName('xl/worksheets/sheet'.$sheet_num.'.xml') !== false) {
+                $zip->extractTo($this->temp_dir, 'xl/worksheets/sheet'.$sheet_num.'.xml');
+                $this->temp_files[] = $this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'worksheets'.DIRECTORY_SEPARATOR.'sheet'.$sheet_num.'.xml';
             }
         }
 
@@ -235,9 +235,9 @@ class Reader implements Iterator, Countable
 
         // If worksheet is present and is OK, parse the styles already
         if ($zip->locateName('xl/styles.xml') !== false) {
-            $this->styles_XML = new SimpleXMLElement($zip->getFromName('xl/styles.xml'));
-            if ($this->styles_XML && $this->styles_XML->cellXfs && $this->styles_XML->cellXfs->xf) {
-                foreach ($this->styles_XML->cellXfs->xf as $row_number => $xf) {
+            $this->styles_xml = new SimpleXMLElement($zip->getFromName('xl/styles.xml'));
+            if ($this->styles_xml && $this->styles_xml->cellXfs && $this->styles_xml->cellXfs->xf) {
+                foreach ($this->styles_xml->cellXfs->xf as $xf) {
                     // Format #0 is a special case - it is the "General" format that is applied regardless of applyNumberFormat
                     if ($xf->attributes()->applyNumberFormat || (0 == (int)$xf->attributes()->numFmtId)) {
                         $format_id = (int)$xf->attributes()->numFmtId;
@@ -250,13 +250,13 @@ class Reader implements Iterator, Countable
                 }
             }
 
-            if ($this->styles_XML->numFmts && $this->styles_XML->numFmts->numFmt) {
-                foreach ($this->styles_XML->numFmts->numFmt as $row_number => $num_ft) {
+            if ($this->styles_xml->numFmts && $this->styles_xml->numFmts->numFmt) {
+                foreach ($this->styles_xml->numFmts->numFmt as $num_ft) {
                     $this->formats[(int)$num_ft->attributes()->numFmtId] = (string)$num_ft->attributes()->formatCode;
                 }
             }
 
-            unset($this->styles_XML);
+            unset($this->styles_xml);
         }
 
         $zip->close();
@@ -306,33 +306,25 @@ class Reader implements Iterator, Countable
 
         $this->shared_strings->close();
 
-        if (isset($this->styles_XML)) {
-            unset($this->styles_XML);
+        if (isset($this->styles_xml)) {
+            unset($this->styles_xml);
         }
-        if ($this->workbook_XML) {
-            unset($this->workbook_XML);
+        if ($this->workbook_xml) {
+            unset($this->workbook_xml);
         }
     }
 
     /**
      * Retrieves an array with information about sheets in the current file
      *
-     * @return array List of sheets (key is sheet index, value is name)
+     * @return array List of sheets (key is sheet index, value is name). Sheet's index starts with 1.
      */
-    public function sheets()
+    public function getSheets()
     {
         if ($this->sheets === false) {
             $this->sheets = array();
-            foreach ($this->workbook_XML->sheets->sheet as $row_number => $sheet) {
-                $attributes = $sheet->attributes('r', true);
-                $sheet_id = null;
-                foreach ($attributes as $name => $value) {
-                    if ($name == 'id') {
-                        $sheet_id = (int)str_replace('rId', '', (string)$value);
-                        break;
-                    }
-                }
-
+            foreach ($this->workbook_xml->sheets->sheet as $sheet) {
+                $sheet_id = (string)$sheet['sheetId'];
                 $this->sheets[$sheet_id] = (string)$sheet['name'];
             }
             ksort($this->sheets);
@@ -351,7 +343,7 @@ class Reader implements Iterator, Countable
     public function changeSheet($sheet_index)
     {
         $real_sheet_index = false;
-        $sheets = $this->sheets();
+        $sheets = $this->getSheets();
         if (isset($sheets[$sheet_index])) {
             $sheet_indexes = array_keys($this->sheets);
             $real_sheet_index = $sheet_indexes[$sheet_index];
@@ -748,10 +740,10 @@ class Reader implements Iterator, Countable
                     $matches = array();
                     if (preg_match('{(0+)(\.?)(0*)}', preg_replace('{\[[^\]]+\]}', '', $format['Code']), $matches)) {
                         $integer = $matches[1];
-                        $decimalPoint = $matches[2];
+                        $decimal_point = $matches[2];
                         $decimals = $matches[3];
 
-                        $format['MinWidth'] = strlen($integer) + strlen($decimalPoint) + strlen($decimals);
+                        $format['MinWidth'] = strlen($integer) + strlen($decimal_point) + strlen($decimals);
                         $format['Decimals'] = $decimals;
                         $format['Precision'] = strlen($format['Decimals']);
                         $format['Pattern'] = '%0'.$format['MinWidth'].'.'.$format['Precision'].'f';
