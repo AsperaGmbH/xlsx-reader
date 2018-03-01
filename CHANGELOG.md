@@ -1,3 +1,7 @@
+### v.0.5.12  2018-03-01
+
+- Added option 'SkipEmptyCells' to constructor in order to consider or not possible empty values in cells. 
+
 ### v.0.5.11  2015-04-30
 
 - Added a special case for cells formatted as text in XLSX. Previously leading zeros would get truncated if a text cell contained only numbers.

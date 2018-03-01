@@ -39,7 +39,12 @@ use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 
 	try
 	{
-		$Spreadsheet = new XLSXReader($Filepath);
+	    // set options for initialization
+	    $reader_options = array(
+	        'SkipEmptyCells' => true
+        );
+
+		$Spreadsheet = new XLSXReader($Filepath, $reader_options);
 		$BaseMem = memory_get_usage();
 
 		$Sheets = $Spreadsheet->getSheets();

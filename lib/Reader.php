@@ -28,11 +28,6 @@ class Reader implements Iterator, Countable
     const CELL_TYPE_STR = 'str';
     const CELL_TYPE_INLINE_STR = 'inlineStr';
 
-    private $options = array(
-        'TempDir'               => '',
-        'ReturnDateTimeObjects' => false
-    );
-
     private static $runtime_info = array(
         'GMPSupported' => false
     );
@@ -70,16 +65,30 @@ class Reader implements Iterator, Countable
      */
     private $styles = array();
 
-    private $temp_dir = '';
+    // Constructor options
+    /**
+     * @var array Temporary file names
+     */
     private $temp_files = array();
-
-    private $current_row = false;
+    /**
+     * @var string Full path of the temporary directory that is going to be used to store unzipped files
+     */
+    private $temp_dir = '';
+    /**
+     * @var bool By default do not format date/time values
+     */
+    private $return_date_time_objects = false;
+    /**
+     * @var bool By default all empty cells(values) are considered
+     */
+    private $skip_empty_cells = false;
 
     // Runtime parsing data
     /**
      * @var int Current row number in the file
      */
     private $row_number = 0;
+    private $current_row = false;
 
     /**
      * @var array Data about separate sheets in the file
@@ -185,27 +194,31 @@ class Reader implements Iterator, Countable
      *    TempDir => string Temporary directory path
      *    ReturnDateTimeObjects => bool True => dates and times will be returned as PHP DateTime objects, false => as
      *    strings
+     *    SkipEmptyCells => bool True => Row content will not contain empty cells, false => opposite
      *
      * @throws  Exception
      */
     public function __construct($filepath, array $options = null)
     {
         if (!is_readable($filepath)) {
-            throw new Exception('SpreadsheetReader_XLSX: File not readable ('.$filepath.')');
+            throw new Exception('XLSXReader: File not readable ('.$filepath.')');
         }
 
         $this->temp_dir = isset($options['TempDir']) && is_writable($options['TempDir']) ?
             $options['TempDir'] :
             sys_get_temp_dir();
 
+        // set options
         $this->temp_dir = rtrim($this->temp_dir, DIRECTORY_SEPARATOR);
         $this->temp_dir = $this->temp_dir.DIRECTORY_SEPARATOR.uniqid().DIRECTORY_SEPARATOR;
+        $this->skip_empty_cells = isset($options['SkipEmptyCells']) && $options['SkipEmptyCells'];
+        $this->return_date_time_objects = isset($options['ReturnDateTimeObjects']) && $options['ReturnDateTimeObjects'];
 
         $zip = new ZipArchive;
         $status = $zip->open($filepath);
 
         if ($status !== true) {
-            throw new Exception('SpreadsheetReader_XLSX: File not readable ('.$filepath.') (Error '.$status.')');
+            throw new Exception('XLSXReader: File not readable ('.$filepath.') (Error '.$status.')');
         }
 
         // Getting the general workbook information
@@ -445,7 +458,8 @@ class Reader implements Iterator, Countable
                         $current_row_column_count = 0;
                     }
 
-                    if ($current_row_column_count > 0) {
+                    if ($current_row_column_count > 0 && !$this->skip_empty_cells) {
+                        // fill values with empty strings in case of need
                         $this->current_row = array_fill(0, $current_row_column_count, '');
                     }
 
@@ -493,7 +507,9 @@ class Reader implements Iterator, Countable
                             $cell_has_shared_string = false;
                         }
 
-                        $this->current_row[$cell_index] = '';
+                        if (!$this->skip_empty_cells) {
+                            $this->current_row[$cell_index] = '';
+                        }
 
                         $cell_count++;
                         if ($cell_index > $max_index) {
@@ -528,9 +544,12 @@ class Reader implements Iterator, Countable
 
             // Adding empty cells, if necessary
             // Only empty cells inbetween and on the left side are added
-            if ($max_index + 1 > $cell_count) {
+            if (($max_index + 1 > $cell_count) && !$this->skip_empty_cells) {
                 $this->current_row = $this->current_row + array_fill(0, $max_index + 1, '');
                 ksort($this->current_row);
+            }
+            if (empty($this->current_row) && $this->skip_empty_cells) {
+                $this->current_row[] = null;
             }
         }
 
@@ -801,7 +820,7 @@ class Reader implements Iterator, Countable
                 $value = clone self::$base_date;
                 $value->add(new DateInterval('P'.$days.'D'.($seconds ? 'T'.$seconds.'S' : '')));
 
-                if (!$this->options['ReturnDateTimeObjects']) {
+                if (!$this->return_date_time_objects) {
                     $value = $value->format($format['Code']);
                 } // else: A DateTime object is returned
             } elseif ($format['Type'] == 'Euro') {
