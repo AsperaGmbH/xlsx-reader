@@ -204,9 +204,10 @@ class Reader implements Iterator, Countable
             throw new Exception('XLSXReader: File not readable ('.$filepath.')');
         }
 
-        $this->temp_dir = isset($options['TempDir']) && is_writable($options['TempDir']) ?
-            $options['TempDir'] :
-            sys_get_temp_dir();
+        if (isset($options['TempDir']) && !is_writable($options['TempDir'])) {
+            throw new Exception('XLSXReader: Provided temporary directory ('.$options['TempDir'].') is not writable');
+        }
+        $this->temp_dir = isset($options['TempDir']) ? $options['TempDir'] : sys_get_temp_dir();
 
         // set options
         $this->temp_dir = rtrim($this->temp_dir, DIRECTORY_SEPARATOR);

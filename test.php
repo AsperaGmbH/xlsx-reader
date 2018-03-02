@@ -40,8 +40,9 @@ use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 	try
 	{
 	    // set options for initialization
-	    $reader_options = array(
-	        'SkipEmptyCells' => true
+        $reader_options = array(
+            'SkipEmptyCells' => true,
+            'TempDir'        => 'C:\Windows\Temp'
         );
 
 		$Spreadsheet = new XLSXReader($Filepath, $reader_options);
