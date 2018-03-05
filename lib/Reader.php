@@ -236,7 +236,7 @@ class Reader implements Iterator, Countable
             );
         }
 
-        $this->getSheets();
+        $this->initSheets();
 
         foreach ($this->sheets as $sheet_num => $name) {
             if ($zip->locateName('xl/worksheets/sheet'.$sheet_num.'.xml') !== false) {
@@ -245,7 +245,9 @@ class Reader implements Iterator, Countable
             }
         }
 
-        $this->changeSheet(0);
+        if (!$this->changeSheet(0)) {
+            throw new Exception('XLSXReader: Sheet cannot be changed.');
+        }
 
         // If worksheet is present and is OK, parse the styles already
         if ($zip->locateName('xl/styles.xml') !== false) {
@@ -337,15 +339,6 @@ class Reader implements Iterator, Countable
      */
     public function getSheets()
     {
-        if ($this->sheets === false) {
-            $this->sheets = array();
-            foreach ($this->workbook_xml->sheets->sheet as $sheet) {
-                $sheet_id = (string)$sheet['sheetId'];
-                $this->sheets[$sheet_id] = (string)$sheet['name'];
-            }
-            ksort($this->sheets);
-        }
-
         return array_values($this->sheets);
     }
 
@@ -439,6 +432,8 @@ class Reader implements Iterator, Countable
     /**
      * Move forward to next element.
      * Similar to the next() function for arrays in PHP
+     *
+     * @return array|false
      *
      * @throws Exception
      */
@@ -894,5 +889,20 @@ class Reader implements Iterator, Countable
         }
 
         return $value;
+    }
+
+    /**
+     * Sets 'sheets', an array with information about sheets in the current file
+     *
+     * @return void
+     */
+    private function initSheets()
+    {
+        $this->sheets = array();
+        foreach ($this->workbook_xml->sheets->sheet as $sheet) {
+            $sheet_id = (string)$sheet['sheetId'];
+            $this->sheets[$sheet_id] = (string)$sheet['name'];
+        }
+        ksort($this->sheets);
     }
 }
