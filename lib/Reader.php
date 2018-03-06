@@ -27,6 +27,84 @@ class Reader implements Iterator, Countable
     const CELL_TYPE_SHARED_STR = 's';
     const CELL_TYPE_STR = 'str';
     const CELL_TYPE_INLINE_STR = 'inlineStr';
+    const BUILTIN_FORMATS = array(
+        0 => '',
+        1 => '0',
+        2 => '0.00',
+        3 => '#,##0',
+        4 => '#,##0.00',
+
+        9  => '0%',
+        10 => '0.00%',
+        11 => '0.00E+00',
+        12 => '# ?/?',
+        13 => '# ??/??',
+        14 => 'mm-dd-yy',
+        15 => 'd-mmm-yy',
+        16 => 'd-mmm',
+        17 => 'mmm-yy',
+        18 => 'h:mm AM/PM',
+        19 => 'h:mm:ss AM/PM',
+        20 => 'h:mm',
+        21 => 'h:mm:ss',
+        22 => 'm/d/yy h:mm',
+
+        37 => '#,##0 ;(#,##0)',
+        38 => '#,##0 ;[Red](#,##0)',
+        39 => '#,##0.00;(#,##0.00)',
+        40 => '#,##0.00;[Red](#,##0.00)',
+
+        45 => 'mm:ss',
+        46 => '[h]:mm:ss',
+        47 => 'mmss.0',
+        48 => '##0.0E+0',
+        49 => '@',
+
+        // CHT & CHS
+        27 => '[$-404]e/m/d',
+        30 => 'm/d/yy',
+        36 => '[$-404]e/m/d',
+        50 => '[$-404]e/m/d',
+        57 => '[$-404]e/m/d',
+
+        // THA
+        59 => 't0',
+        60 => 't0.00',
+        61 => 't#,##0',
+        62 => 't#,##0.00',
+        67 => 't0%',
+        68 => 't0.00%',
+        69 => 't# ?/?',
+        70 => 't# ??/??'
+    );
+    const DATE_REPLACEMENTS = array(
+        'All' => array(
+            '\\'    => '',
+            'am/pm' => 'A',
+            'yyyy'  => 'Y',
+            'yy'    => 'y',
+            'mmmmm' => 'M',
+            'mmmm'  => 'F',
+            'mmm'   => 'M',
+            ':mm'   => ':i',
+            'mm'    => 'm',
+            'm'     => 'n',
+            'dddd'  => 'l',
+            'ddd'   => 'D',
+            'dd'    => 'd',
+            'd'     => 'j',
+            'ss'    => 's',
+            '.s'    => ''
+        ),
+        '24H' => array(
+            'hh' => 'H',
+            'h'  => 'G'
+        ),
+        '12H' => array(
+            'hh' => 'h',
+            'h'  => 'G'
+        )
+    );
 
     private static $runtime_info = array(
         'GMPSupported' => false
@@ -97,86 +175,7 @@ class Reader implements Iterator, Countable
 
     private $row_open = false;
 
-    private static $builtin_formats = array(
-        0 => '',
-        1 => '0',
-        2 => '0.00',
-        3 => '#,##0',
-        4 => '#,##0.00',
-
-        9  => '0%',
-        10 => '0.00%',
-        11 => '0.00E+00',
-        12 => '# ?/?',
-        13 => '# ??/??',
-        14 => 'mm-dd-yy',
-        15 => 'd-mmm-yy',
-        16 => 'd-mmm',
-        17 => 'mmm-yy',
-        18 => 'h:mm AM/PM',
-        19 => 'h:mm:ss AM/PM',
-        20 => 'h:mm',
-        21 => 'h:mm:ss',
-        22 => 'm/d/yy h:mm',
-
-        37 => '#,##0 ;(#,##0)',
-        38 => '#,##0 ;[Red](#,##0)',
-        39 => '#,##0.00;(#,##0.00)',
-        40 => '#,##0.00;[Red](#,##0.00)',
-
-        45 => 'mm:ss',
-        46 => '[h]:mm:ss',
-        47 => 'mmss.0',
-        48 => '##0.0E+0',
-        49 => '@',
-
-        // CHT & CHS
-        27 => '[$-404]e/m/d',
-        30 => 'm/d/yy',
-        36 => '[$-404]e/m/d',
-        50 => '[$-404]e/m/d',
-        57 => '[$-404]e/m/d',
-
-        // THA
-        59 => 't0',
-        60 => 't0.00',
-        61 => 't#,##0',
-        62 => 't#,##0.00',
-        67 => 't0%',
-        68 => 't0.00%',
-        69 => 't# ?/?',
-        70 => 't# ??/??'
-    );
     private $formats = array();
-
-    private static $date_replacements = array(
-        'All' => array(
-            '\\'    => '',
-            'am/pm' => 'A',
-            'yyyy'  => 'Y',
-            'yy'    => 'y',
-            'mmmmm' => 'M',
-            'mmmm'  => 'F',
-            'mmm'   => 'M',
-            ':mm'   => ':i',
-            'mm'    => 'm',
-            'm'     => 'n',
-            'dddd'  => 'l',
-            'ddd'   => 'D',
-            'dd'    => 'd',
-            'd'     => 'j',
-            'ss'    => 's',
-            '.s'    => ''
-        ),
-        '24H' => array(
-            'hh' => 'H',
-            'h'  => 'G'
-        ),
-        '12H' => array(
-            'hh' => 'h',
-            'h'  => 'G'
-        )
-    );
 
     private static $base_date = false;
     private static $decimal_separator = '.';
@@ -677,8 +676,8 @@ class Reader implements Iterator, Countable
                 'Currency'  => false
             );
 
-            if (isset(self::$builtin_formats[$format_index])) {
-                $format['Code'] = self::$builtin_formats[$format_index];
+            if (array_key_exists($format_index, self::BUILTIN_FORMATS)) {
+                $format['Code'] = self::BUILTIN_FORMATS[$format_index];
             } elseif (isset($this->formats[$format_index])) {
                 $format['Code'] = $this->formats[$format_index];
             }
@@ -717,11 +716,11 @@ class Reader implements Iterator, Countable
                 $format['Code'] = trim(preg_replace('{^(\[\$[[:alpha:]]*-[0-9A-F]*\])}i', '', $format['Code']));
                 $format['Code'] = strtolower($format['Code']);
 
-                $format['Code'] = strtr($format['Code'], self::$date_replacements['All']);
+                $format['Code'] = strtr($format['Code'], self::DATE_REPLACEMENTS['All']);
                 if (strpos($format['Code'], 'A') === false) {
-                    $format['Code'] = strtr($format['Code'], self::$date_replacements['24H']);
+                    $format['Code'] = strtr($format['Code'], self::DATE_REPLACEMENTS['24H']);
                 } else {
-                    $format['Code'] = strtr($format['Code'], self::$date_replacements['12H']);
+                    $format['Code'] = strtr($format['Code'], self::DATE_REPLACEMENTS['12H']);
                 }
             } elseif ($format['Code'] == '[$eUR ]#,##0.00_-') {
                 $format['Type'] = 'Euro';
