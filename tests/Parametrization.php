@@ -24,6 +24,10 @@ class ParametrizationTest extends PHPUnit\Framework\TestCase
             self::fail('[TempDir] parameter check should have failed.');
         } catch (Exception $e) {
             // nothing unexpected happened
+            self::assertSame(
+                'XLSXReader: Provided temporary directory ('.self::TEMP_DIR_PATH.') is not writable',
+                $e->getMessage()
+            );
         }
     }
 
