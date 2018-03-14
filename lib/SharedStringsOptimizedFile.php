@@ -2,7 +2,7 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
-use Exception;
+use RuntimeException;
 
 /** Data object to hold all data corresponding to a single optimized shared string file (not the original XML file). */
 class SharedStringsOptimizedFile
@@ -144,14 +144,16 @@ class SharedStringsOptimizedFile
      * @param string $mode
      * @return resource The newly opened file handle
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function openHandle($mode)
     {
         $this->closeHandle();
         $new_handle = @fopen($this->getFile(), $mode);
         if (!$new_handle) {
-            throw new Exception('Could not open file handle for optimized shared string file with mode ' . $mode . '.');
+            throw new RuntimeException(
+                'Could not open file handle for optimized shared string file with mode ' . $mode . '.'
+            );
         }
         $this->setHandle($new_handle);
         return $this->getHandle();
@@ -176,12 +178,12 @@ class SharedStringsOptimizedFile
      *
      * @return resource The rewound file handle
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function rewindHandle()
     {
         if (!$this->handle) {
-            throw new Exception('Could not rewind file handle; There is no file handle currently open.');
+            throw new RuntimeException('Could not rewind file handle; There is no file handle currently open.');
         }
         rewind($this->handle);
         $this->handle_current_index = -1;

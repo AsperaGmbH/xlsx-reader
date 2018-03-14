@@ -224,6 +224,7 @@ class Reader implements Iterator, Countable
 
         // set options
         $this->temp_dir = rtrim($this->temp_dir, DIRECTORY_SEPARATOR);
+        /** @noinspection NonSecureUniqidUsageInspection */
         $this->temp_dir = $this->temp_dir . DIRECTORY_SEPARATOR . uniqid() . DIRECTORY_SEPARATOR;
         $this->skip_empty_cells = isset($options['SkipEmptyCells']) && $options['SkipEmptyCells'];
         $this->return_date_time_objects = isset($options['ReturnDateTimeObjects']) && $options['ReturnDateTimeObjects'];

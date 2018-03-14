@@ -99,6 +99,8 @@ class SharedStringsConfiguration
      * Adjusting this value has no effect if the creation of optimized shared string files is disabled.
      *
      * @param $new_entry_count
+     *
+     * @throws InvalidArgumentException
      */
     public function setOptimizedFileEntryCount($new_entry_count)
     {

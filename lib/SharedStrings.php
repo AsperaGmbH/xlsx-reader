@@ -3,7 +3,8 @@
 namespace Aspera\Spreadsheet\XLSX;
 
 use XMLReader;
-use Exception;
+
+use RuntimeException;
 use SplFixedArray;
 
 require_once('SharedStringsConfiguration.php');
@@ -89,11 +90,12 @@ class SharedStrings
     /**
      * SharedStrings constructor. Prepares the data stored within the given shared string file for reading.
      *
-     * @param string $shared_strings_directory Directory of the shared strings file
-     * @param string $shared_strings_filename Filename of the shared strings file
-     * @param SharedStringsConfiguration $shared_strings_configuration Configuration for shared string reading and caching behaviour
+     * @param string                     $shared_strings_directory     Directory of the shared strings file
+     * @param string                     $shared_strings_filename      Filename of the shared strings file
+     * @param SharedStringsConfiguration $shared_strings_configuration Configuration for shared string reading and
+     *                                                                 caching behaviour
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function __construct(
         $shared_strings_directory,
@@ -122,8 +124,8 @@ class SharedStrings
         foreach ($this->prepared_shared_string_files as $file_data) {
             $file_data->closeHandle();
         }
-        unset($this->shared_strings_directory);
-        unset($this->shared_strings_filename);
+
+        unset($this->shared_strings_directory, $this->shared_strings_filename);
     }
 
     /**
@@ -155,7 +157,7 @@ class SharedStrings
      * @param int $target_index Shared string index
      * @return string Shared string of the given index
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function getSharedString($target_index)
     {
@@ -188,7 +190,7 @@ class SharedStrings
      * @param int $target_index
      * @return null|string
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     private function getStringFromOptimizedFile($target_index)
     {
@@ -235,15 +237,18 @@ class SharedStrings
                 break; // unexpected EOF; Silent fallback to original shared string file.
             }
         }
-        if (is_string($file_line) && $file_line != '') {
+        if (is_string($file_line) && $file_line !== '') {
             $file_line = json_decode($file_line);
+
             if ($this->shared_strings_configuration->getKeepFileHandles()) {
                 $file_data->setValueAtCurrentIndex($file_line);
             } else {
                 $file_data->closeHandle();
             }
+
             return $file_line;
         }
+
         return null;
     }
 
@@ -271,23 +276,27 @@ class SharedStrings
 
         // If an index with the same value as the last already fetched is requested
         // (any further traversing the tree would get us further away from the node)
-        if (($index == $this->shared_string_index) && ($this->last_shared_string_value !== null)) {
+        if (($target_index === $this->shared_string_index) && ($this->last_shared_string_value !== null)) {
             return $this->last_shared_string_value;
         }
 
         // Move reader to the next <si> node, if it isn't already pointing at one.
         $last_result = true;
         $moved_forward = false;
-        while ($last_result && ($this->shared_strings_reader->name != 'si' || $this->shared_strings_reader->nodeType == XMLReader::END_ELEMENT)) {
+        while (   $last_result && ($this->shared_strings_reader->name !== 'si'
+               || $this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT)
+        ) {
             $moved_forward = true;
             $last_result = $this->shared_strings_reader->read();
         }
+
         if (!$last_result) {
             // Unexpected EOF
             $this->shared_strings_reader->close();
             $this->shared_strings_reader = null;
             return '';
         }
+
         if ($moved_forward) {
             $this->shared_string_index++;
         }
@@ -298,6 +307,7 @@ class SharedStrings
             $last_result = $this->shared_strings_reader->next('si');
             $this->shared_string_index++;
         }
+
         if (!$last_result) {
             // Unexpected EOF
             $this->shared_strings_reader->close();
@@ -310,18 +320,19 @@ class SharedStrings
         while ($this->shared_strings_reader->read()) {
             switch ($this->shared_strings_reader->name) {
                 case 't':
-                    if ($this->shared_strings_reader->nodeType == XMLReader::END_ELEMENT) {
+                    if ($this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT) {
                         continue 2;
                     }
                     $value .= $this->shared_strings_reader->readString();
                     break;
                 case 'si':
-                    if ($this->shared_strings_reader->nodeType == XMLReader::END_ELEMENT) {
+                    if ($this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT) {
                         break 2;
                     }
                     break;
             }
         }
+
         if ($value) {
             $this->last_shared_string_value = $value;
         }
@@ -341,7 +352,7 @@ class SharedStrings
      *
      * @return void
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     private function prepareSharedStrings()
     {
@@ -350,14 +361,16 @@ class SharedStrings
 
         // Obtain number of shared strings available
         while ($this->shared_strings_reader->read()) {
-            if ($this->shared_strings_reader->name == 'sst') {
+            if ($this->shared_strings_reader->name === 'sst') {
                 $this->shared_string_count = $this->shared_strings_reader->getAttribute('uniqueCount');
                 break;
             }
         }
+
         if (!$this->shared_string_count) {
             return; // No shared strings available, no preparation necessary
         }
+
         if ($this->shared_strings_configuration->getUseCache()) {
             // This is why we ask for at least 8 KB of memory; Lower values may already exceed the limit with this assignment:
             $this->shared_string_cache = new SplFixedArray(self::SHARED_STRING_CACHE_ARRAY_SIZE_STEP);
@@ -374,7 +387,7 @@ class SharedStrings
         while ($this->shared_strings_reader->read()) {
             switch ($this->shared_strings_reader->name) {
                 case 'si':
-                    if ($this->shared_strings_reader->nodeType == XMLReader::END_ELEMENT) {
+                    if ($this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT) {
                         if ($write_to_cache) {
                             $cache_current_memory_byte = memory_get_usage(false) - $start_memory_byte;
                             if ($cache_current_memory_byte > $cache_max_size_byte) {
@@ -389,7 +402,7 @@ class SharedStrings
                     }
                     break;
                 case 't':
-                    if ($this->shared_strings_reader->nodeType != XMLReader::END_ELEMENT) {
+                    if ($this->shared_strings_reader->nodeType !== XMLReader::END_ELEMENT) {
                         $string_value .= $this->shared_strings_reader->readString();
                     }
                     break;
@@ -402,6 +415,7 @@ class SharedStrings
         // Close all no longer necessary file handles
         $this->shared_strings_reader->close();
         $this->shared_strings_reader = null;
+
         /** @var SharedStringsOptimizedFile $file_data */
         foreach ($this->prepared_shared_string_files as $file_data) {
             $file_data->closeHandle();
@@ -416,7 +430,7 @@ class SharedStrings
      * @param string $string
      * @param bool $write_to_cache
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     private function prepareSingleSharedString($index, $string, $write_to_cache = false)
     {
@@ -452,7 +466,7 @@ class SharedStrings
         $create_new_file = !$newest_file_data || $newest_file_is_full;
         if ($create_new_file) {
             // Assemble new filename; Add random hash to avoid conflicts for when the target directory is also used by other processes.
-            $hash = base_convert(mt_rand(pow(36, 4), pow(36, 5) - 1), 10, 36); // Possible results: "10000" - "zzzzz"
+            $hash = base_convert(mt_rand(36 ** 4, (36 ** 5) - 1), 10, 36); // Possible results: "10000" - "zzzzz"
             $newest_file_data = new SharedStringsOptimizedFile();
             $newest_file_data->setFile($this->shared_strings_directory . 'shared_strings_tmp_' . $index . '_' . $hash . '.txt');
             $fhandle = $newest_file_data->openHandle('wb');
@@ -467,7 +481,7 @@ class SharedStrings
 
         // Write shared string to the chosen file
         if (fwrite($fhandle, json_encode($string) . PHP_EOL) === false) {
-            throw new Exception('Could not write shared string to temporary file.');
+            throw new RuntimeException('Could not write shared string to temporary file.');
         }
         $newest_file_data->increaseCount();
 
