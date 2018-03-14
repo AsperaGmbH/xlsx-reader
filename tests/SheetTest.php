@@ -1,8 +1,14 @@
 <?php
 
+namespace Aspera\Spreadsheet\XLSX\Tests;
+
+require_once __DIR__.'/../vendor/autoload.php';
+
+use Exception;
+use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 
-class SheetTest extends PHPUnit\Framework\TestCase
+class SheetTest extends PHPUnitTestCase
 {
     const FILE_PATH = 'input_files\multiple_sheets_test.xlsx';
 

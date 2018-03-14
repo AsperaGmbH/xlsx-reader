@@ -2,6 +2,8 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
+require_once __DIR__.'/../vendor/autoload.php';
+
 use Iterator;
 use Countable;
 use RuntimeException;
@@ -12,8 +14,6 @@ use DateTime;
 use DateTimeZone;
 use DateInterval;
 use Exception;
-
-require_once('SharedStrings.php');
 
 /**
  * Class for parsing XLSX files specifically

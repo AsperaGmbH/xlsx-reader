@@ -2,13 +2,11 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
-use XMLReader;
+require_once __DIR__.'/../vendor/autoload.php';
 
+use XMLReader;
 use RuntimeException;
 use SplFixedArray;
-
-require_once('SharedStringsConfiguration.php');
-require_once('SharedStringsOptimizedFile.php');
 
 class SharedStrings
 {
