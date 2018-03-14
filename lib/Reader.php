@@ -2,7 +2,7 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
-require_once __DIR__.'/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use Iterator;
 use Countable;
@@ -18,6 +18,7 @@ use Exception;
 /**
  * Class for parsing XLSX files specifically
  *
+ * @author Aspera GmbH
  * @author Martins Pilsetnieks
  */
 class Reader implements Iterator, Countable
@@ -36,7 +37,7 @@ class Reader implements Iterator, Countable
         3 => '#,##0',
         4 => '#,##0.00',
 
-        9 => '0%',
+        9  => '0%',
         10 => '0.00%',
         11 => '0.00E+00',
         12 => '# ?/?',
@@ -82,30 +83,30 @@ class Reader implements Iterator, Countable
 
     const DATE_REPLACEMENTS = array(
         'All' => array(
-            '\\' => '',
+            '\\'    => '',
             'am/pm' => 'A',
-            'yyyy' => 'Y',
-            'yy' => 'y',
+            'yyyy'  => 'Y',
+            'yy'    => 'y',
             'mmmmm' => 'M',
-            'mmmm' => 'F',
-            'mmm' => 'M',
-            ':mm' => ':i',
-            'mm' => 'm',
-            'm' => 'n',
-            'dddd' => 'l',
-            'ddd' => 'D',
-            'dd' => 'd',
-            'd' => 'j',
-            'ss' => 's',
-            '.s' => ''
+            'mmmm'  => 'F',
+            'mmm'   => 'M',
+            ':mm'   => ':i',
+            'mm'    => 'm',
+            'm'     => 'n',
+            'dddd'  => 'l',
+            'ddd'   => 'D',
+            'dd'    => 'd',
+            'd'     => 'j',
+            'ss'    => 's',
+            '.s'    => ''
         ),
         '24H' => array(
             'hh' => 'H',
-            'h' => 'G'
+            'h'  => 'G'
         ),
         '12H' => array(
             'hh' => 'h',
-            'h' => 'G'
+            'h'  => 'G'
         )
     );
 
@@ -704,11 +705,11 @@ class Reader implements Iterator, Countable
 
         if (!$format) {
             $format = array(
-                'Code' => false,
-                'Type' => false,
-                'Scale' => 1,
+                'Code'      => false,
+                'Type'      => false,
+                'Scale'     => 1,
                 'Thousands' => false,
-                'Currency' => false
+                'Currency'  => false
             );
 
             if (array_key_exists($format_index, self::BUILTIN_FORMATS)) {

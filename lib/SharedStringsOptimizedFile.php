@@ -4,7 +4,11 @@ namespace Aspera\Spreadsheet\XLSX;
 
 use RuntimeException;
 
-/** Data object to hold all data corresponding to a single optimized shared string file (not the original XML file). */
+/**
+ * Data object to hold all data corresponding to a single optimized shared string file (not the original XML file).
+ *
+ * @author Aspera GmbH
+ */
 class SharedStringsOptimizedFile
 {
     /**

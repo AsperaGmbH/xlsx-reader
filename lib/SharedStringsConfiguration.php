@@ -4,7 +4,11 @@ namespace Aspera\Spreadsheet\XLSX;
 
 use InvalidArgumentException;
 
-/** Holds all configuration options related to shared string related behaviour */
+/**
+ * Holds all configuration options related to shared string related behaviour
+ *
+ * @author Aspera GmbH
+ */
 class SharedStringsConfiguration
 {
     /**

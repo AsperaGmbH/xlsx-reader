@@ -8,6 +8,11 @@ use XMLReader;
 use RuntimeException;
 use SplFixedArray;
 
+/**
+ * Class to handle strings inside of XLSX files which are put to a specific shared strings file.
+ *
+ * @author Aspera GmbH
+ */
 class SharedStrings
 {
     /**
