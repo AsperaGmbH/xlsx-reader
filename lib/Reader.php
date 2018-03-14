@@ -34,7 +34,7 @@ class Reader implements Iterator, Countable
         3 => '#,##0',
         4 => '#,##0.00',
 
-        9  => '0%',
+        9 => '0%',
         10 => '0.00%',
         11 => '0.00E+00',
         12 => '# ?/?',
@@ -79,30 +79,30 @@ class Reader implements Iterator, Countable
     );
     const DATE_REPLACEMENTS = array(
         'All' => array(
-            '\\'    => '',
+            '\\' => '',
             'am/pm' => 'A',
-            'yyyy'  => 'Y',
-            'yy'    => 'y',
+            'yyyy' => 'Y',
+            'yy' => 'y',
             'mmmmm' => 'M',
-            'mmmm'  => 'F',
-            'mmm'   => 'M',
-            ':mm'   => ':i',
-            'mm'    => 'm',
-            'm'     => 'n',
-            'dddd'  => 'l',
-            'ddd'   => 'D',
-            'dd'    => 'd',
-            'd'     => 'j',
-            'ss'    => 's',
-            '.s'    => ''
+            'mmmm' => 'F',
+            'mmm' => 'M',
+            ':mm' => ':i',
+            'mm' => 'm',
+            'm' => 'n',
+            'dddd' => 'l',
+            'ddd' => 'D',
+            'dd' => 'd',
+            'd' => 'j',
+            'ss' => 's',
+            '.s' => ''
         ),
         '24H' => array(
             'hh' => 'H',
-            'h'  => 'G'
+            'h' => 'G'
         ),
         '12H' => array(
             'hh' => 'h',
-            'h'  => 'G'
+            'h' => 'G'
         )
     );
 
@@ -190,27 +190,32 @@ class Reader implements Iterator, Countable
     /**
      * @param string Path to file
      * @param array Options:
-     *    TempDir => string Temporary directory path
-     *    ReturnDateTimeObjects => bool True => dates and times will be returned as PHP DateTime objects, false => as
-     *    strings
-     *    SkipEmptyCells => bool True => Row content will not contain empty cells, false => opposite
+     *    TempDir (string)
+     *      Path to directory to write temporary work files to
+     *    ReturnDateTimeObjects (bool)
+     *      If true, date/time data will be returned as PHP DateTime objects.
+     *      Otherwise, they will be returned as strings.
+     *    SkipEmptyCells (bool)
+     *      If true, row content will not contain empty cells
+     *    SharedStringsConfiguration (SharedStringsConfiguration)
+     *      Configuration options to control shared string reading and caching behaviour
      *
-     * @throws  Exception
+     * @throws Exception
      */
     public function __construct($filepath, array $options = null)
     {
         if (!is_readable($filepath)) {
-            throw new Exception('XLSXReader: File not readable ('.$filepath.')');
+            throw new Exception('XLSXReader: File not readable (' . $filepath . ')');
         }
 
         if (isset($options['TempDir']) && !is_writable($options['TempDir'])) {
-            throw new Exception('XLSXReader: Provided temporary directory ('.$options['TempDir'].') is not writable');
+            throw new Exception('XLSXReader: Provided temporary directory (' . $options['TempDir'] . ') is not writable');
         }
         $this->temp_dir = isset($options['TempDir']) ? $options['TempDir'] : sys_get_temp_dir();
 
         // set options
         $this->temp_dir = rtrim($this->temp_dir, DIRECTORY_SEPARATOR);
-        $this->temp_dir = $this->temp_dir.DIRECTORY_SEPARATOR.uniqid().DIRECTORY_SEPARATOR;
+        $this->temp_dir = $this->temp_dir . DIRECTORY_SEPARATOR . uniqid() . DIRECTORY_SEPARATOR;
         $this->skip_empty_cells = isset($options['SkipEmptyCells']) && $options['SkipEmptyCells'];
         $this->return_date_time_objects = isset($options['ReturnDateTimeObjects']) && $options['ReturnDateTimeObjects'];
 
@@ -218,7 +223,7 @@ class Reader implements Iterator, Countable
         $status = $zip->open($filepath);
 
         if ($status !== true) {
-            throw new Exception('XLSXReader: File not readable ('.$filepath.') (Error '.$status.')');
+            throw new Exception('XLSXReader: File not readable (' . $filepath . ') (Error ' . $status . ')');
         }
 
         // Getting the general workbook information
@@ -229,18 +234,25 @@ class Reader implements Iterator, Countable
         // Extracting the XMLs from the XLSX zip file
         if ($zip->locateName('xl/sharedStrings.xml') !== false) {
             $zip->extractTo($this->temp_dir, 'xl/sharedStrings.xml');
-            $this->temp_files[] = $this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'sharedStrings.xml';
+            $this->temp_files[] = $this->temp_dir . 'xl' . DIRECTORY_SEPARATOR . 'sharedStrings.xml';
+            $shared_strings_configuration = null;
+            if (!empty($options['SharedStringsConfiguration'])) {
+                $shared_strings_configuration = $options['SharedStringsConfiguration'];
+            }
             $this->shared_strings = new SharedStrings(
-                $this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'sharedStrings.xml'
+                $this->temp_dir . 'xl' . DIRECTORY_SEPARATOR,
+                'sharedStrings.xml',
+                $shared_strings_configuration
             );
+            $this->temp_files = array_merge($this->temp_files, $this->shared_strings->getTempFiles());
         }
 
         $this->initSheets();
 
         foreach ($this->sheets as $sheet_num => $name) {
-            if ($zip->locateName('xl/worksheets/sheet'.$sheet_num.'.xml') !== false) {
-                $zip->extractTo($this->temp_dir, 'xl/worksheets/sheet'.$sheet_num.'.xml');
-                $this->temp_files[] = $this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'worksheets'.DIRECTORY_SEPARATOR.'sheet'.$sheet_num.'.xml';
+            if ($zip->locateName('xl/worksheets/sheet' . $sheet_num . '.xml') !== false) {
+                $zip->extractTo($this->temp_dir, 'xl/worksheets/sheet' . $sheet_num . '.xml');
+                $this->temp_files[] = $this->temp_dir . 'xl' . DIRECTORY_SEPARATOR . 'worksheets' . DIRECTORY_SEPARATOR . 'sheet' . $sheet_num . '.xml';
             }
         }
 
@@ -302,26 +314,28 @@ class Reader implements Iterator, Countable
      */
     public function __destruct()
     {
-        // First close the worksheet, then delete its temporary files
+        // First close the worksheet, then delete its temporary files.
         if ($this->worksheet && $this->worksheet instanceof XMLReader) {
             $this->worksheet->close();
             unset($this->worksheet);
         }
 
+        // Close shared string handler; Will also close all still opened shared string temporary work files.
+        $this->shared_strings->close();
+
+        // Delete all registered temporary work files.
         foreach ($this->temp_files as $temp_file) {
             @unlink($temp_file);
         }
 
         // Better safe than sorry - shouldn't try deleting '.' or '/', or '..'.
         if (strlen($this->temp_dir) > 2) {
-            @rmdir($this->temp_dir.'xl'.DIRECTORY_SEPARATOR.'worksheets');
-            @rmdir($this->temp_dir.'xl');
+            @rmdir($this->temp_dir . 'xl' . DIRECTORY_SEPARATOR . 'worksheets');
+            @rmdir($this->temp_dir . 'xl');
             @rmdir($this->temp_dir);
         }
 
         unset($this->worksheet_path);
-
-        $this->shared_strings->close();
 
         if (isset($this->styles_xml)) {
             unset($this->styles_xml);
@@ -357,7 +371,7 @@ class Reader implements Iterator, Countable
             $real_sheet_index = $sheet_indexes[$sheet_index];
         }
 
-        $temp_worksheet_path = $this->temp_dir.'xl/worksheets/sheet'.$real_sheet_index.'.xml';
+        $temp_worksheet_path = $this->temp_dir . 'xl/worksheets/sheet' . $real_sheet_index . '.xml';
 
         if ($real_sheet_index !== false && is_readable($temp_worksheet_path)) {
             $this->worksheet_path = $temp_worksheet_path;
@@ -669,11 +683,11 @@ class Reader implements Iterator, Countable
 
         if (!$format) {
             $format = array(
-                'Code'      => false,
-                'Type'      => false,
-                'Scale'     => 1,
+                'Code' => false,
+                'Type' => false,
+                'Scale' => 1,
                 'Thousands' => false,
-                'Currency'  => false
+                'Currency' => false
             );
 
             if (array_key_exists($format_index, self::BUILTIN_FORMATS)) {
@@ -762,7 +776,7 @@ class Reader implements Iterator, Countable
                         $format['MinWidth'] = strlen($integer) + strlen($decimal_point) + strlen($decimals);
                         $format['Decimals'] = $decimals;
                         $format['Precision'] = strlen($format['Decimals']);
-                        $format['Pattern'] = '%0'.$format['MinWidth'].'.'.$format['Precision'].'f';
+                        $format['Pattern'] = '%0' . $format['MinWidth'] . '.' . $format['Precision'] . 'f';
                     }
                 }
 
@@ -793,7 +807,7 @@ class Reader implements Iterator, Countable
             } elseif ($format['Type'] == 'Percentage') {
                 // Percentages
                 if ($format['Code'] === '0%') {
-                    $value = round(100 * $value, 0).'%';
+                    $value = round(100 * $value, 0) . '%';
                 } else {
                     $value = sprintf('%.2f%%', round(100 * $value, 2));
                 }
@@ -815,13 +829,13 @@ class Reader implements Iterator, Countable
                 }
 
                 $value = clone self::$base_date;
-                $value->add(new DateInterval('P'.$days.'D'.($seconds ? 'T'.$seconds.'S' : '')));
+                $value->add(new DateInterval('P' . $days . 'D' . ($seconds ? 'T' . $seconds . 'S' : '')));
 
                 if (!$this->return_date_time_objects) {
                     $value = $value->format($format['Code']);
                 } // else: A DateTime object is returned
             } elseif ($format['Type'] == 'Euro') {
-                $value = 'EUR '.sprintf('%1.2f', $value);
+                $value = 'EUR ' . sprintf('%1.2f', $value);
             } else {
                 // Fractional numbers; We get "0.25" and have to turn that into "1/4".
                 if ($format['Type'] == 'Fraction' && ($value != (int)$value)) {
@@ -852,15 +866,15 @@ class Reader implements Iterator, Countable
                         substr($format['Code'], 0, 3) == '? ?'
                     ) {
                         // Extract whole values from fraction (2.25 => "2 1/4")
-                        $value = ($value < 0 ? '-' : '').
-                            ($integer ? $integer.' ' : '').
-                            $adj_decimal.'/'.
+                        $value = ($value < 0 ? '-' : '') .
+                            ($integer ? $integer . ' ' : '') .
+                            $adj_decimal . '/' .
                             $adj_decimal_divisor;
                     } else {
                         // Show entire value as fraction (2.25 => "9/4")
                         $adj_decimal += $integer * $adj_decimal_divisor;
-                        $value = ($value < 0 ? '-' : '').
-                            $adj_decimal.'/'.
+                        $value = ($value < 0 ? '-' : '') .
+                            $adj_decimal . '/' .
                             $adj_decimal_divisor;
                     }
                 } else {
