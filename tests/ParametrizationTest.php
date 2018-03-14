@@ -8,12 +8,12 @@ class ParametrizationTest extends PHPUnit\Framework\TestCase
     const TEMP_DIR_PATH = __DIR__.'/temp_new_folder';
 
     /** @var XLSXReader */
-    private $reader = null;
+    private $reader;
 
     public function testOptionTempDir()
     {
         // create a directory 'read only'
-        @mkdir($this->temp_dir_path, 0444);
+        @mkdir(self::TEMP_DIR_PATH, 0444);
 
         $options = array(
             'TempDir' => self::TEMP_DIR_PATH
@@ -44,7 +44,7 @@ class ParametrizationTest extends PHPUnit\Framework\TestCase
         unset($this->reader);
 
         // after destruction, temporary directory must be totally emptied
-        $folder_scan = @scandir(self::TEMP_DIR_PATH);
+        $folder_scan = @scandir(self::TEMP_DIR_PATH, SCANDIR_SORT_NONE);
         self::assertCount(2, $folder_scan, 'Folder ['.self::TEMP_DIR_PATH.'] is not empty');
     }
 

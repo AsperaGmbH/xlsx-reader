@@ -4,6 +4,7 @@ namespace Aspera\Spreadsheet\XLSX;
 
 use Iterator;
 use Countable;
+use RuntimeException;
 use ZipArchive;
 use SimpleXMLElement;
 use XMLReader;
@@ -27,6 +28,7 @@ class Reader implements Iterator, Countable
     const CELL_TYPE_SHARED_STR = 's';
     const CELL_TYPE_STR = 'str';
     const CELL_TYPE_INLINE_STR = 'inlineStr';
+
     const BUILTIN_FORMATS = array(
         0 => '',
         1 => '0',
@@ -77,6 +79,7 @@ class Reader implements Iterator, Countable
         69 => 't# ?/?',
         70 => 't# ??/??'
     );
+
     const DATE_REPLACEMENTS = array(
         'All' => array(
             '\\' => '',
@@ -117,6 +120,7 @@ class Reader implements Iterator, Countable
      * @var string Path to the worksheet XML file
      */
     private $worksheet_path = false;
+
     /**
      * @var XMLReader XML reader object for the worksheet XML file
      */
@@ -131,13 +135,14 @@ class Reader implements Iterator, Countable
     /**
      * @var SharedStrings
      */
-    private $shared_strings = null;
+    private $shared_strings;
 
     // Style data
     /**
      * @var SimpleXMLElement XML object for the styles XML file
      */
     private $styles_xml = false;
+
     /**
      * @var array Container for cell value style data
      */
@@ -148,24 +153,28 @@ class Reader implements Iterator, Countable
      * @var array Temporary file names
      */
     private $temp_files = array();
+
     /**
      * @var string Full path of the temporary directory that is going to be used to store unzipped files
      */
-    private $temp_dir = '';
+    private $temp_dir;
+
     /**
      * @var bool By default do not format date/time values
      */
-    private $return_date_time_objects = false;
+    private $return_date_time_objects;
+
     /**
      * @var bool By default all empty cells(values) are considered
      */
-    private $skip_empty_cells = false;
+    private $skip_empty_cells;
 
     // Runtime parsing data
     /**
      * @var int Current row number in the file
      */
     private $row_number = 0;
+
     private $current_row = false;
 
     /**
@@ -200,16 +209,16 @@ class Reader implements Iterator, Countable
      *    SharedStringsConfiguration (SharedStringsConfiguration)
      *      Configuration options to control shared string reading and caching behaviour
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function __construct($filepath, array $options = null)
     {
         if (!is_readable($filepath)) {
-            throw new Exception('XLSXReader: File not readable (' . $filepath . ')');
+            throw new RuntimeException('XLSXReader: File not readable (' . $filepath . ')');
         }
 
         if (isset($options['TempDir']) && !is_writable($options['TempDir'])) {
-            throw new Exception('XLSXReader: Provided temporary directory (' . $options['TempDir'] . ') is not writable');
+            throw new RuntimeException('XLSXReader: Provided temporary directory (' . $options['TempDir'] . ') is not writable');
         }
         $this->temp_dir = isset($options['TempDir']) ? $options['TempDir'] : sys_get_temp_dir();
 
@@ -223,7 +232,9 @@ class Reader implements Iterator, Countable
         $status = $zip->open($filepath);
 
         if ($status !== true) {
-            throw new Exception('XLSXReader: File not readable (' . $filepath . ') (Error ' . $status . ')');
+            throw new RuntimeException(
+                'XLSXReader: File not readable (' . $filepath . ') (Error ' . $status . ')'
+            );
         }
 
         // Getting the general workbook information
@@ -257,7 +268,7 @@ class Reader implements Iterator, Countable
         }
 
         if (!$this->changeSheet(0)) {
-            throw new Exception('XLSXReader: Sheet cannot be changed.');
+            throw new RuntimeException('XLSXReader: Sheet cannot be changed.');
         }
 
         // If worksheet is present and is OK, parse the styles already
@@ -266,7 +277,7 @@ class Reader implements Iterator, Countable
             if ($this->styles_xml && $this->styles_xml->cellXfs && $this->styles_xml->cellXfs->xf) {
                 foreach ($this->styles_xml->cellXfs->xf as $xf) {
                     // Format #0 is a special case - it is the "General" format that is applied regardless of applyNumberFormat
-                    if ($xf->attributes()->applyNumberFormat || (0 == (int)$xf->attributes()->numFmtId)) {
+                    if ($xf->attributes()->applyNumberFormat || (0 === (int)$xf->attributes()->numFmtId)) {
                         $format_id = (int)$xf->attributes()->numFmtId;
                         // If format ID >= 164, it is a custom format and should be read from styleSheet\numFmts
                         $this->styles[] = $format_id;
@@ -279,7 +290,8 @@ class Reader implements Iterator, Countable
 
             if ($this->styles_xml->numFmts && $this->styles_xml->numFmts->numFmt) {
                 foreach ($this->styles_xml->numFmts->numFmt as $num_ft) {
-                    $this->formats[(int)$num_ft->attributes()->numFmtId] = (string)$num_ft->attributes()->formatCode;
+                    $num_ft_attributes = $num_ft->attributes();
+                    $this->formats[(int)$num_ft_attributes->numFmtId] = (string)$num_ft_attributes->formatCode;
                 }
             }
 
@@ -340,6 +352,7 @@ class Reader implements Iterator, Countable
         if (isset($this->styles_xml)) {
             unset($this->styles_xml);
         }
+
         if ($this->workbook_xml) {
             unset($this->workbook_xml);
         }
@@ -366,6 +379,7 @@ class Reader implements Iterator, Countable
     {
         $real_sheet_index = false;
         $sheets = $this->getSheets();
+
         if (isset($sheets[$sheet_index])) {
             $sheet_indexes = array_keys($this->sheets);
             $real_sheet_index = $sheet_indexes[$sheet_index];
@@ -435,7 +449,7 @@ class Reader implements Iterator, Countable
      */
     public function current()
     {
-        if ($this->row_number == 0 && $this->current_row === false) {
+        if ($this->row_number === 0 && $this->current_row === false) {
             $this->next();
         }
 
@@ -458,10 +472,11 @@ class Reader implements Iterator, Countable
 
         if (!$this->row_open) {
             while ($this->valid = $this->worksheet->read()) {
-                if ($this->worksheet->name == 'row') {
+                if ($this->worksheet->name === 'row') {
                     // Getting the row spanning area (stored as e.g., 1:12)
                     // so that the last cells will be present, even if empty
                     $row_spans = $this->worksheet->getAttribute('spans');
+
                     if ($row_spans) {
                         $row_spans = explode(':', $row_spans);
                         $current_row_column_count = $row_spans[1];
@@ -492,7 +507,7 @@ class Reader implements Iterator, Countable
                 switch ($this->worksheet->name) {
                     // End of row
                     case 'row':
-                        if ($this->worksheet->nodeType == XMLReader::END_ELEMENT) {
+                        if ($this->worksheet->nodeType === XMLReader::END_ELEMENT) {
                             $this->row_open = false;
                             break 2;
                         }
@@ -500,8 +515,8 @@ class Reader implements Iterator, Countable
                     // Cell
                     case 'c':
                         // If it is a closing tag, skip it
-                        if ($this->worksheet->nodeType == XMLReader::END_ELEMENT) {
-                            continue;
+                        if ($this->worksheet->nodeType === XMLReader::END_ELEMENT) {
+                            continue 2;
                         }
 
                         $style_id = (int)$this->worksheet->getAttribute('s');
@@ -512,7 +527,7 @@ class Reader implements Iterator, Countable
                         $cell_index = self::indexFromColumnLetter($letter);
 
                         // Determine cell type
-                        if ($this->worksheet->getAttribute('t') == self::CELL_TYPE_SHARED_STR) {
+                        if ($this->worksheet->getAttribute('t') === self::CELL_TYPE_SHARED_STR) {
                             $cell_has_shared_string = true;
                         } else {
                             $cell_has_shared_string = false;
@@ -523,6 +538,7 @@ class Reader implements Iterator, Countable
                         }
 
                         $cell_count++;
+
                         if ($cell_index > $max_index) {
                             $max_index = $cell_index;
                         }
@@ -531,8 +547,8 @@ class Reader implements Iterator, Countable
                     // Cell value
                     case 'v':
                     case 'is':
-                        if ($this->worksheet->nodeType == XMLReader::END_ELEMENT) {
-                            continue;
+                        if ($this->worksheet->nodeType === XMLReader::END_ELEMENT) {
+                            continue 2;
                         }
 
                         $value = $this->worksheet->readString();
@@ -556,9 +572,10 @@ class Reader implements Iterator, Countable
             // Adding empty cells, if necessary
             // Only empty cells inbetween and on the left side are added
             if (($max_index + 1 > $cell_count) && !$this->skip_empty_cells) {
-                $this->current_row = $this->current_row + array_fill(0, $max_index + 1, '');
+                $this->current_row += array_fill(0, $max_index + 1, '');
                 ksort($this->current_row);
             }
+
             if (empty($this->current_row) && $this->skip_empty_cells) {
                 $this->current_row[] = null;
             }
@@ -618,7 +635,7 @@ class Reader implements Iterator, Countable
                 // Something is very, very wrong
                 return false;
             }
-            $result += $ord * pow(26, $j);
+            $result += $ord * (26 ** $j);
         }
 
         return $result - 1;
@@ -629,13 +646,15 @@ class Reader implements Iterator, Countable
      *
      * @param int $int_1 Number #1
      * @param int $int_2 Number #2
+     *
      * @return int Greatest common divisor
      */
     public static function GCD($int_1, $int_2)
     {
-        $int_1 = abs($int_1);
-        $int_2 = abs($int_2);
-        if ($int_1 + $int_2 == 0) {
+        $int_1 = (int)abs($int_1);
+        $int_2 = (int)abs($int_2);
+
+        if ($int_1 + $int_2 === 0) {
             return 0;
         }
 
@@ -654,6 +673,7 @@ class Reader implements Iterator, Countable
      *
      * @param string Cell value
      * @param int Format index
+     *
      * @throws Exception
      *
      * @return string Formatted cell value
@@ -671,7 +691,7 @@ class Reader implements Iterator, Countable
         }
 
         // A special case for the "General" format
-        if ($format_index == 0) {
+        if ($format_index === 0) {
             return $this->generalFormat($value);
         }
 
@@ -711,7 +731,7 @@ class Reader implements Iterator, Countable
                     case 4:
                         if ($value < 0) {
                             $format['Code'] = $sections[1];
-                        } elseif ($value == 0) {
+                        } elseif ($value === 0) {
                             $format['Code'] = $sections[2];
                         }
                         break;
@@ -722,7 +742,7 @@ class Reader implements Iterator, Countable
             $format['Code'] = trim(preg_replace('{^\[[[:alpha:]]+\]}i', '', $format['Code']));
 
             // Percentages
-            if (substr($format['Code'], -1) == '%') {
+            if (substr($format['Code'], -1) === '%') {
                 $format['Type'] = 'Percentage';
             } elseif (preg_match('{^(\[\$[[:alpha:]]*-[0-9A-F]*\])*[hmsdy]}i', $format['Code'])) {
                 $format['Type'] = 'DateTime';
@@ -736,7 +756,7 @@ class Reader implements Iterator, Countable
                 } else {
                     $format['Code'] = strtr($format['Code'], self::DATE_REPLACEMENTS['12H']);
                 }
-            } elseif ($format['Code'] == '[$eUR ]#,##0.00_-') {
+            } elseif ($format['Code'] === '[$eUR ]#,##0.00_-') {
                 $format['Type'] = 'Euro';
             } else {
                 // Removing skipped characters
@@ -755,7 +775,7 @@ class Reader implements Iterator, Countable
                 $scale = 1;
                 $matches = array();
                 if (preg_match('{(0|#)(,+)}', $format['Code'], $matches)) {
-                    $scale = pow(1000, strlen($matches[2]));
+                    $scale = 1000 ** strlen($matches[2]);
                     // Removing the commas
                     $format['Code'] = preg_replace(array('{0,+}', '{#,+}'), array('0', '#'), $format['Code']);
                 }
@@ -794,6 +814,7 @@ class Reader implements Iterator, Countable
 
                     $format['Currency'] = $curr_code;
                 }
+
                 $format['Code'] = trim($format['Code']);
             }
 
@@ -802,16 +823,18 @@ class Reader implements Iterator, Countable
 
         // Applying format to value
         if ($format) {
-            if ($format['Code'] == '@') {
+            if ($format['Code'] === '@') {
                 return (string)$value;
-            } elseif ($format['Type'] == 'Percentage') {
+            }
+
+            if ($format['Type'] === 'Percentage') {
                 // Percentages
                 if ($format['Code'] === '0%') {
                     $value = round(100 * $value, 0) . '%';
                 } else {
                     $value = sprintf('%.2f%%', round(100 * $value, 2));
                 }
-            } elseif ($format['Type'] == 'DateTime') {
+            } elseif ($format['Type'] === 'DateTime') {
                 // Dates and times
                 $days = (int)$value;
                 // Correcting for Feb 29, 1900
@@ -834,20 +857,20 @@ class Reader implements Iterator, Countable
                 if (!$this->return_date_time_objects) {
                     $value = $value->format($format['Code']);
                 } // else: A DateTime object is returned
-            } elseif ($format['Type'] == 'Euro') {
+            } elseif ($format['Type'] === 'Euro') {
                 $value = 'EUR ' . sprintf('%1.2f', $value);
             } else {
                 // Fractional numbers; We get "0.25" and have to turn that into "1/4".
-                if ($format['Type'] == 'Fraction' && ($value != (int)$value)) {
+                if ($format['Type'] === 'Fraction' && ($value != (int)$value)) {
                     // Split fraction from integer value (2.25 => 2 and 0.25)
                     $integer = floor(abs($value));
                     $decimal = fmod(abs($value), 1);
 
                     // Turn fraction into non-decimal value (0.25 => 25)
-                    $decimal *= pow(10, strlen($decimal) - 2);
+                    $decimal *= 10 ** (strlen($decimal) - 2);
 
                     // Obtain biggest divisor for the fraction part (25 => 100 => 25/100)
-                    $decimal_divisor = pow(10, strlen($decimal));
+                    $decimal_divisor = 10 ** strlen($decimal);
 
                     // Determine greatest common divisor for fraction optimization (so that 25/100 => 1/4)
                     if (self::$runtime_info['GMPSupported']) {
@@ -863,7 +886,7 @@ class Reader implements Iterator, Countable
                     if (
                         strpos($format['Code'], '0') !== false ||
                         strpos($format['Code'], '#') !== false ||
-                        substr($format['Code'], 0, 3) == '? ?'
+                        0 === strpos($format['Code'], '? ?')
                     ) {
                         // Extract whole values from fraction (2.25 => "2 1/4")
                         $value = ($value < 0 ? '-' : '') .
@@ -879,7 +902,7 @@ class Reader implements Iterator, Countable
                     }
                 } else {
                     // Scaling
-                    $value = $value / $format['Scale'];
+                    $value /= $format['Scale'];
 
                     if (!empty($format['MinWidth']) && $format['Decimals']) {
                         if ($format['Thousands']) {
@@ -912,10 +935,12 @@ class Reader implements Iterator, Countable
     private function initSheets()
     {
         $this->sheets = array();
+
         foreach ($this->workbook_xml->sheets->sheet as $sheet) {
             $sheet_id = (string)$sheet['sheetId'];
             $this->sheets[$sheet_id] = (string)$sheet['name'];
         }
+
         ksort($this->sheets);
     }
 }

@@ -1,106 +1,91 @@
 <?php
+
 use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 
-/**
- * XLS parsing uses php-excel-reader from http://code.google.com/p/php-excel-reader/
- */
-	header('Content-Type: text/plain');
+if (PHP_SAPI !== 'cli') {
+    header('Content-Type: text/plain');
+}
 
-	if (isset($argv[1]))
-	{
-		$Filepath = $argv[1];
-	}
-	elseif (isset($_GET['File']))
-	{
-		$Filepath = $_GET['File'];
-	}
-	else
-	{
-		if (php_sapi_name() == 'cli')
-		{
-			echo 'Please specify filename as the first argument'.PHP_EOL;
-		}
-		else
-		{
-			echo 'Please specify filename as a HTTP GET parameter "File", e.g., "/test.php?File=test.xlsx"';
-		}
-		exit;
-	}
+if (isset($argv[1])) {
+    $filepath = $argv[1];
+} elseif (isset($_GET['file'])) {
+    $filepath = $_GET['file'];
+} else {
+    if (PHP_SAPI === 'cli') {
+        echo 'Please specify filename as the first argument' . PHP_EOL;
+    } else {
+        echo 'Please specify filename as a HTTP GET parameter "File", e.g., "/test.php?file=test.xlsx"';
+    }
 
-	// Excel reader from http://code.google.com/p/php-excel-reader/
-	require('lib/Reader.php');
+    exit;
+}
 
-	date_default_timezone_set('UTC');
+require('lib/Reader.php');
 
-	$StartMem = memory_get_usage();
-	echo '---------------------------------'.PHP_EOL;
-	echo 'Starting memory: '.$StartMem.PHP_EOL;
-	echo '---------------------------------'.PHP_EOL;
+date_default_timezone_set('UTC');
 
-	try
-	{
-	    // set options for initialization
-        $reader_options = array(
-            'SkipEmptyCells' => true,
-            'TempDir'        => 'C:\Windows\Temp'
-        );
+$StartMem = memory_get_usage();
+echo '---------------------------------' . PHP_EOL;
+echo 'Starting memory: ' . $StartMem . PHP_EOL;
+echo '---------------------------------' . PHP_EOL;
 
-		$Spreadsheet = new XLSXReader($Filepath, $reader_options);
-		$BaseMem = memory_get_usage();
+try {
+    // set options for initialization
+    $reader_options = array(
+        'SkipEmptyCells' => true,
+        'TempDir'        => sys_get_temp_dir()
+    );
 
-		$Sheets = $Spreadsheet->getSheets();
+    $spreadsheet = new XLSXReader($filepath, $reader_options);
+    $base_mem = memory_get_usage();
 
-		echo '---------------------------------'.PHP_EOL;
-		echo 'Spreadsheets:'.PHP_EOL;
-		print_r($Sheets);
-		echo '---------------------------------'.PHP_EOL;
-		echo '---------------------------------'.PHP_EOL;
+    $sheets = $spreadsheet->getSheets();
 
-		foreach ($Sheets as $Index => $Name)
-		{
-			echo '---------------------------------'.PHP_EOL;
-			echo '*** Sheet '.$Name.' ***'.PHP_EOL;
-			echo '---------------------------------'.PHP_EOL;
+    echo '---------------------------------' . PHP_EOL;
+    echo 'Spreadsheets:' . PHP_EOL;
+    print_r($sheets);
+    echo '---------------------------------' . PHP_EOL;
+    echo '---------------------------------' . PHP_EOL;
 
-			$Time = microtime(true);
+    foreach ($sheets as $Index => $name) {
+        echo '---------------------------------' . PHP_EOL;
+        echo '*** Sheet ' . $name . ' ***' . PHP_EOL;
+        echo '---------------------------------' . PHP_EOL;
 
-			$Spreadsheet->changeSheet($Index);
+        $Time = microtime(true);
 
-			foreach ($Spreadsheet as $Key => $Row)
-			{
-				echo $Key.': ';
-				if ($Row)
-				{
-					print_r($Row);
-				}
-				else
-				{
-					var_dump($Row);
-				}
-				$CurrentMem = memory_get_usage();
-		
-				echo 'Memory: '.($CurrentMem - $BaseMem).' current, '.$CurrentMem.' base'.PHP_EOL;
-				echo '---------------------------------'.PHP_EOL;
-		
-				if ($Key && ($Key % 500 == 0))
-				{
-					echo '---------------------------------'.PHP_EOL;
-					echo 'Time: '.(microtime(true) - $Time);
-					echo '---------------------------------'.PHP_EOL;
-				}
-			}
-		
-			echo PHP_EOL.'---------------------------------'.PHP_EOL;
-			echo 'Time: '.(microtime(true) - $Time);
-			echo PHP_EOL;
+        $spreadsheet->changeSheet($Index);
 
-			echo '---------------------------------'.PHP_EOL;
-			echo '*** End of sheet '.$Name.' ***'.PHP_EOL;
-			echo '---------------------------------'.PHP_EOL;
-		}
-		
-	}
-	catch (Exception $E)
-	{
-		echo $E->getMessage();
-	}
+        foreach ($spreadsheet as $key => $row) {
+            echo $key . ': ';
+
+            if ($row) {
+                print_r($row);
+            } else {
+                var_dump($row);
+            }
+
+            $current_mem = memory_get_usage();
+
+            echo 'Memory: ' . ($current_mem - $base_mem) . ' current, ' . $current_mem . ' base' . PHP_EOL;
+            echo '---------------------------------' . PHP_EOL;
+
+            if ($key && ($key % 500 === 0)) {
+                echo '---------------------------------' . PHP_EOL;
+                echo 'Time: ' . (microtime(true) - $Time);
+                echo '---------------------------------' . PHP_EOL;
+            }
+        }
+
+        echo PHP_EOL . '---------------------------------' . PHP_EOL;
+        echo 'Time: ' . (microtime(true) - $Time);
+        echo PHP_EOL;
+
+        echo '---------------------------------' . PHP_EOL;
+        echo '*** End of sheet ' . $name . ' ***' . PHP_EOL;
+        echo '---------------------------------' . PHP_EOL;
+    }
+
+} catch (Exception $e) {
+    echo $e->getMessage();
+}

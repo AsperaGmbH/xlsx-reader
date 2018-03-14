@@ -7,7 +7,7 @@ class IteratorTest extends PHPUnit\Framework\TestCase
     const FILE_PATH = 'input_files\iterator_test.xlsx';
 
     /** @var XLSXReader */
-    private $reader = null;
+    private $reader;
 
     public function setUp()
     {
