@@ -1,6 +1,6 @@
 {
   "name": "aspera/xlsx-reader",
-  "description": "XLSX spreadsheet reader library for Microsoft Excel and structured text files",
+  "description": "Spreadsheet reader library for Microsoft Excel XLSX files",
   "keywords": ["spreadsheet", "xls", "xlsx", "excel"],
   "homepage": "https://bitbucket-prod.aspera.usu.grp/projects/SMARTTRACK/repos/xlsx-reader/",
   "version": "0.5.11",
