@@ -14,6 +14,7 @@ use DateTime;
 use DateTimeZone;
 use DateInterval;
 use Exception;
+use InvalidArgumentException;
 
 /**
  * Class for parsing XLSX files specifically
@@ -149,12 +150,23 @@ class Reader implements Iterator, Countable
      */
     private $styles = array();
 
-    // Constructor options
+    // Configurable locale information
     /**
-     * @var array Temporary file names
+     * @var string Decimal separator character for output of locally formatted values
      */
-    private $temp_files = array();
+    private $decimal_separator;
 
+    /**
+     * @var string Thousands separator character for output of locally formatted values
+     */
+    private $thousand_separator;
+
+    /**
+     * @var string Currency character code for output of locally formatted values
+     */
+    private $currency_code;
+
+    // Constructor options
     /**
      * @var string Full path of the temporary directory that is going to be used to store unzipped files
      */
@@ -172,10 +184,18 @@ class Reader implements Iterator, Countable
 
     // Runtime parsing data
     /**
+     * @var array Temporary files
+     */
+    private $temp_files = array();
+
+    /**
      * @var int Current row number in the file
      */
     private $row_number = 0;
 
+    /**
+     * @var bool|array Contents of last read row
+     */
     private $current_row = false;
 
     /**
@@ -183,14 +203,20 @@ class Reader implements Iterator, Countable
      */
     private $sheets = false;
 
+    /**
+     * @var bool Whether the reader is currently looking at an element within a <row> node
+     */
     private $row_open = false;
 
+    /**
+     * @var array List of custom formats defined by the current XLSX file; array key = format index
+     */
     private $formats = array();
 
-    private static $base_date = false;
-    private static $decimal_separator = '.';
-    private static $thousand_separator = '';
-    private static $currency_code = '';
+    /**
+     * @var DateTime Standardized base date for the document's date/time values
+     */
+    private static $base_date;
 
     /**
      * @var array Cache for already processed format strings
@@ -218,12 +244,11 @@ class Reader implements Iterator, Countable
             throw new RuntimeException('XLSXReader: File not readable (' . $filepath . ')');
         }
 
+        // set options
         if (isset($options['TempDir']) && !is_writable($options['TempDir'])) {
             throw new RuntimeException('XLSXReader: Provided temporary directory (' . $options['TempDir'] . ') is not writable');
         }
         $this->temp_dir = isset($options['TempDir']) ? $options['TempDir'] : sys_get_temp_dir();
-
-        // set options
         $this->temp_dir = rtrim($this->temp_dir, DIRECTORY_SEPARATOR);
         /** @noinspection NonSecureUniqidUsageInspection */
         $this->temp_dir = $this->temp_dir . DIRECTORY_SEPARATOR . uniqid() . DIRECTORY_SEPARATOR;
@@ -239,12 +264,12 @@ class Reader implements Iterator, Countable
             );
         }
 
-        // Getting the general workbook information
+        // Get general workbook information
         if ($zip->locateName('xl/workbook.xml') !== false) {
             $this->workbook_xml = new SimpleXMLElement($zip->getFromName('xl/workbook.xml'));
         }
 
-        // Extracting the XMLs from the XLSX zip file
+        // Extract XML files from the XLSX zip file
         if ($zip->locateName('xl/sharedStrings.xml') !== false) {
             $zip->extractTo($this->temp_dir, 'xl/sharedStrings.xml');
             $this->temp_files[] = $this->temp_dir . 'xl' . DIRECTORY_SEPARATOR . 'sharedStrings.xml';
@@ -273,7 +298,7 @@ class Reader implements Iterator, Countable
             throw new RuntimeException('XLSXReader: Sheet cannot be changed.');
         }
 
-        // If worksheet is present and is OK, parse the styles already
+        // If worksheet is present and valid, parse the styles already
         if ($zip->locateName('xl/styles.xml') !== false) {
             $this->styles_xml = new SimpleXMLElement($zip->getFromName('xl/styles.xml'));
             if ($this->styles_xml && $this->styles_xml->cellXfs && $this->styles_xml->cellXfs->xf) {
@@ -302,21 +327,17 @@ class Reader implements Iterator, Countable
 
         $zip->close();
 
-        // Setting base date
-        if (!self::$base_date) {
-            self::$base_date = new DateTime;
-            self::$base_date->setTimezone(new DateTimeZone('UTC'));
-            self::$base_date->setDate(1900, 1, 0);
-            self::$base_date->setTime(0, 0, 0);
-        }
+        // Set base date for calculation of date/time data
+        self::$base_date = new DateTime;
+        self::$base_date->setTimezone(new DateTimeZone('UTC'));
+        self::$base_date->setDate(1900, 1, 0);
+        self::$base_date->setTime(0, 0, 0);
 
-        // Decimal and thousand separators
-        if (!self::$decimal_separator && !self::$thousand_separator && !self::$currency_code) {
-            $locale = localeconv();
-            self::$decimal_separator = $locale['decimal_point'];
-            self::$thousand_separator = $locale['thousands_sep'];
-            self::$currency_code = $locale['int_curr_symbol'];
-        }
+        // Prefill locale related data using current system locale
+        $locale = localeconv();
+        $this->decimal_separator = $locale['decimal_point'];
+        $this->thousand_separator = $locale['thousands_sep'];
+        $this->currency_code = $locale['int_curr_symbol'];
 
         if (function_exists('gmp_gcd')) {
             self::$runtime_info['GMPSupported'] = true;
@@ -358,6 +379,45 @@ class Reader implements Iterator, Countable
         if ($this->workbook_xml) {
             unset($this->workbook_xml);
         }
+    }
+
+    /**
+     * Set the decimal separator to use for the output of locale-oriented formatted values
+     *
+     * @param string $new_character
+     */
+    public function setDecimalSeparator($new_character)
+    {
+        if (!is_string($new_character)) {
+            throw new InvalidArgumentException('Given argument is not a string.');
+        }
+        $this->decimal_separator = $new_character;
+    }
+
+    /**
+     * Set the thousands separator to use for the output of locale-oriented formatted values
+     *
+     * @param string $new_character
+     */
+    public function setThousandsSeparator($new_character)
+    {
+        if (!is_string($new_character)) {
+            throw new InvalidArgumentException('Given argument is not a string.');
+        }
+        $this->thousand_separator = $new_character;
+    }
+
+    /**
+     * Set the currency character code to use for the output of locale-oriented formatted values
+     *
+     * @param string $new_character
+     */
+    public function setCurrencyCode($new_character)
+    {
+        if (!is_string($new_character)) {
+            throw new InvalidArgumentException('Given argument is not a string.');
+        }
+        $this->currency_code = $new_character;
     }
 
     /**
@@ -486,8 +546,8 @@ class Reader implements Iterator, Countable
                         $current_row_column_count = 0;
                     }
 
+                    // If configured: Return empty strings for empty values
                     if ($current_row_column_count > 0 && !$this->skip_empty_cells) {
-                        // fill values with empty strings in case of need
                         $this->current_row = array_fill(0, $current_row_column_count, '');
                     }
 
@@ -535,6 +595,7 @@ class Reader implements Iterator, Countable
                             $cell_has_shared_string = false;
                         }
 
+                        // If configured: Return empty strings for empty values
                         if (!$this->skip_empty_cells) {
                             $this->current_row[$cell_index] = '';
                         }
@@ -571,7 +632,7 @@ class Reader implements Iterator, Countable
                 }
             }
 
-            // Adding empty cells, if necessary
+            // If configured: Return empty strings for empty values
             // Only empty cells inbetween and on the left side are added
             if (($max_index + 1 > $cell_count) && !$this->skip_empty_cells) {
                 $this->current_row += array_fill(0, $max_index + 1, '');
@@ -811,7 +872,7 @@ class Reader implements Iterator, Countable
                     }
 
                     if (!$curr_code) {
-                        $curr_code = self::$currency_code;
+                        $curr_code = $this->currency_code;
                     }
 
                     $format['Currency'] = $curr_code;
@@ -909,7 +970,7 @@ class Reader implements Iterator, Countable
                     if (!empty($format['MinWidth']) && $format['Decimals']) {
                         if ($format['Thousands']) {
                             $value = number_format($value, $format['Precision'],
-                                self::$decimal_separator, self::$thousand_separator);
+                                $this->decimal_separator, $this->thousand_separator);
                         } else {
                             $value = sprintf($format['Pattern'], $value);
                         }
