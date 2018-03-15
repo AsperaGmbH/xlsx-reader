@@ -162,7 +162,7 @@ class Reader implements Iterator, Countable
     private $thousand_separator;
 
     /**
-     * @var string Currency character code for output of locally formatted values
+     * @var string Currency character for output of locally formatted values
      */
     private $currency_code;
 
@@ -865,16 +865,13 @@ class Reader implements Iterator, Countable
 
                 $matches = array();
                 if (preg_match('{\[\$(.*)\]}u', $format['Code'], $matches)) {
-                    $curr_code = $matches[1];
-                    $curr_code = explode('-', $curr_code);
-                    if ($curr_code) {
+                    // Format contains a currency code (Syntax: [$<Currency String>-<language info>])
+                    $curr_code = explode('-', $matches[1]);
+                    if (isset($curr_code[0])) {
                         $curr_code = $curr_code[0];
-                    }
-
-                    if (!$curr_code) {
+                    } else {
                         $curr_code = $this->currency_code;
                     }
-
                     $format['Currency'] = $curr_code;
                 }
 
@@ -980,7 +977,7 @@ class Reader implements Iterator, Countable
 
                 // Currency/Accounting
                 if ($format['Currency']) {
-                    $value = preg_replace('', $format['Currency'], $value);
+                    $value = preg_replace('{\[\$.*\]}u', $format['Currency'], $value);
                 }
             }
 
