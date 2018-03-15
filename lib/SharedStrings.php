@@ -280,6 +280,10 @@ class SharedStrings
         // If an index with the same value as the last already fetched is requested
         // (any further traversing the tree would get us further away from the node)
         if (($target_index === $this->shared_string_index) && ($this->last_shared_string_value !== null)) {
+            if (!$this->shared_strings_configuration->getKeepFileHandles()) {
+                $this->shared_strings_reader->close();
+                $this->shared_strings_reader = null;
+            }
             return $this->last_shared_string_value;
         }
 

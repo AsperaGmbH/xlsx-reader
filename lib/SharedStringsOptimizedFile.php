@@ -24,6 +24,7 @@ class SharedStringsOptimizedFile
      * @var resource $handle
      */
     private $handle;
+
     /**
      * Index of the line the handle currently points at. (Only used during reading from the file)
      *
