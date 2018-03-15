@@ -946,10 +946,9 @@ class Reader implements Iterator, Countable
                     $adj_decimal = $decimal / $gcd;
                     $adj_decimal_divisor = $decimal_divisor / $gcd;
 
-                    if (
-                        strpos($format['Code'], '0') !== false ||
-                        strpos($format['Code'], '#') !== false ||
-                        0 === strpos($format['Code'], '? ?')
+                    if (   strpos($format['Code'], '0') !== false
+                        || strpos($format['Code'], '#') !== false
+                        || strpos($format['Code'], '? ?') === 0
                     ) {
                         // Extract whole values from fraction (2.25 => "2 1/4")
                         $value = ($value < 0 ? '-' : '') .
