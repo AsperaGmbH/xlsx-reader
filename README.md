@@ -66,15 +66,16 @@ In the browser:
     http://path-to-library/test.php?file=/path/to/spreadsheet.xls
 
 ### Notes about library performance
-XLSX files use so called "shared strings" internally to optimize for cases where the same string is repeated multiple times.
+XLSX files use so called "shared strings" to optimize file size for cases where the same string is repeated multiple times.
+For larger documents, this list of shared strings can become quite large, causing either performance bottlenecks or
+insane memory consumption when parsing the document.
 
-Internally XLSX is an XML text that is parsed sequentially to extract data from it, however, in some cases these shared strings are a problem -
-sometimes Excel may put all, or nearly all of the strings from the spreadsheet in the shared string file (which is a separate XML text), and not necessarily in the same
-order. 
+To deal with this, several configuration options are supplied that you can use to control shared string handling behavior.
+You can introduce them to a Reader instance via a SharedStringsConfiguration object, supplied to the constructor via the 
+"SharedStringsConfiguration" option.
 
-Worst case scenario is when it is in reverse order - for each string we need to parse the shared string XML from the beginning, if we want to avoid keeping the data in memory.
-To that end, the XLSX parser has a cache for shared strings that is used if the total shared string count is not too high. In case you get out of memory errors, you can
-try adjusting the *SHARED_STRING_CACHE_LIMIT* constant in XLSXReader to a lower one.
+For a full list of available configuration values and their effects on performance/memory consumption, check the
+code documentation found within the SharedStringsConfiguration class.
 
 ### Licensing
 All of the code in this library is licensed under the MIT license as included in the [LICENSE.md](LICENSE.md) file.
