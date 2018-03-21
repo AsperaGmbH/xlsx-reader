@@ -465,7 +465,7 @@ class SharedStrings
         if (count($this->prepared_shared_string_files) > 0) {
             $shared_string_file_index = max(array_keys($this->prepared_shared_string_files));
             $newest_file_data = $this->prepared_shared_string_files[$shared_string_file_index];
-            if ($newest_file_data->getCount() > $this->shared_strings_configuration->getOptimizedFileEntryCount()) {
+            if ($newest_file_data->getCount() >= $this->shared_strings_configuration->getOptimizedFileEntryCount()) {
                 $newest_file_is_full = true;
             }
         }
