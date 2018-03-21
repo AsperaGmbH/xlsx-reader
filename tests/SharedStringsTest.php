@@ -98,9 +98,10 @@ class SharedStringsTest extends TestCase
         } else {
             $cache_size_kb = 8;
 
-            // Exact entry counts can differ a bit, based on used PHP version. Hence, use min/max range.
-            $min_entry_count = 100;
-            $max_entry_count = 200;
+            /* Exact entry counts can differ a bit, based on used PHP version and internal configuration.
+             * Hence, use generous min/max range. */
+            $min_entry_count = 50;
+            $max_entry_count = 2000;
         }
 
         // Initialize reader
