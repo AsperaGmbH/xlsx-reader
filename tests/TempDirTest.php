@@ -51,7 +51,11 @@ class TempDirTest extends PHPUnitTestCase
         $file_list = @scandir($temp_dir_path, SCANDIR_SORT_NONE);
 
         // 2 entries will always exist: ., ..; We expect there to be MORE entries than that, if the reader used the directory.
-        self::assertGreaterThan(2, count($file_list), 'The configured TempDir [' . $temp_dir_path . '] was not used by the reader.');
+        self::assertGreaterThan(
+            2,
+            count($file_list),
+            'The configured TempDir [' . $temp_dir_path . '] was not used by the reader.'
+        );
     }
 
     /**
@@ -100,8 +104,7 @@ class TempDirTest extends PHPUnitTestCase
         $temp_dir_path = sys_get_temp_dir();
         if (!is_string($temp_dir_path)) {
             throw new Exception(
-                'Path to temporary work directory could not be determined.'
-                . ' sys_get_temp_dir() returned invalid value.'
+                'Path to temporary work directory could not be determined. sys_get_temp_dir() returned invalid value.'
             );
         }
         if ($temp_dir_path !== '') {
