@@ -8,6 +8,11 @@ use Exception;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 
+/**
+ * Tests ensuring that the Reader properly implements the Iterator interface
+ *
+ * @author Aspera GmbH
+ */
 class IteratorTest extends PHPUnitTestCase
 {
     const FILE_PATH = 'input_files\iterator_test.xlsx';

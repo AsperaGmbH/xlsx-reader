@@ -28,7 +28,7 @@ foreach ($reader as $row) {
 Multiple sheet reading is also supported.
 
 You can retrieve information about sheets contained in the file by calling the `getSheets()` method which returns an array with
-sheet indexes as keys and sheet names as values. Then you can change the sheet that's currently being read by passing that index
+sheet indexes as keys and Worksheet objects as values. Then you can change the sheet that's currently being read by passing that index
 to the `changeSheet($index)` method.
 
 Example:
@@ -36,12 +36,14 @@ Example:
 ```php
 <?php
 use Aspera\Spreadsheet\XLSX\Reader;
+use Aspera\Spreadsheet\XLSX\Worksheet;
 
 $reader = new Reader('example.xlsx');
 $sheets = $reader->getSheets();
 
-foreach ($sheets as $index => $name) {
-    echo 'Sheet #' . $index . ': ' . $name;
+/** @var Worksheet $sheet_data */
+foreach ($sheets as $index => $sheet_data) {
+    echo 'Sheet #' . $index . ': ' . $sheet_data->getName();
 
     $reader->changeSheet($index);
 
@@ -76,6 +78,16 @@ You can introduce them to a Reader instance via a SharedStringsConfiguration obj
 
 For a full list of available configuration values and their effects on performance/memory consumption, check the
 code documentation found within the SharedStringsConfiguration class.
+
+### Notes about unsupported features
+This reader's purpose is to allow reading of basic data (text, numbers, dates...) from XLSX documents. As such,
+there are no plans to extend support to include every single feature available for XLSX files. Only a minimal
+subset of XLSX capabilities is supported.
+
+In particular, the following should be noted in regards to unsupported features:
+- Files with multiple internal shared strings files are not supported.
+- Files with multiple internal styles definition files are not supported.
+- Fractions are only partially supported. The results delivered by the reader might be slightly off from the original input.
 
 ### Licensing
 All of the code in this library is licensed under the MIT license as included in the [LICENSE.md](LICENSE.md) file.

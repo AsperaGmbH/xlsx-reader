@@ -11,7 +11,11 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-/** Test shared/inline string behaviour and configuration. */
+/**
+ * Test shared/inline string behaviour and configuration.
+ *
+ * @author Aspera GmbH
+ */
 class SharedStringsTest extends TestCase
 {
     /** @var string FILE_PATH Path to the test file. */
@@ -206,7 +210,7 @@ class SharedStringsTest extends TestCase
     /**
      * From the given object, return the value of the given property, regardless of its access modifier.
      *
-     * @param object $target_object Object to retrieve the property value from
+     * @param object $target_object        Object to retrieve the property value from
      * @param string $target_property_name Name of the property of which the value should be returned
      * @return mixed
      * @throws ReflectionException

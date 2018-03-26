@@ -17,19 +17,19 @@ use Exception;
 use InvalidArgumentException;
 
 /**
- * Class for parsing XLSX files specifically
+ * Class for parsing XLSX files
  *
  * @author Aspera GmbH
  * @author Martins Pilsetnieks
  */
 class Reader implements Iterator, Countable
 {
-    const CELL_TYPE_BOOL = 'b';
-    const CELL_TYPE_NUMBER = 'n';
-    const CELL_TYPE_ERROR = 'e';
+    // XML Namespaces
+    const XMLNS_MAIN = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+    const XMLNS_DOCUMENT_RELATIONSHIPS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const XMLNS_PACKAGE_RELATIONSHIPS = 'http://schemas.openxmlformats.org/package/2006/relationships';
+
     const CELL_TYPE_SHARED_STR = 's';
-    const CELL_TYPE_STR = 'str';
-    const CELL_TYPE_INLINE_STR = 'inlineStr';
 
     const BUILTIN_FORMATS = array(
         0 => '',
@@ -111,46 +111,18 @@ class Reader implements Iterator, Countable
         )
     );
 
-    private static $runtime_info = array(
-        'GMPSupported' => false
-    );
-
-    private $valid = false;
-
-    // Worksheet file
     /**
-     * @var string Path to the worksheet XML file
+     * @var DateTime Standardized base date for the document's date/time values
      */
-    private $worksheet_path = false;
+    private static $base_date;
 
     /**
-     * @var XMLReader XML reader object for the worksheet XML file
+     * Is the gmp_gcd method available for usage? Cached value.
+     *
+     * @var bool
      */
-    private $worksheet = false;
+    private static $gmp_gcd_available = false;
 
-    // Workbook data
-    /**
-     * @var SimpleXMLElement XML object for the workbook XML file
-     */
-    private $workbook_xml = false;
-
-    /**
-     * @var SharedStrings
-     */
-    private $shared_strings;
-
-    // Style data
-    /**
-     * @var SimpleXMLElement XML object for the styles XML file
-     */
-    private $styles_xml = false;
-
-    /**
-     * @var array Container for cell value style data
-     */
-    private $styles = array();
-
-    // Configurable locale information
     /**
      * @var string Decimal separator character for output of locally formatted values
      */
@@ -166,7 +138,64 @@ class Reader implements Iterator, Countable
      */
     private $currency_code;
 
-    // Constructor options
+    /**
+     * @var array Temporary files
+     */
+    private $temp_files = array();
+
+    /**
+     * RelationshipData instance containing all file paths and file identifiers to all parts of the read XLSX file
+     * that are relevant to the reader's functionality.
+     *
+     * @var RelationshipData $relationship_data
+     */
+    private $relationship_data;
+
+    /**
+     * @var SimpleXMLElement XML object for the workbook XML file
+     */
+    private $workbook_xml = false;
+
+    /**
+     * @var array Data about separate sheets in the file
+     */
+    private $sheets = false;
+
+    /**
+     * @var string Path to the current worksheet XML file
+     */
+    private $worksheet_path = false;
+
+    /**
+     * @var XMLReader XML reader object for the current worksheet XML file
+     */
+    private $worksheet_reader = false;
+
+    /**
+     * @var SharedStrings
+     */
+    private $shared_strings;
+
+    /**
+     * @var SimpleXMLElement XML object for the styles XML file
+     */
+    private $styles_xml = false;
+
+    /**
+     * @var array Container for cell value style data
+     */
+    private $styles = array();
+
+    /**
+     * @var array List of custom formats defined by the current XLSX file; array key = format index
+     */
+    private $formats = array();
+
+    /**
+     * @var array Cache for already processed format strings
+     */
+    private $parsed_format_cache = array();
+
     /**
      * @var string Full path of the temporary directory that is going to be used to store unzipped files
      */
@@ -182,11 +211,17 @@ class Reader implements Iterator, Countable
      */
     private $skip_empty_cells;
 
-    // Runtime parsing data
     /**
-     * @var array Temporary files
+     * Internal storage for the result of the valid() method related to the Iterator interface.
+     *
+     * @var bool
      */
-    private $temp_files = array();
+    private $valid = false;
+
+    /**
+     * @var bool Whether the reader is currently looking at an element within a <row> node
+     */
+    private $row_open = false;
 
     /**
      * @var int Current row number in the file
@@ -199,41 +234,16 @@ class Reader implements Iterator, Countable
     private $current_row = false;
 
     /**
-     * @var array Data about separate sheets in the file
-     */
-    private $sheets = false;
-
-    /**
-     * @var bool Whether the reader is currently looking at an element within a <row> node
-     */
-    private $row_open = false;
-
-    /**
-     * @var array List of custom formats defined by the current XLSX file; array key = format index
-     */
-    private $formats = array();
-
-    /**
-     * @var DateTime Standardized base date for the document's date/time values
-     */
-    private static $base_date;
-
-    /**
-     * @var array Cache for already processed format strings
-     */
-    private $parsed_format_cache = array();
-
-    /**
      * @param string Path to file
      * @param array Options:
-     *    TempDir (string)
+     *      - TempDir (string)
      *      Path to directory to write temporary work files to
-     *    ReturnDateTimeObjects (bool)
+     *      - ReturnDateTimeObjects (bool)
      *      If true, date/time data will be returned as PHP DateTime objects.
      *      Otherwise, they will be returned as strings.
-     *    SkipEmptyCells (bool)
+     *      - SkipEmptyCells (bool)
      *      If true, row content will not contain empty cells
-     *    SharedStringsConfiguration (SharedStringsConfiguration)
+     *      - SharedStringsConfiguration (SharedStringsConfiguration)
      *      Configuration options to control shared string reading and caching behaviour
      *
      * @throws RuntimeException
@@ -244,7 +254,7 @@ class Reader implements Iterator, Countable
             throw new RuntimeException('XLSXReader: File not readable (' . $filepath . ')');
         }
 
-        // set options
+        // Set options
         if (isset($options['TempDir']) && !is_writable($options['TempDir'])) {
             throw new RuntimeException('XLSXReader: Provided temporary directory (' . $options['TempDir'] . ') is not writable');
         }
@@ -255,77 +265,10 @@ class Reader implements Iterator, Countable
         $this->skip_empty_cells = isset($options['SkipEmptyCells']) && $options['SkipEmptyCells'];
         $this->return_date_time_objects = isset($options['ReturnDateTimeObjects']) && $options['ReturnDateTimeObjects'];
 
-        $zip = new ZipArchive;
-        $status = $zip->open($filepath);
-
-        if ($status !== true) {
-            throw new RuntimeException(
-                'XLSXReader: File not readable (' . $filepath . ') (Error ' . $status . ')'
-            );
+        $shared_strings_configuration = null;
+        if (!empty($options['SharedStringsConfiguration'])) {
+            $shared_strings_configuration = $options['SharedStringsConfiguration'];
         }
-
-        // Get general workbook information
-        if ($zip->locateName('xl/workbook.xml') !== false) {
-            $this->workbook_xml = new SimpleXMLElement($zip->getFromName('xl/workbook.xml'));
-        }
-
-        // Extract XML files from the XLSX zip file
-        if ($zip->locateName('xl/sharedStrings.xml') !== false) {
-            $zip->extractTo($this->temp_dir, 'xl/sharedStrings.xml');
-            $this->temp_files[] = $this->temp_dir . 'xl' . DIRECTORY_SEPARATOR . 'sharedStrings.xml';
-            $shared_strings_configuration = null;
-            if (!empty($options['SharedStringsConfiguration'])) {
-                $shared_strings_configuration = $options['SharedStringsConfiguration'];
-            }
-            $this->shared_strings = new SharedStrings(
-                $this->temp_dir . 'xl' . DIRECTORY_SEPARATOR,
-                'sharedStrings.xml',
-                $shared_strings_configuration
-            );
-            $this->temp_files = array_merge($this->temp_files, $this->shared_strings->getTempFiles());
-        }
-
-        $this->initSheets();
-
-        foreach ($this->sheets as $sheet_num => $name) {
-            if ($zip->locateName('xl/worksheets/sheet' . $sheet_num . '.xml') !== false) {
-                $zip->extractTo($this->temp_dir, 'xl/worksheets/sheet' . $sheet_num . '.xml');
-                $this->temp_files[] = $this->temp_dir . 'xl' . DIRECTORY_SEPARATOR . 'worksheets' . DIRECTORY_SEPARATOR . 'sheet' . $sheet_num . '.xml';
-            }
-        }
-
-        if (!$this->changeSheet(0)) {
-            throw new RuntimeException('XLSXReader: Sheet cannot be changed.');
-        }
-
-        // If worksheet is present and valid, parse the styles already
-        if ($zip->locateName('xl/styles.xml') !== false) {
-            $this->styles_xml = new SimpleXMLElement($zip->getFromName('xl/styles.xml'));
-            if ($this->styles_xml && $this->styles_xml->cellXfs && $this->styles_xml->cellXfs->xf) {
-                foreach ($this->styles_xml->cellXfs->xf as $xf) {
-                    // Format #0 is a special case - it is the "General" format that is applied regardless of applyNumberFormat
-                    if ($xf->attributes()->applyNumberFormat || (0 === (int)$xf->attributes()->numFmtId)) {
-                        $format_id = (int)$xf->attributes()->numFmtId;
-                        // If format ID >= 164, it is a custom format and should be read from styleSheet\numFmts
-                        $this->styles[] = $format_id;
-                    } else {
-                        // 0 for "General" format
-                        $this->styles[] = 0;
-                    }
-                }
-            }
-
-            if ($this->styles_xml->numFmts && $this->styles_xml->numFmts->numFmt) {
-                foreach ($this->styles_xml->numFmts->numFmt as $num_ft) {
-                    $num_ft_attributes = $num_ft->attributes();
-                    $this->formats[(int)$num_ft_attributes->numFmtId] = (string)$num_ft_attributes->formatCode;
-                }
-            }
-
-            unset($this->styles_xml);
-        }
-
-        $zip->close();
 
         // Set base date for calculation of date/time data
         self::$base_date = new DateTime;
@@ -339,9 +282,34 @@ class Reader implements Iterator, Countable
         $this->thousand_separator = $locale['thousands_sep'];
         $this->currency_code = $locale['int_curr_symbol'];
 
-        if (function_exists('gmp_gcd')) {
-            self::$runtime_info['GMPSupported'] = true;
+        // Determine availability of standard functions
+        self::$gmp_gcd_available = function_exists('gmp_gcd');
+
+        // Open zip file
+        $zip = new ZipArchive;
+        $status = $zip->open($filepath);
+        if ($status !== true) {
+            throw new RuntimeException('XLSXReader: File not readable (' . $filepath . ') (Error ' . $status . ')');
         }
+
+        // Gather up information on the document's file structure
+        $this->relationship_data = new RelationshipData();
+        $this->relationship_data->loadFromZip($zip);
+
+        // Prepare workbook data
+        $this->initWorkbook($zip);
+
+        // Prepare shared strings
+        $this->initSharedStrings($zip, $shared_strings_configuration);
+
+        // Prepare worksheet data and set the first worksheet as the active worksheet
+        $this->initWorksheets($zip);
+
+        // Prepare styles data
+        $this->initStyles($zip);
+
+        // Finish initialization phase
+        $zip->close();
     }
 
     /**
@@ -350,9 +318,9 @@ class Reader implements Iterator, Countable
     public function __destruct()
     {
         // First close the worksheet, then delete its temporary files.
-        if ($this->worksheet && $this->worksheet instanceof XMLReader) {
-            $this->worksheet->close();
-            unset($this->worksheet);
+        if ($this->worksheet_reader && $this->worksheet_reader instanceof XMLReader) {
+            $this->worksheet_reader->close();
+            unset($this->worksheet_reader);
         }
 
         // Close shared string handler; Will also close all still opened shared string temporary work files.
@@ -423,7 +391,7 @@ class Reader implements Iterator, Countable
     /**
      * Retrieves an array with information about sheets in the current file
      *
-     * @return array List of sheets (key is sheet index, value is name). Sheet's index starts with 1.
+     * @return array List of sheets (key is sheet index, value is of type Worksheet). Sheet's index starts with 0.
      */
     public function getSheets()
     {
@@ -431,7 +399,7 @@ class Reader implements Iterator, Countable
     }
 
     /**
-     * Changes the current sheet in the file to another
+     * Changes the current sheet in the file to the sheet with the given index.
      *
      * @param int Sheet index
      *
@@ -439,25 +407,30 @@ class Reader implements Iterator, Countable
      */
     public function changeSheet($sheet_index)
     {
-        $real_sheet_index = false;
-        $sheets = $this->getSheets();
+        $sheets = $this->getSheets(); // Note: Realigns indexes to an auto increment.
+        if (!isset($sheets[$sheet_index])) {
+            return false;
+        }
+        /** @var Worksheet $target_sheet */
+        $target_sheet = $sheets[$sheet_index];
 
-        if (isset($sheets[$sheet_index])) {
-            $sheet_indexes = array_keys($this->sheets);
-            $real_sheet_index = $sheet_indexes[$sheet_index];
+        // The path to the target worksheet file can be obtained via the relationship id reference.
+        $target_relationship_id = $target_sheet->getRelationshipId();
+        /** @var RelationshipElement $relationship_worksheet */
+        foreach ($this->relationship_data->getWorksheets() as $relationship_worksheet) {
+            if ($relationship_worksheet->getId() === $target_relationship_id) {
+                $worksheet_path = $relationship_worksheet->getAccessPath();
+                break;
+            }
+        }
+        if (!isset($worksheet_path) || !is_readable($worksheet_path)) {
+            return false;
         }
 
-        $temp_worksheet_path = $this->temp_dir . 'xl/worksheets/sheet' . $real_sheet_index . '.xml';
-
-        if ($real_sheet_index !== false && is_readable($temp_worksheet_path)) {
-            $this->worksheet_path = $temp_worksheet_path;
-
-            $this->rewind();
-
-            return true;
-        }
-
-        return false;
+        // Initialize the determined target sheet as the new current sheet
+        $this->worksheet_path = $worksheet_path;
+        $this->rewind();
+        return true;
     }
 
     /**
@@ -487,13 +460,13 @@ class Reader implements Iterator, Countable
     {
         // If the worksheet was already iterated, XML file is reopened.
         // Otherwise it should be at the beginning anyway
-        if ($this->worksheet instanceof XMLReader) {
-            $this->worksheet->close();
+        if ($this->worksheet_reader instanceof XMLReader) {
+            $this->worksheet_reader->close();
         } else {
-            $this->worksheet = new XMLReader;
+            $this->worksheet_reader = new XMLReader;
         }
 
-        $this->worksheet->open($this->worksheet_path);
+        $this->worksheet_reader->open($this->worksheet_path);
 
         $this->valid = true;
         $this->row_open = false;
@@ -533,11 +506,11 @@ class Reader implements Iterator, Countable
         $this->current_row = array();
 
         if (!$this->row_open) {
-            while ($this->valid = $this->worksheet->read()) {
-                if ($this->worksheet->name === 'row') {
+            while ($this->valid = $this->worksheet_reader->read()) {
+                if ($this->worksheet_reader->namespaceURI === self::XMLNS_MAIN && $this->worksheet_reader->localName === 'row') {
                     // Getting the row spanning area (stored as e.g., 1:12)
                     // so that the last cells will be present, even if empty
-                    $row_spans = $this->worksheet->getAttribute('spans');
+                    $row_spans = $this->worksheet_reader->getAttribute('spans');
 
                     if ($row_spans) {
                         $row_spans = explode(':', $row_spans);
@@ -562,38 +535,42 @@ class Reader implements Iterator, Countable
             // These two are needed to control for empty cells
             $max_index = 0;
             $cell_count = 0;
+            $last_cell_index = -1;
 
             $cell_has_shared_string = false;
-
-            while ($this->valid = $this->worksheet->read()) {
-                switch ($this->worksheet->name) {
+            while ($this->valid = $this->worksheet_reader->read()) {
+                if ($this->worksheet_reader->namespaceURI !== self::XMLNS_MAIN) {
+                    continue;
+                }
+                switch ($this->worksheet_reader->localName) {
                     // End of row
                     case 'row':
-                        if ($this->worksheet->nodeType === XMLReader::END_ELEMENT) {
+                        if ($this->worksheet_reader->nodeType === XMLReader::END_ELEMENT) {
                             $this->row_open = false;
                             break 2;
                         }
                         break;
                     // Cell
                     case 'c':
-                        // If it is a closing tag, skip it
-                        if ($this->worksheet->nodeType === XMLReader::END_ELEMENT) {
+                        if ($this->worksheet_reader->nodeType === XMLReader::END_ELEMENT) {
                             continue 2;
                         }
 
-                        $style_id = (int)$this->worksheet->getAttribute('s');
+                        $style_id = (int)$this->worksheet_reader->getAttribute('s');
 
                         // Get the index of the cell
-                        $cell_index = $this->worksheet->getAttribute('r');
-                        $letter = preg_replace('{[^[:alpha:]]}S', '', $cell_index);
-                        $cell_index = self::indexFromColumnLetter($letter);
+                        $cell_index = $this->worksheet_reader->getAttribute('r');
+                        if ($cell_index) {
+                            $letter = preg_replace('{[^[:alpha:]]}S', '', $cell_index);
+                            $cell_index = self::indexFromColumnLetter($letter);
+                        } else {
+                            // No "r" attribute available; Just position this cell to the right of the last one.
+                            $cell_index = $last_cell_index + 1;
+                        }
+                        $last_cell_index = $cell_index;
 
                         // Determine cell type
-                        if ($this->worksheet->getAttribute('t') === self::CELL_TYPE_SHARED_STR) {
-                            $cell_has_shared_string = true;
-                        } else {
-                            $cell_has_shared_string = false;
-                        }
+                        $cell_has_shared_string = $this->worksheet_reader->getAttribute('t') === self::CELL_TYPE_SHARED_STR;
 
                         // If configured: Return empty strings for empty values
                         if (!$this->skip_empty_cells) {
@@ -605,16 +582,15 @@ class Reader implements Iterator, Countable
                         if ($cell_index > $max_index) {
                             $max_index = $cell_index;
                         }
-
                         break;
                     // Cell value
                     case 'v':
                     case 'is':
-                        if ($this->worksheet->nodeType === XMLReader::END_ELEMENT) {
+                        if ($this->worksheet_reader->nodeType === XMLReader::END_ELEMENT) {
                             continue 2;
                         }
 
-                        $value = $this->worksheet->readString();
+                        $value = $this->worksheet_reader->readString();
 
                         if ($cell_has_shared_string) {
                             $value = $this->shared_strings->getSharedString($value);
@@ -690,12 +666,11 @@ class Reader implements Iterator, Countable
     public static function indexFromColumnLetter($letter)
     {
         $letter = strtoupper($letter);
-
         $result = 0;
         for ($i = strlen($letter) - 1, $j = 0; $i >= 0; $i--, $j++) {
             $ord = ord($letter[$i]) - 64;
             if ($ord > 26) {
-                // Something is very, very wrong
+                // This does not seem to be a letter. Someone must have given us an invalid value.
                 return false;
             }
             $result += $ord * (26 ** $j);
@@ -759,7 +734,6 @@ class Reader implements Iterator, Countable
         }
 
         $format = array();
-
         if (isset($this->parsed_format_cache[$format_index])) {
             $format = $this->parsed_format_cache[$format_index];
         }
@@ -874,10 +848,8 @@ class Reader implements Iterator, Countable
                     }
                     $format['Currency'] = $curr_code;
                 }
-
                 $format['Code'] = trim($format['Code']);
             }
-
             $this->parsed_format_cache[$format_index] = $format;
         }
 
@@ -933,7 +905,7 @@ class Reader implements Iterator, Countable
                     $decimal_divisor = 10 ** strlen($decimal);
 
                     // Determine greatest common divisor for fraction optimization (so that 25/100 => 1/4)
-                    if (self::$runtime_info['GMPSupported']) {
+                    if (self::$gmp_gcd_available) {
                         $gcd = gmp_strval(gmp_gcd($decimal, $decimal_divisor));
                     } else {
                         $gcd = self::GCD($decimal, $decimal_divisor);
@@ -962,7 +934,6 @@ class Reader implements Iterator, Countable
                 } else {
                     // Scaling
                     $value /= $format['Scale'];
-
                     if (!empty($format['MinWidth']) && $format['Decimals']) {
                         if ($format['Thousands']) {
                             $value = number_format($value, $format['Precision'],
@@ -970,7 +941,6 @@ class Reader implements Iterator, Countable
                         } else {
                             $value = sprintf($format['Pattern'], $value);
                         }
-
                         $value = preg_replace('{(0+)(\.?)(0*)}', $value, $format['Code']);
                     }
                 }
@@ -980,26 +950,180 @@ class Reader implements Iterator, Countable
                     $value = preg_replace('{\[\$.*\]}u', $format['Currency'], $value);
                 }
             }
-
         }
 
         return $value;
     }
 
     /**
-     * Sets 'sheets', an array with information about sheets in the current file
+     * Read general workbook information from the given zip into memory
      *
+     * @param ZipArchive $zip
+     */
+    private function initWorkbook(ZipArchive $zip)
+    {
+        $workbook = $this->relationship_data->getWorkbook();
+        if ($workbook) {
+            $workbook_xml = $zip->getFromName($workbook->getOriginalPath());
+
+            // Workaround for xpath bug (Default namespace cannot be addressed; Fix by "removing" its declaration:)
+            $workbook_xml = str_replace('xmlns=', 'ns=', $workbook_xml);
+
+            $this->workbook_xml = new SimpleXMLElement($workbook_xml);
+        }
+    }
+
+    /**
+     * Read shared strings data from the given zip into memory as configured via the given configuration object
+     * and potentially create temporary work files for easy retrieval of shared string data.
+     *
+     * @param ZipArchive                 $zip
+     * @param SharedStringsConfiguration $shared_strings_configuration Optional, default null
+     */
+    private function initSharedStrings(
+        ZipArchive $zip,
+        SharedStringsConfiguration $shared_strings_configuration = null
+    ) {
+        $shared_strings = $this->relationship_data->getSharedStrings();
+        if (count($shared_strings) > 0) {
+            /* Currently, documents with multiple shared strings files are not supported.
+            *  Only the first shared string file will be used. */
+            /** @var RelationshipElement $first_shared_string_element */
+            $first_shared_string_element = $shared_strings[0];
+
+            // Determine target directory and path for the extracted file
+            $inzip_path = $first_shared_string_element->getOriginalPath();
+            $inzip_path_for_outzip = str_replace(RelationshipData::ZIP_DIR_SEP, DIRECTORY_SEPARATOR, $inzip_path);
+            $dir_of_extracted_file = $this->temp_dir . dirname($inzip_path_for_outzip) . DIRECTORY_SEPARATOR;
+            $filename_of_extracted_file = basename($inzip_path_for_outzip);
+            $path_to_extracted_file = $dir_of_extracted_file . $filename_of_extracted_file;
+
+            // Extract file and note it in relevant variables
+            $zip->extractTo($this->temp_dir, $inzip_path);
+            $first_shared_string_element->setAccessPath($path_to_extracted_file);
+            $this->temp_files[] = $path_to_extracted_file;
+
+            // Initialize SharedStrings
+            $this->shared_strings = new SharedStrings(
+                $dir_of_extracted_file,
+                $filename_of_extracted_file,
+                $shared_strings_configuration
+            );
+
+            // Extend temp_files with files created by SharedStrings
+            $this->temp_files = array_merge($this->temp_files, $this->shared_strings->getTempFiles());
+        }
+    }
+
+    /**
+     * Initializes internal sheet information storage and sets the first sheet as the current sheet.
+     *
+     * @param  ZipArchive $zip
      * @return void
      */
-    private function initSheets()
+    private function initWorksheets(ZipArchive $zip)
     {
         $this->sheets = array();
 
-        foreach ($this->workbook_xml->sheets->sheet as $sheet) {
+        // Determine namespaces of interest (main namespace, relationships namespace) of the workbook
+        $namespaces = $this->workbook_xml->getDocNamespaces();
+        $main_ns = '';
+        $rel_ns = '';
+        foreach ($namespaces as $namespace_prefix => $namespace_uri) {
+            switch ($namespace_uri) {
+                case self::XMLNS_MAIN:
+                    $main_ns = $namespace_prefix;
+                    break;
+                case self::XMLNS_DOCUMENT_RELATIONSHIPS:
+                    $rel_ns = $namespace_prefix;
+                    break;
+            }
+        }
+        $main_ns_pre = $main_ns . ($main_ns != '' ? ':' : '');
+
+        // Iterate through all sheet elements in the workbook
+        $xpath_query = '/' . $main_ns_pre . 'workbook/' . $main_ns_pre . 'sheets/' . $main_ns_pre . 'sheet';
+        foreach ($this->workbook_xml->xpath($xpath_query) as $sheet) {
             $sheet_id = (string)$sheet['sheetId'];
-            $this->sheets[$sheet_id] = (string)$sheet['name'];
+            $new_sheet = new Worksheet();
+            $new_sheet->setId($sheet_id);
+            $new_sheet->setName((string)$sheet['name']);
+            $new_sheet->setRelationshipId((string)$sheet->attributes($rel_ns, true)['id']);
+            $this->sheets[$sheet_id] = $new_sheet;
         }
 
+        // Sheet order determining value: Sheet ID attribute
         ksort($this->sheets);
+
+        // Extract worksheets to temporary work directory
+        foreach ($this->relationship_data->getWorksheets() as $worksheet) {
+            /** @var RelationshipElement $worksheet */
+            $worksheet_path_zip = $worksheet->getOriginalPath();
+            $worksheet_path_conv = str_replace(RelationshipData::ZIP_DIR_SEP, DIRECTORY_SEPARATOR, $worksheet_path_zip);
+            $worksheet_path_unzipped = $this->temp_dir . $worksheet_path_conv;
+            $zip->extractTo($this->temp_dir, $worksheet_path_zip);
+            $worksheet->setAccessPath($worksheet_path_unzipped);
+            $this->temp_files[] = $worksheet_path_unzipped;
+        }
+
+        // Set first sheet as current sheet
+        if (!$this->changeSheet(0)) {
+            throw new RuntimeException('XLSXReader: Sheet cannot be changed.');
+        }
+    }
+
+    /**
+     * Reads and prepares information on styles declared by the document for later usage.
+     *
+     * @param ZipArchive $zip
+     */
+    private function initStyles(ZipArchive $zip)
+    {
+        $styles = $this->relationship_data->getStyles();
+        if (count($styles) > 0) {
+            /* Currently, documents with multiple styles files are not supported.
+            *  Only the first styles file will be used. */
+            /** @var RelationshipElement $first_styles_element */
+            $first_styles_element = $styles[0];
+
+            $styles_xml_raw = $zip->getFromName($first_styles_element->getOriginalPath());
+
+            // Workaround for xpath bug (Default namespace cannot be addressed; Fix by "removing" its declaration:)
+            $styles_xml_raw = str_replace('xmlns=', 'ns=', $styles_xml_raw);
+
+            $this->styles_xml = new SimpleXMLElement($styles_xml_raw);
+
+            // Determine namespaces of interest (main namespace, relationships namespace) of the workbook
+            $namespaces = $this->styles_xml->getDocNamespaces();
+            $main_ns = '';
+            foreach ($namespaces as $namespace_prefix => $namespace_uri) {
+                switch ($namespace_uri) {
+                    case self::XMLNS_MAIN:
+                        $main_ns = $namespace_prefix;
+                        break;
+                }
+            }
+            $main_ns_pre = $main_ns . ($main_ns != '' ? ':' : '');
+
+            // Read cell style definitions and store them in internal variables
+            foreach ($this->styles_xml->xpath($main_ns_pre . 'cellXfs/' . $main_ns_pre . 'xf') as $xf) {
+                // Check if the found number format should actually be applied; If not, use "General" format (ID: 0)
+                if ($xf->attributes()->applyNumberFormat) {
+                    // If format ID >= 164, it is a custom format and should be read from styleSheet\numFmts
+                    $this->styles[] = (int)$xf->attributes()->numFmtId;
+                } else {
+                    $this->styles[] = 0;
+                }
+            }
+
+            // Read number format definitions and store them in internal variables
+            foreach ($this->styles_xml->xpath($main_ns_pre . 'numFmts/' . $main_ns_pre . 'numFmt') as $num_ft) {
+                $num_ft_attributes = $num_ft->attributes();
+                $this->formats[(int)$num_ft_attributes->numFmtId] = (string)$num_ft_attributes->formatCode;
+            }
+
+            // Clean up
+            unset($this->styles_xml);
+        }
     }
 }

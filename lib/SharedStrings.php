@@ -290,9 +290,9 @@ class SharedStrings
         // Move reader to the next <si> node, if it isn't already pointing at one.
         $last_result = true;
         $moved_forward = false;
-        while (   $last_result && ($this->shared_strings_reader->name !== 'si'
-               || $this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT)
-        ) {
+        $is_si = $this->shared_strings_reader->localName === 'si'
+            && $this->shared_strings_reader->namespaceURI === Reader::XMLNS_MAIN;
+        while ($last_result && (!$is_si || $this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT)) {
             $moved_forward = true;
             $last_result = $this->shared_strings_reader->read();
         }
@@ -325,7 +325,10 @@ class SharedStrings
         // Extract the value from the shared string
         $value = '';
         while ($this->shared_strings_reader->read()) {
-            switch ($this->shared_strings_reader->name) {
+            if ($this->shared_strings_reader->namespaceURI !== Reader::XMLNS_MAIN) {
+                continue;
+            }
+            switch ($this->shared_strings_reader->localName) {
                 case 't':
                     if ($this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT) {
                         continue 2;
@@ -368,7 +371,8 @@ class SharedStrings
 
         // Obtain number of shared strings available
         while ($this->shared_strings_reader->read()) {
-            if ($this->shared_strings_reader->name === 'sst') {
+            if ($this->shared_strings_reader->localName === 'sst'
+                && $this->shared_strings_reader->namespaceURI === Reader::XMLNS_MAIN) {
                 $this->shared_string_count = $this->shared_strings_reader->getAttribute('uniqueCount');
                 break;
             }
@@ -392,7 +396,10 @@ class SharedStrings
 
         // Work through the XML file and cache/reformat/move string data, according to configuration and situation
         while ($this->shared_strings_reader->read()) {
-            switch ($this->shared_strings_reader->name) {
+            if ($this->shared_strings_reader->namespaceURI !== Reader::XMLNS_MAIN) {
+                continue;
+            }
+            switch ($this->shared_strings_reader->localName) {
                 case 'si':
                     if ($this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT) {
                         if ($write_to_cache) {
@@ -433,9 +440,9 @@ class SharedStrings
      * Stores the given shared string either in internal cache or in a seek optimized file, depending on the
      * current configuration and status of the internal cache.
      *
-     * @param int $index
+     * @param int    $index
      * @param string $string
-     * @param bool $write_to_cache
+     * @param bool   $write_to_cache
      *
      * @throws RuntimeException
      */
@@ -475,7 +482,8 @@ class SharedStrings
             // Assemble new filename; Add random hash to avoid conflicts for when the target directory is also used by other processes.
             $hash = base_convert(mt_rand(36 ** 4, (36 ** 5) - 1), 10, 36); // Possible results: "10000" - "zzzzz"
             $newest_file_data = new SharedStringsOptimizedFile();
-            $newest_file_data->setFile($this->shared_strings_directory . 'shared_strings_tmp_' . $index . '_' . $hash . '.txt');
+            $filename_without_suffix = preg_replace('~(.+)\.[^./]$~', '$1', $this->shared_strings_filename);
+            $newest_file_data->setFile($this->shared_strings_directory . $filename_without_suffix . '_tmp_' . $index . '_' . $hash . '.txt');
             $fhandle = $newest_file_data->openHandle('wb');
             $this->prepared_shared_string_files[$index] = $newest_file_data;
         } else {

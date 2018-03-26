@@ -8,7 +8,11 @@ use Exception;
 use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 
-/** Test temporary work directory functionality */
+/**
+ * Test temporary work directory functionality
+ *
+ * @author Aspera GmbH
+ */
 class TempDirTest extends PHPUnitTestCase
 {
     /** @var string FILE_PATH XLSX File to be used for testing. */

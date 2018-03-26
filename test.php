@@ -1,6 +1,7 @@
 <?php
 
 use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
+use Aspera\Spreadsheet\XLSX\Worksheet;
 
 if (PHP_SAPI !== 'cli') {
     header('Content-Type: text/plain');
@@ -47,7 +48,9 @@ try {
     echo '---------------------------------' . PHP_EOL;
     echo '---------------------------------' . PHP_EOL;
 
-    foreach ($sheets as $Index => $name) {
+    /** @var Worksheet $sheet_data */
+    foreach ($sheets as $Index => $sheet_data) {
+        $name = $sheet_data->getName();
         echo '---------------------------------' . PHP_EOL;
         echo '*** Sheet ' . $name . ' ***' . PHP_EOL;
         echo '---------------------------------' . PHP_EOL;

@@ -8,6 +8,11 @@ use Exception;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 
+/**
+ * Make sure the SkipEmptyCells option works how it should.
+ *
+ * @author Aspera GmbH
+ */
 class SkipEmptyCellsTest extends PHPUnitTestCase
 {
     const FILE_PATH = 'input_files/iterator_test.xlsx';
