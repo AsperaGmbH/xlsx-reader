@@ -295,6 +295,8 @@ class SharedStrings
         while ($last_result && (!$is_si || $this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT)) {
             $moved_forward = true;
             $last_result = $this->shared_strings_reader->read();
+            $is_si = $this->shared_strings_reader->localName === 'si'
+                && $this->shared_strings_reader->namespaceURI === Reader::XMLNS_MAIN;
         }
 
         if (!$last_result) {
