@@ -2,6 +2,8 @@
 
 namespace Aspera\Spreadsheet\XLSX\Tests;
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
 use ReflectionClass;
 use ReflectionException;
 use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
@@ -9,7 +11,6 @@ use Aspera\Spreadsheet\XLSX\SharedStrings;
 use Aspera\Spreadsheet\XLSX\SharedStringsConfiguration;
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * Test shared/inline string behaviour and configuration.

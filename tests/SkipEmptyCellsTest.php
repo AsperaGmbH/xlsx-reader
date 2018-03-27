@@ -6,6 +6,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use Exception;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
+use Aspera\Spreadsheet\XLSX\Worksheet;
 use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 
 /**
@@ -35,8 +36,16 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
 
         $reader = new XLSXReader(self::FILE_PATH, $options);
 
-        $sheet_index = array_keys($reader->getSheets(), 'EmptyCellsSheet');
-        $reader->changeSheet($sheet_index[0]);
+        $sheet_index = null;
+        /** @var Worksheet $worksheet */
+        foreach ($reader->getSheets() as $index => $worksheet) {
+            if ($worksheet->getName() == 'EmptyCellsSheet') {
+                $sheet_index = $index;
+                break;
+            }
+        }
+        self::assertNotNull($sheet_index, 'Could not locate worksheet with name "EmptyCellsSheet".');
+        $reader->changeSheet($sheet_index);
 
         $current = $reader->current();
         $num_cols = count($current);

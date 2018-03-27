@@ -34,21 +34,21 @@ class RelationshipData
      *
      * @var array $worksheets
      */
-    private $worksheets;
+    private $worksheets = array();
 
     /**
      * SharedStrings files meta information, saved as a list of RelationshipElement instances.
      *
      * @var array $sharedStrings
      */
-    private $sharedStrings;
+    private $sharedStrings = array();
 
     /**
      * Styles files meta information, saved as a list of RelationshipElement instances.
      *
      * @var array $styles
      */
-    private $styles;
+    private $styles = array();
 
     /**
      * Returns the workbook relationship element, if a valid one has been obtained previously.
@@ -116,27 +116,15 @@ class RelationshipData
     }
 
     /**
-     * Prepare internal variables for a new relationship data read.
-     */
-    private function init()
-    {
-        $this->workbook = null;
-        $this->worksheets = array();
-        $this->sharedStrings = array();
-        $this->styles = array();
-    }
-
-    /**
      * Navigates through the XLSX file using .rels files, gathering up found file parts along the way.
      * Results are saved in internal variables for later retrieval.
      *
      * @param ZipArchive $zip Handle to zip file to read relationship data from
+     *
      * @throws RuntimeException
      */
-    public function loadFromZip(ZipArchive $zip)
+    public function __construct(ZipArchive $zip)
     {
-        $this->init();
-
         // Start with root .rels file. It will point us towards the worksheet file.
         $root_rel_file = self::toRelsFilePath(''); // empty string returns root path
         $this->evaluateRelationshipFromZip($zip, $root_rel_file);
@@ -157,6 +145,7 @@ class RelationshipData
      *
      * @param ZipArchive $zip
      * @param string     $file_zipname
+     *
      * @throws RuntimeException
      */
     private function evaluateRelationshipFromZip(ZipArchive $zip, $file_zipname)

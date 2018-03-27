@@ -293,8 +293,7 @@ class Reader implements Iterator, Countable
         }
 
         // Gather up information on the document's file structure
-        $this->relationship_data = new RelationshipData();
-        $this->relationship_data->loadFromZip($zip);
+        $this->relationship_data = new RelationshipData($zip);
 
         // Prepare workbook data
         $this->initWorkbook($zip);

@@ -2,6 +2,8 @@
 
 namespace Aspera\Spreadsheet\XLSX\Tests;
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Aspera\Spreadsheet\XLSX\Reader;
