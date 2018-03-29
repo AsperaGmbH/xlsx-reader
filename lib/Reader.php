@@ -600,6 +600,8 @@ class Reader implements Iterator, Countable
                             $value = $this->formatValue($value, $style_id);
                         } elseif ($value) {
                             $value = $this->generalFormat($value);
+                        } elseif (empty($value) && $this->skip_empty_cells) {
+                            break;
                         }
 
                         $this->current_row[$cell_index] = $value;
