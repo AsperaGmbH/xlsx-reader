@@ -595,13 +595,16 @@ class Reader implements Iterator, Countable
                             $value = $this->shared_strings->getSharedString($value);
                         }
 
+                        // Skip empty values when specified as early as possible
+                        if (empty($value) && $this->skip_empty_cells) {
+                            break;
+                        }
+
                         // Format value if necessary
                         if ($value !== '' && $style_id && isset($this->styles[$style_id])) {
                             $value = $this->formatValue($value, $style_id);
                         } elseif ($value) {
                             $value = $this->generalFormat($value);
-                        } elseif (empty($value) && $this->skip_empty_cells) {
-                            break;
                         }
 
                         $this->current_row[$cell_index] = $value;
