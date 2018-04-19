@@ -2,8 +2,6 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
-require_once __DIR__ . '/../vendor/autoload.php';
-
 use XMLReader;
 use RuntimeException;
 use SplFixedArray;
