@@ -190,6 +190,11 @@ class Reader implements Iterator, Countable
     private $formats = array();
 
     /**
+     * @var array List of custom formats defined by the user; array key = format index
+     */
+    private $customized_formats = array();
+
+    /**
      * @var array Cache for already processed format strings
      */
     private $parsed_format_cache = array();
@@ -304,6 +309,11 @@ class Reader implements Iterator, Countable
 
         // Prepare styles data
         $this->initStyles($zip);
+
+        // Prepare custom formats
+        if (!empty($options['CustomFormats'])) {
+            $this->initCustomFormats($options['CustomFormats']);
+        }
 
         // Finish initialization phase
         $zip->close();
@@ -749,7 +759,9 @@ class Reader implements Iterator, Countable
                 'Currency'  => false
             );
 
-            if (array_key_exists($format_index, self::BUILTIN_FORMATS)) {
+            if (array_key_exists($format_index, $this->customized_formats)) {
+                $format['Code'] = $this->customized_formats[$format_index];
+            } elseif (array_key_exists($format_index, self::BUILTIN_FORMATS)) {
                 $format['Code'] = self::BUILTIN_FORMATS[$format_index];
             } elseif (isset($this->formats[$format_index])) {
                 $format['Code'] = $this->formats[$format_index];
@@ -881,8 +893,8 @@ class Reader implements Iterator, Countable
                 $seconds = 0;
                 if ($time) {
                     // Here time is converted to seconds
-                    // Some loss of precision will occur
-                    $seconds = (int)($time * 86400);
+                    // Workaround against precision loss: set low precision will round up milliseconds
+                    $seconds = (int)round($time * 86400, 0);
                 }
 
                 $value = clone self::$base_date;
@@ -1126,6 +1138,19 @@ class Reader implements Iterator, Countable
 
             // Clean up
             unset($this->styles_xml);
+        }
+    }
+
+    /**
+     * @param   array $custom_formats
+     * @return  void
+     */
+    private function initCustomFormats(array $custom_formats)
+    {
+        foreach ($custom_formats as $format_index => $format) {
+            if (array_key_exists($format_index, self::BUILTIN_FORMATS) !== false) {
+                $this->customized_formats[$format_index] = $format;
+            }
         }
     }
 }
