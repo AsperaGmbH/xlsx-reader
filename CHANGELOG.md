@@ -1,6 +1,13 @@
-### v.0.5.12  2018-03-01
+### v.0.6.0  2018-05-01
 
-- Added option 'SkipEmptyCells' to constructor in order to consider or not possible empty values in cells. 
+- Added option 'SkipEmptyCells' in order to consider or not possible empty values in cells. 
+- Added option 'CustomFormats' to define and overwrite format values.
+- Ensure deletion of temporary files after run.
+- Fix: MAP Toolkit xlsx files can be parsed.
+- PHP 7 compliance.
+- Allow configuration of locale based values.
+- Include PHPUnit and tests for iterator, file location, shared strings, sheet handling, namespaces and temporary directories handling. 
+- Major structural refactoring and appliance of PSR1, PSR2 and PSR4 (namespace directory structure)
 
 ### v.0.5.11  2015-04-30
 
