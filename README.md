@@ -18,11 +18,21 @@ This is about the easiest way to read a file:
 ```php
 <?php
 use Aspera\Spreadsheet\XLSX\Reader;
+use Aspera\Spreadsheet\XLSX\SharedStringsConfiguration;
 
-$reader = new Reader('example.xlsx');
+$options = array(
+    'TempDir'                    => 'C:/Temp/',
+    'SkipEmptyCells'             => false,
+    'ReturnDateTimeObjects'      => true,
+    'SharedStringsConfiguration' => new SharedStringsConfiguration(),
+    'CustomFormats'              => array(20 => 'hh:mm')
+);
+
+$reader = new Reader('example.xlsx', $options);
 foreach ($reader as $row) {
     print_r($row);
 }
+?>
 ```
 
 Multiple sheet reading is also supported.
@@ -51,8 +61,15 @@ foreach ($sheets as $index => $sheet_data) {
         print_r($row);
     }
 }
+?>
 ```
 
+As extra configuration options we have:
+- TempDir: provided temporary directory (used for unzipping all files like Styles.xml, Worksheet.xml...) must be writable and accessible by the XLSX Reader. 
+- SkipEmptyCells: will skip empty values within any cell. If an entire row does not contain any value, only one empty (NULL) entry will be returned. 
+- ReturnDateTimeObjects: will not return formatted date-time strings, DateTime objects instead.
+- SharedStringsConfiguration: explained in "Notes about library performance".
+- CustomFormats: matrix that will overwrite any format read by the parser. Array format must match the BUILT-IN formats list documented by Microsoft.
 
 If a sheet is changed to the same that is currently open, the position in the file still reverts to the beginning, so as to conform
 to the same behavior as when changed to a different sheet.
