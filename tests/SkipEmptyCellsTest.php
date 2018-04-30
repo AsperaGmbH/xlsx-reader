@@ -34,7 +34,8 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
             'SkipEmptyCells' => $skip_empty_cells
         );
 
-        $reader = new XLSXReader(self::FILE_PATH, $options);
+        $reader = new XLSXReader($options);
+        $reader->open(self::FILE_PATH);
 
         $sheet_index = null;
         /** @var Worksheet $worksheet */
@@ -51,6 +52,8 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
         $num_cols = count($current);
 
         self::assertEquals($exp_num_cols, $num_cols, 'Number of cells differ');
+
+        $reader->close();
     }
 
     /**

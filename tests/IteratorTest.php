@@ -22,7 +22,13 @@ class IteratorTest extends PHPUnitTestCase
 
     public function setUp()
     {
-        $this->reader = new XLSXReader(self::FILE_PATH);
+        $this->reader = new XLSXReader();
+        $this->reader->open(self::FILE_PATH);
+    }
+
+    public function tearDown()
+    {
+        $this->reader->close();
     }
 
     /**

@@ -240,7 +240,6 @@ class Reader implements Iterator, Countable
     private $current_row = false;
 
     /**
-     * @param string Path to file
      * @param array Options:
      *      - TempDir (string)
      *      Path to directory to write temporary work files to
@@ -254,12 +253,8 @@ class Reader implements Iterator, Countable
      *
      * @throws RuntimeException
      */
-    public function __construct($filepath, array $options = null)
+    public function __construct(array $options = null)
     {
-        if (!is_readable($filepath)) {
-            throw new RuntimeException('XLSXReader: File not readable (' . $filepath . ')');
-        }
-
         // Set options
         if (isset($options['TempDir']) && !is_writable($options['TempDir'])) {
             throw new RuntimeException('XLSXReader: Provided temporary directory (' . $options['TempDir'] . ') is not writable');
@@ -297,18 +292,14 @@ class Reader implements Iterator, Countable
     }
 
     /**
-     * Destructor, destroys all that remains (closes and deletes temp files)
-     */
-    public function __destruct()
-    {
-        $this->close();
-    }
-
-    /**
-     * @param string $file_path
+     * @param string $file_path Path to file
      */
     public function open($file_path)
     {
+        if (!is_readable($file_path)) {
+            throw new RuntimeException('XLSXReader: File not readable (' . $file_path . ')');
+        }
+
         // Open zip file
         $zip = new ZipArchive;
         $status = $zip->open($file_path);

@@ -35,5 +35,6 @@ class FilepartLocationTest extends TestCase
             'Could not read data from test file; Filepart/Relationship handling might be broken.'
             . ' Retrieved row contents: [' . implode('|', $actual_row) . ']'
         );
+        $reader->close();
     }
 }

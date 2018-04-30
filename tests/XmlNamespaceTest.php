@@ -25,7 +25,9 @@ class XmlNamespaceTest extends TestCase
      */
     public function testReadXmlWithNamespaces()
     {
-        $reader = new Reader(self::TEST_FILE);
+        $reader = new Reader();
+        $reader->open(self::TEST_FILE);
+
         $actual_row = $reader->next();
         $expected_row = array('1.230000 €', 'test string');
         self::assertSame(
@@ -34,5 +36,7 @@ class XmlNamespaceTest extends TestCase
             'Could not read data from test file; XML namespace handling might be broken.'
             . ' Retrieved row contents: [' . implode('|', $actual_row) . ']'
         );
+
+        $reader->close();
     }
 }
