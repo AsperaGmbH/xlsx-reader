@@ -174,6 +174,9 @@ class Reader implements Iterator, Countable
      */
     private $shared_strings;
 
+    /** @var SharedStringsConfiguration */
+    private $shared_strings_configuration = null;
+
     /**
      * @var SimpleXMLElement XML object for the styles XML file
      */
@@ -268,9 +271,8 @@ class Reader implements Iterator, Countable
         $this->skip_empty_cells = isset($options['SkipEmptyCells']) && $options['SkipEmptyCells'];
         $this->return_date_time_objects = isset($options['ReturnDateTimeObjects']) && $options['ReturnDateTimeObjects'];
 
-        $shared_strings_configuration = null;
         if (!empty($options['SharedStringsConfiguration'])) {
-            $shared_strings_configuration = $options['SharedStringsConfiguration'];
+            $this->shared_strings_configuration = $options['SharedStringsConfiguration'];
         }
 
         // Set base date for calculation of date/time data
@@ -288,11 +290,30 @@ class Reader implements Iterator, Countable
         // Determine availability of standard functions
         self::$gmp_gcd_available = function_exists('gmp_gcd');
 
+        // Prepare custom formats
+        if (!empty($options['CustomFormats'])) {
+            $this->initCustomFormats($options['CustomFormats']);
+        }
+    }
+
+    /**
+     * Destructor, destroys all that remains (closes and deletes temp files)
+     */
+    public function __destruct()
+    {
+        $this->close();
+    }
+
+    /**
+     * @param string $file_path
+     */
+    public function open($file_path)
+    {
         // Open zip file
         $zip = new ZipArchive;
-        $status = $zip->open($filepath);
+        $status = $zip->open($file_path);
         if ($status !== true) {
-            throw new RuntimeException('XLSXReader: File not readable (' . $filepath . ') (Error ' . $status . ')');
+            throw new RuntimeException('XLSXReader: File not readable (' . $file_path . ') (Error ' . $status . ')');
         }
 
         // Gather up information on the document's file structure
@@ -302,7 +323,7 @@ class Reader implements Iterator, Countable
         $this->initWorkbook($zip);
 
         // Prepare shared strings
-        $this->initSharedStrings($zip, $shared_strings_configuration);
+        $this->initSharedStrings($zip, $this->shared_strings_configuration);
 
         // Prepare worksheet data and set the first worksheet as the active worksheet
         $this->initWorksheets($zip);
@@ -310,19 +331,14 @@ class Reader implements Iterator, Countable
         // Prepare styles data
         $this->initStyles($zip);
 
-        // Prepare custom formats
-        if (!empty($options['CustomFormats'])) {
-            $this->initCustomFormats($options['CustomFormats']);
-        }
-
         // Finish initialization phase
         $zip->close();
     }
 
     /**
-     * Destructor, destroys all that remains (closes and deletes temp files)
+     * Free all connected resources.
      */
-    public function __destruct()
+    public function close()
     {
         // First close the worksheet, then delete its temporary files.
         if ($this->worksheet_reader && $this->worksheet_reader instanceof XMLReader) {

@@ -37,7 +37,8 @@ try {
         'TempDir'        => sys_get_temp_dir()
     );
 
-    $spreadsheet = new XLSXReader($filepath, $reader_options);
+    $spreadsheet = new XLSXReader($reader_options);
+    $spreadsheet->open($filepath);
     $base_mem = memory_get_usage();
 
     $sheets = $spreadsheet->getSheets();

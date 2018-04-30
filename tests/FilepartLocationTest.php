@@ -25,7 +25,8 @@ class FilepartLocationTest extends TestCase
      */
     public function testReadDocumentWithUncommonFilepartPaths()
     {
-        $reader = new Reader(self::TEST_FILE);
+        $reader = new Reader();
+        $reader->open(self::TEST_FILE);
         $actual_row = $reader->next();
         $expected_row = array('1.230000 €', 'test string');
         self::assertSame(

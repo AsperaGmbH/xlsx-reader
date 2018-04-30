@@ -34,9 +34,10 @@ class TempDirTest extends PHPUnitTestCase
         // Create target directory and configure reader to use it.
         $temp_dir_path = self::getTempDirPath();
         @mkdir($temp_dir_path);
-        self::$reader = new XLSXReader(self::FILE_PATH, array(
+        self::$reader = new XLSXReader(array(
             'TempDir' => $temp_dir_path
         ));
+        self::$reader->open(self::FILE_PATH);
     }
 
     /**
@@ -73,8 +74,8 @@ class TempDirTest extends PHPUnitTestCase
     {
         $temp_dir_path = self::getTempDirPath();
 
-        // Invoke destructor; This should delete all files from TempDir again.
-        self::$reader = null;
+        // Close -> Invoke destructor; This should delete all files from TempDir again.
+        self::$reader->close();
 
         // After destruction, temporary directory must be totally emptied.
         clearstatcache();

@@ -56,9 +56,11 @@ class SharedStringsTest extends TestCase
         $shared_strings_config->setUseCache($use_cache);
         $shared_strings_config->setUseOptimizedFiles($use_optimized_files);
         $shared_strings_config->setCacheSizeKilobyte(self::CACHE_MAX_SIZE_KB);
-        $xlsx_reader = new XLSXReader(self::FILE_PATH, array(
+        $xlsx_reader = new XLSXReader(array(
             'SharedStringsConfiguration' => $shared_strings_config
         ));
+
+        $xlsx_reader->open(self::FILE_PATH);
 
         // Check values; A1 contains a shared string, B1 contains an inline string.
         $test_row = $xlsx_reader->current();
@@ -113,9 +115,10 @@ class SharedStringsTest extends TestCase
         $shared_strings_config = new SharedStringsConfiguration();
         $shared_strings_config->setUseCache($use_cache);
         $shared_strings_config->setCacheSizeKilobyte($cache_size_kb);
-        $xlsx_reader = new XLSXReader(self::FILE_PATH, array(
+        $xlsx_reader = new XLSXReader(array(
             'SharedStringsConfiguration' => $shared_strings_config
         ));
+        $xlsx_reader->open(self::FILE_PATH);
 
         // Get shared strings cache from shared strings object
         $shared_strings = self::getAccessibleProperty($xlsx_reader, 'shared_strings');
@@ -180,9 +183,10 @@ class SharedStringsTest extends TestCase
         $shared_strings_config->setUseCache(false);
         $shared_strings_config->setUseOptimizedFiles($use_optimized_files);
         $shared_strings_config->setOptimizedFileEntryCount($entries_per_file);
-        $xlsx_reader = new XLSXReader(self::FILE_PATH, array(
+        $xlsx_reader = new XLSXReader(array(
             'SharedStringsConfiguration' => $shared_strings_config
         ));
+        $xlsx_reader->open(self::FILE_PATH);
 
         // Get optimized shared strings file list from shared strings object
         $shared_strings = self::getAccessibleProperty($xlsx_reader, 'shared_strings');
