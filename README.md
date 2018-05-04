@@ -28,10 +28,12 @@ $options = array(
     'CustomFormats'              => array(20 => 'hh:mm')
 );
 
-$reader = new Reader('example.xlsx', $options);
+$reader = new Reader($options);
+$reader->open('example.xlsx');
 foreach ($reader as $row) {
     print_r($row);
 }
+$reader->close();
 ?>
 ```
 
@@ -48,7 +50,8 @@ Example:
 use Aspera\Spreadsheet\XLSX\Reader;
 use Aspera\Spreadsheet\XLSX\Worksheet;
 
-$reader = new Reader('example.xlsx');
+$reader = new Reader();
+$reader->open('example.xlsx');
 $sheets = $reader->getSheets();
 
 /** @var Worksheet $sheet_data */
@@ -61,6 +64,7 @@ foreach ($sheets as $index => $sheet_data) {
         print_r($row);
     }
 }
+$reader->close();
 ?>
 ```
 
