@@ -93,3 +93,6 @@ try {
 } catch (Exception $e) {
     echo $e->getMessage();
 }
+if (isset($spreadsheet)) {
+    $spreadsheet->close();
+}
