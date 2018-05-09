@@ -68,6 +68,7 @@ class SharedStringsTest extends TestCase
             'Could not read shared string. Found value: [' . $test_row[0] . ']');
         self::assertSame('inline string', $test_row[1],
             'Could not read inline string. Found value: [' . $test_row[1] . ']');
+        $xlsx_reader->close();
     }
 
     /**
@@ -210,6 +211,7 @@ class SharedStringsTest extends TestCase
                 self::fail('Optimized shared string files were created, despite the configuration denying it.');
             }
         }
+        $xlsx_reader->close();
     }
 
     /**
