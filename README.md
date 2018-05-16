@@ -78,16 +78,6 @@ As extra configuration options we have:
 If a sheet is changed to the same that is currently open, the position in the file still reverts to the beginning, so as to conform
 to the same behavior as when changed to a different sheet.
 
-### Testing
-
-From the command line:
-
-    php test.php path-to-spreadsheet.xls
-
-In the browser:
-
-    http://path-to-library/test.php?file=/path/to/spreadsheet.xls
-
 ### Notes about library performance
 XLSX files use so called "shared strings" to optimize file size for cases where the same string is repeated multiple times.
 For larger documents, this list of shared strings can become quite large, causing either performance bottlenecks or

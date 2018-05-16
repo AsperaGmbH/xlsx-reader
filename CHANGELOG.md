@@ -1,3 +1,6 @@
+### v.0.6.1  2018-05-16
+- Removed unneccessary test files.
+
 ### v.0.6.0  2018-05-01
 
 - Added option 'SkipEmptyCells' in order to consider or not possible empty values in cells. 
