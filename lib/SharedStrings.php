@@ -340,6 +340,9 @@ class SharedStrings
                         break 2;
                     }
                     break;
+                default:
+                    // nop
+                    break;
             }
         }
 
@@ -419,6 +422,9 @@ class SharedStrings
                     if ($this->shared_strings_reader->nodeType !== XMLReader::END_ELEMENT) {
                         $string_value .= $this->shared_strings_reader->readString();
                     }
+                    break;
+                default:
+                    // nop
                     break;
             }
         }

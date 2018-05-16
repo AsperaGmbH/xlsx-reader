@@ -1,5 +1,6 @@
 ### v.0.6.1  2018-05-16
 - Removed unneccessary test files.
+- Minor code quality improvements.
 
 ### v.0.6.0  2018-05-01
 

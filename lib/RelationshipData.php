@@ -201,6 +201,9 @@ class RelationshipData
                 case 'styles':
                     $this->styles[] = $element_data;
                     break;
+                default:
+                    // nop
+                    break;
             }
         }
     }

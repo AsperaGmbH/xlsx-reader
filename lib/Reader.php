@@ -624,6 +624,9 @@ class Reader implements Iterator, Countable
 
                         $this->current_row[$cell_index] = $value;
                         break;
+                    default:
+                        // nop
+                        break;
                 }
             }
 
@@ -792,6 +795,9 @@ class Reader implements Iterator, Countable
                         } elseif ($value === 0) {
                             $format['Code'] = $sections[2];
                         }
+                        break;
+                    default:
+                        // nop
                         break;
                 }
             }
@@ -1058,6 +1064,9 @@ class Reader implements Iterator, Countable
                 case self::XMLNS_DOCUMENT_RELATIONSHIPS:
                     $rel_ns = $namespace_prefix;
                     break;
+                default:
+                    // nop
+                    break;
             }
         }
         $main_ns_pre = $main_ns . ($main_ns != '' ? ':' : '');
@@ -1118,10 +1127,9 @@ class Reader implements Iterator, Countable
             $namespaces = $this->styles_xml->getDocNamespaces();
             $main_ns = '';
             foreach ($namespaces as $namespace_prefix => $namespace_uri) {
-                switch ($namespace_uri) {
-                    case self::XMLNS_MAIN:
-                        $main_ns = $namespace_prefix;
-                        break;
+                if ($namespace_uri == self::XMLNS_MAIN) {
+                    $main_ns = $namespace_prefix;
+                    break;
                 }
             }
             $main_ns_pre = $main_ns . ($main_ns != '' ? ':' : '');
