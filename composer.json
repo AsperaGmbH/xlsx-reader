@@ -3,8 +3,6 @@
   "description": "Spreadsheet reader library for Microsoft Excel XLSX files",
   "keywords": ["spreadsheet", "xls", "xlsx", "excel"],
   "homepage": "https://bitbucket-prod.aspera.usu.grp/projects/SMARTTRACK/repos/xlsx-reader/",
-  "version": "0.5.11",
-  "time": "2018-02-22",
   "type": "library",
   "license": ["MIT"],
   "authors": [
