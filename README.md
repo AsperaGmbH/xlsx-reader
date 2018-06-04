@@ -8,7 +8,14 @@ very restricted subset of XLSX capabilities, such as basic cell value formatting
 
 ### Requirements
 *  PHP 5.6.0 or newer
-*  PHP must have Zip file support (see <http://php.net/manual/en/zip.installation.php>)
+*  PHP must have Zip file support, this should be the case  (see <http://php.net/manual/en/zip.installation.php>)
+
+### Installation using Composer
+The package is available on [Packagist](https://packagist.org/packages/aspera/xlsx-reader), you can install it using [Composer](https://getcomposer.org/)
+
+```
+composer require aspera/xlsx-reader
+```
 
 ### Usage
 
@@ -30,11 +37,12 @@ $options = array(
 
 $reader = new Reader($options);
 $reader->open('example.xlsx');
+
 foreach ($reader as $row) {
     print_r($row);
 }
+
 $reader->close();
-?>
 ```
 
 Multiple sheet reading is also supported.
@@ -64,8 +72,8 @@ foreach ($sheets as $index => $sheet_data) {
         print_r($row);
     }
 }
+
 $reader->close();
-?>
 ```
 
 As extra configuration options we have:
