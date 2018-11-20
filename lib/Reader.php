@@ -1086,7 +1086,7 @@ class Reader implements Iterator, Countable
             $this->sheets[$pos_index] = $new_sheet;
         }
 
-        // Sheet order determining value: Sheet ID attribute
+        // Sheet order determining value: relative sheet positioning within the document (rId)
         ksort($this->sheets);
 
         // Extract worksheets to temporary work directory
