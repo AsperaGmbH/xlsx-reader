@@ -1074,12 +1074,16 @@ class Reader implements Iterator, Countable
         // Iterate through all sheet elements in the workbook
         $xpath_query = '/' . $main_ns_pre . 'workbook/' . $main_ns_pre . 'sheets/' . $main_ns_pre . 'sheet';
         foreach ($this->workbook_xml->xpath($xpath_query) as $sheet) {
+            // $sheet_id is the internal sheet identifier (depending on its creation timestamp)
             $sheet_id = (string)$sheet['sheetId'];
+            $rel_id = (string)$sheet->attributes($rel_ns, true)['id'];
+            // $pos_index is the ordering index of every sheet within the document
+            $pos_index = str_ireplace('rId', '', $rel_id);
             $new_sheet = new Worksheet();
             $new_sheet->setId($sheet_id);
             $new_sheet->setName((string)$sheet['name']);
-            $new_sheet->setRelationshipId((string)$sheet->attributes($rel_ns, true)['id']);
-            $this->sheets[$sheet_id] = $new_sheet;
+            $new_sheet->setRelationshipId($rel_id);
+            $this->sheets[$pos_index] = $new_sheet;
         }
 
         // Sheet order determining value: Sheet ID attribute
