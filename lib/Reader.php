@@ -539,6 +539,11 @@ class Reader implements Iterator, Countable
                     }
 
                     $this->row_open = true;
+
+                    // Do not read further than here if the current 'row' node is not the one to be read
+                    if ((int)$this->worksheet_reader->getAttribute('r') !== $this->row_number) {
+                        return $this->current_row;
+                    }
                     break;
                 }
             }
@@ -546,6 +551,20 @@ class Reader implements Iterator, Countable
 
         // Reading the necessary row, if found
         if ($this->row_open) {
+            // Do not read further than here if the current 'row' node is not the one to be read
+            if ((int)$this->worksheet_reader->getAttribute('r') !== $this->row_number) {
+                $row_spans = $this->worksheet_reader->getAttribute('spans');
+                if ($row_spans) {
+                    $row_spans = explode(':', $row_spans);
+                    $current_row_column_count = $row_spans[1];
+                } else {
+                    $current_row_column_count = 0;
+                }
+                if ($current_row_column_count > 0 && !$this->skip_empty_cells) {
+                    $this->current_row = array_fill(0, $current_row_column_count, '');
+                }
+            }
+
             // These two are needed to control for empty cells
             $max_index = 0;
             $cell_count = 0;
@@ -559,6 +578,7 @@ class Reader implements Iterator, Countable
                 switch ($this->worksheet_reader->localName) {
                     // End of row
                     case 'row':
+                        // Compares if the current node is a 'row' closing tag
                         if ($this->worksheet_reader->nodeType === XMLReader::END_ELEMENT) {
                             $this->row_open = false;
                             break 2;
@@ -566,6 +586,7 @@ class Reader implements Iterator, Countable
                         break;
                     // Cell
                     case 'c':
+                        // Compares if the current node is a 'c' closing tag
                         if ($this->worksheet_reader->nodeType === XMLReader::END_ELEMENT) {
                             continue 2;
                         }
@@ -600,6 +621,7 @@ class Reader implements Iterator, Countable
                     // Cell value
                     case 'v':
                     case 'is':
+                        // Compares if the current node is a 'v' or 'is' closing tag
                         if ($this->worksheet_reader->nodeType === XMLReader::END_ELEMENT) {
                             continue 2;
                         }
