@@ -16,102 +16,6 @@ use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
 class IteratorTest extends PHPUnitTestCase
 {
     const FILE_PATH = 'input_files\iterator_test.xlsx';
-    const EXPECTED_ARRAY = array(
-        0  => array(
-            0 => 'text1',
-            1 => 'text2',
-            2 => 'text3',
-            3 => '',
-            4 => 'shared string',
-            5 => 'inline string'
-        ),
-        1  => array(),
-        2  => array(
-            0 => '',
-            1 => '',
-            2 => '',
-            3 => 'text1',
-            4 => 'text1',
-            5 => 'text1'
-        ),
-        3  => array(
-            0 => '',
-            1 => '',
-            2 => '',
-            3 => 'text2',
-            4 => 'text2',
-            5 => 'text2'
-        ),
-        4  => array(
-            0 => '',
-            1 => '',
-            2 => '',
-            3 => 'text3',
-            4 => 'text3',
-            5 => 'text3'
-        ),
-        5  => array(
-            0 => 'all borders',
-            1 => '',
-            2 => '',
-            3 => '',
-            4 => '',
-            5 => '',
-            6 => '',
-            7 => 'border-a1',
-            8 => 'border-b1',
-            9 => 'border-c1'
-        ),
-        6  => array(
-            0 => '',
-            1 => '',
-            2 => '',
-            3 => '',
-            4 => '',
-            5 => '',
-            6 => '',
-            7 => 'border-a2',
-            8 => 'border-b2',
-            9 => 'border-c2'
-        ),
-        7  => array(
-            0 => '',
-            1 => '',
-            2 => '',
-            3 => '',
-            4 => '',
-            5 => '',
-            6 => '',
-            7 => 'border-a3',
-            8 => 'border-b3',
-            9 => 'border-c3'
-        ),
-        8  => array(
-            0 => '12345',
-            1 => '123.45',
-            2 => '123.45',
-            3 => '',
-            4 => '12468.45',
-            5 => '12468'
-        ),
-        9  => array(),
-        10 => array(
-            0 => '10000.4',
-            1 => '10000.4',
-            2 => '10000.4',
-            3 => '10001',
-            4 => '10000.4',
-            5 => '10000.4'
-        ),
-        11 => array(),
-        12 => array(
-            0 => 'a cell',
-            1 => 'a long cell',
-            2 => '',
-            3 => '',
-            4 => ''
-        )
-    );
 
     /** @var XLSXReader */
     private $reader;
@@ -185,6 +89,107 @@ class IteratorTest extends PHPUnitTestCase
             $read_file[] = $this->reader->current();
             $this->reader->next();
         }
-        self::assertEquals(self::EXPECTED_ARRAY, $read_file, 'File has not be read correctly');
+        self::assertFalse($this->reader->valid(), 'File reading has finished and it is still valid');
+        self::assertEquals($this->getExpectedArray(), $read_file, 'File has not been read correctly');
+    }
+
+    private function getExpectedArray()
+    {
+        return array(
+            array(
+                'text1',
+                'text2',
+                'text3',
+                '',
+                'shared string',
+                'inline string'
+            ),
+            array(),
+            array(
+                '',
+                '',
+                '',
+                'text1',
+                'text1',
+                'text1'
+            ),
+            array(
+                '',
+                '',
+                '',
+                'text2',
+                'text2',
+                'text2'
+            ),
+            array(
+                '',
+                '',
+                '',
+                'text3',
+                'text3',
+                'text3'
+            ),
+            array(
+                'all borders',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'border-a1',
+                'border-b1',
+                'border-c1'
+            ),
+            array(
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'border-a2',
+                'border-b2',
+                'border-c2'
+            ),
+            array(
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'border-a3',
+                'border-b3',
+                'border-c3'
+            ),
+            array(
+                '12345',
+                '123.45',
+                '123.45',
+                '',
+                '12468.45',
+                '12468'
+            ),
+            array(),
+            array(
+                '10000.4',
+                '10000.4',
+                '10000.4',
+                '10001',
+                '10000.4',
+                '10000.4'
+            ),
+            array(),
+            array(
+                'a cell',
+                'a long cell',
+                '',
+                '',
+                ''
+            )
+        );
     }
 }
