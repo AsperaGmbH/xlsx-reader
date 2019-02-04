@@ -21,6 +21,9 @@ class SheetTest extends PHPUnitTestCase
     /** @var XLSXReader */
     private $reader;
 
+    /**
+     * @throws Exception
+     */
     public function setUp()
     {
         $this->reader = new XLSXReader();
@@ -62,18 +65,29 @@ class SheetTest extends PHPUnitTestCase
         /** @var Worksheet $worksheet */
         foreach ($this->reader->getSheets() as $index => $worksheet) {
             $sheet_name_in_sheet_data = $worksheet->getName();
-            self::assertTrue($this->reader->changeSheet($index),
-                'Unable to switch to sheet [' . $index . '] => [' . $sheet_name_in_sheet_data . ']');
+            self::assertTrue(
+                $this->reader->changeSheet($index),
+                'Unable to switch to sheet [' . $index . '] => [' . $sheet_name_in_sheet_data . ']'
+            );
 
             // For testing, the sheet name is written in each sheet's first cell of the first line
             $content = $this->reader->current();
-            self::assertTrue(is_array($content) && !empty($content),
-                'No content found in sheet [' . $index . '] => [' . $sheet_name_in_sheet_data . ']');
+            self::assertTrue(
+                is_array($content) && !empty($content),
+                'No content found in sheet [' . $index . '] => [' . $sheet_name_in_sheet_data . ']'
+            );
             $sheet_name_in_cell = $content[0];
-            self::assertSame($sheet_name_in_cell, $sheet_name_in_sheet_data, 'Sheet has been changed to a wrong one');
+            self::assertSame(
+                $sheet_name_in_cell,
+                $sheet_name_in_sheet_data,
+                'Sheet has been changed to a wrong one'
+            );
         }
 
         // test index out of bounds
-        self::assertFalse($this->reader->changeSheet(-1), 'Error expected when stepping out of bounds');
+        self::assertFalse(
+            $this->reader->changeSheet(-1),
+            'Error expected when stepping out of bounds'
+        );
     }
 }

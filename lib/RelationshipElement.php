@@ -11,32 +11,16 @@ use ZipArchive;
  */
 class RelationshipElement
 {
-    /**
-     * Internal identifier of this file part
-     *
-     * @var string $id
-     */
+    /** @var string Internal identifier of this file part */
     private $id;
 
-    /**
-     * Element validity flag; If false, this element was not found or might be corrupted.
-     *
-     * @var bool $is_valid
-     */
+    /** @var bool Element validity flag; If false, this element was not found or might be corrupted. */
     private $is_valid;
 
-    /**
-     * Path to this element, as per the context its information was retrieved from.
-     *
-     * @var string $original_path
-     */
+    /** @var string Path to this element, as per the context its information was retrieved from. */
     private $original_path;
 
-    /**
-     * Absolute path to the file associated with this element for access.
-     *
-     * @var string $access_path
-     */
+    /** @var string Absolute path to the file associated with this element for access. */
     private $access_path;
 
     /**

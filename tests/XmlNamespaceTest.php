@@ -15,6 +15,12 @@ use Aspera\Spreadsheet\XLSX\Reader;
  */
 class XmlNamespaceTest extends TestCase
 {
+    /**
+     * Things of note about the test file:
+     * - All elements in all xml files have a valid root namespace prefix.
+     * - workbook.xml does not declare the relationship namespace in the root element. This is valid, but not commonly seen.
+     * - workbook.xml uses edition 3 namespaces, while the rest of the document uses edition 1 namespaces. This should not cause issues.
+     */
     const TEST_FILE = 'input_files/xml_namespace_test.xlsx';
 
     /**

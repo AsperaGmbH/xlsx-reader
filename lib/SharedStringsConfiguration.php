@@ -14,7 +14,7 @@ class SharedStringsConfiguration
     /**
      * If true: Allow caching shared strings to RAM to increase performance.
      *
-     * @var bool $use_cache
+     * @var bool
      */
     private $use_cache = true;
 
@@ -23,14 +23,14 @@ class SharedStringsConfiguration
      * Once exceeded, additional shared strings will not be written to RAM and instead get read from file as needed.
      * Note that this is a "soft" limit that only applies to the main cache. The application may slightly exceed it.
      *
-     * @var int $cache_size_kilobyte
+     * @var int
      */
     private $cache_size_kilobyte = 256;
 
     /**
      * If true: Allow creation of new files to reduce seek times for non-cached shared strings.
      *
-     * @var bool $use_optimized_files
+     * @var bool
      */
     private $use_optimized_files = true;
 
@@ -39,7 +39,7 @@ class SharedStringsConfiguration
      * Lower values result in higher performance at the cost of more temporary files being created.
      * At extremely low values (< 10) you might be better off increasing the cache size.
      *
-     * @var int $optimized_file_entry_count
+     * @var int
      */
     private $optimized_file_entry_count = 2500;
 
@@ -47,16 +47,16 @@ class SharedStringsConfiguration
      * If true: file pointers to shared string files are kept open for more efficient reads.
      * Causes higher memory consumption, especially if $optimized_file_entry_count is low.
      *
-     * @var bool $keep_file_handles
+     * @var bool
      */
     private $keep_file_handles = true;
 
     /**
      * Enable/disable caching of shared string values in RAM.
      *
-     * @param bool $new_use_cache_value
+     * @param   bool    $new_use_cache_value
      *
-     * @throws InvalidArgumentException
+     * @throws  InvalidArgumentException
      */
     public function setUseCache($new_use_cache_value)
     {
@@ -71,9 +71,9 @@ class SharedStringsConfiguration
      * Set the maximum size of the internal shared string cache, in kilobyte. (minimum: 8 KB)
      * Note that this is a soft limit; Depending on circumstances, it might be exceeded by a few byte/kilobyte.
      *
-     * @param int $new_max_size
+     * @param   int $new_max_size
      *
-     * @throws InvalidArgumentException
+     * @throws  InvalidArgumentException
      */
     public function setCacheSizeKilobyte($new_max_size)
     {
@@ -86,9 +86,9 @@ class SharedStringsConfiguration
     /**
      * Enable/disable the creation of new temporary files for the purpose of optimizing shared string seek performance.
      *
-     * @param bool $new_use_files_value
+     * @param   bool    $new_use_files_value
      *
-     * @throws InvalidArgumentException
+     * @throws  InvalidArgumentException
      */
     public function setUseOptimizedFiles($new_use_files_value)
     {
@@ -102,9 +102,9 @@ class SharedStringsConfiguration
      * Set the amount of entries to be stored per single optimized shared string file.
      * Adjusting this value has no effect if the creation of optimized shared string files is disabled.
      *
-     * @param $new_entry_count
+     * @param   int $new_entry_count
      *
-     * @throws InvalidArgumentException
+     * @throws  InvalidArgumentException
      */
     public function setOptimizedFileEntryCount($new_entry_count)
     {
@@ -117,9 +117,9 @@ class SharedStringsConfiguration
     /**
      * Enable/disable keeping file pointers to shared string files open to achieve more efficient file reads.
      *
-     * @param bool $new_keep_file_pointers_value
+     * @param   bool    $new_keep_file_pointers_value
      *
-     * @throws InvalidArgumentException
+     * @throws  InvalidArgumentException
      */
     public function setKeepFileHandles($new_keep_file_pointers_value)
     {

@@ -7,8 +7,9 @@ As of now, the library does not support every potential type of content that can
 very restricted subset of XLSX capabilities, such as basic cell value formatting and shared string evaluation.
 
 ### Requirements
-*  PHP 5.6.0 or newer
-*  PHP must have Zip file support, this should be the case  (see <http://php.net/manual/en/zip.installation.php>)
+*  PHP 5.6.0 or newer, with at least the following optional features enabled:
+    *  Zip (enabled by default; see <http://php.net/manual/en/zip.installation.php>)
+    *  XMLReader (enabled by default; see <http://php.net/manual/en/xmlreader.installation.php>)
 
 ### Installation using Composer
 The package is available on [Packagist](https://packagist.org/packages/aspera/xlsx-reader), you can install it using [Composer](https://getcomposer.org/)

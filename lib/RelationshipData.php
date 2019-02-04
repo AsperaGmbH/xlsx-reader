@@ -2,7 +2,6 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
-use XMLReader;
 use RuntimeException;
 use ZipArchive;
 
@@ -22,32 +21,16 @@ class RelationshipData
      */
     const ZIP_DIR_SEP = '/';
 
-    /**
-     * Workbook file meta information. Only one element exists per file.
-     *
-     * @var RelationshipElement $workbook
-     */
+    /** @var RelationshipElement Workbook file meta information. Only one element exists per file. */
     private $workbook;
 
-    /**
-     * Worksheet files meta information, saved as a list of RelationshipElement instances.
-     *
-     * @var array $worksheets
-     */
+    /** @var array Worksheet files meta information, saved as a list of RelationshipElement instances. */
     private $worksheets = array();
 
-    /**
-     * SharedStrings files meta information, saved as a list of RelationshipElement instances.
-     *
-     * @var array $sharedStrings
-     */
-    private $sharedStrings = array();
+    /** @var array SharedStrings files meta information, saved as a list of RelationshipElement instances. */
+    private $shared_strings = array();
 
-    /**
-     * Styles files meta information, saved as a list of RelationshipElement instances.
-     *
-     * @var array $styles
-     */
+    /** @var array Styles files meta information, saved as a list of RelationshipElement instances. */
     private $styles = array();
 
     /**
@@ -73,7 +56,7 @@ class RelationshipData
     public function getSharedStrings()
     {
         $return_list = array();
-        foreach ($this->sharedStrings as $shared_string_element) {
+        foreach ($this->shared_strings as $shared_string_element) {
             if ($shared_string_element->isValid()) {
                 $return_list[] = $shared_string_element;
             }
@@ -119,9 +102,9 @@ class RelationshipData
      * Navigates through the XLSX file using .rels files, gathering up found file parts along the way.
      * Results are saved in internal variables for later retrieval.
      *
-     * @param ZipArchive $zip Handle to zip file to read relationship data from
+     * @param   ZipArchive  $zip    Handle to zip file to read relationship data from
      *
-     * @throws RuntimeException
+     * @throws  RuntimeException
      */
     public function __construct(ZipArchive $zip)
     {
@@ -143,10 +126,10 @@ class RelationshipData
      * Read through the .rels data of the given .rels file from the given zip handle
      * and save all included file data to internal variables.
      *
-     * @param ZipArchive $zip
-     * @param string     $file_zipname
+     * @param   ZipArchive  $zip
+     * @param   string      $file_zipname
      *
-     * @throws RuntimeException
+     * @throws  RuntimeException
      */
     private function evaluateRelationshipFromZip(ZipArchive $zip, $file_zipname)
     {
@@ -154,27 +137,27 @@ class RelationshipData
             throw new RuntimeException('Could not read relationship data. File [' . $file_zipname . '] could not be found.');
         }
 
-        $rels_reader = new XMLReader();
+        $rels_reader = new OoxmlReader();
+        $rels_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_RELATIONSHIPS_PACKAGELEVEL);
+        $rels_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
         $rels_reader->xml($zip->getFromName($file_zipname));
-
         while ($rels_reader->read() !== false) {
-            $is_relationship = $rels_reader->namespaceURI === Reader::XMLNS_PACKAGE_RELATIONSHIPS
-                && $rels_reader->localName === 'Relationship';
-            if (!$is_relationship || $rels_reader->nodeType === XMLReader::END_ELEMENT) {
+            if (!$rels_reader->matchesElement('Relationship') || $rels_reader->isClosingTag()) {
                 // This element is not important to us. Skip.
                 continue;
             }
 
             // Only the last part of the relationship type definition matters to us.
-            if (!preg_match('~([^/]+)/?$~', $rels_reader->getAttribute('Type'), $type_regexp_matches)) {
+            $rels_type = $rels_reader->getAttributeNsId('Type');
+            if (!preg_match('~([^/]+)/?$~', $rels_type, $type_regexp_matches)) {
                 throw new RuntimeException(
-                    'Invalid type definition found: [' . $rels_reader->getAttribute('Type') . ']'
+                    'Invalid type definition found: [' . $rels_type . ']'
                     . ' Relationship could not be evaluated.'
                 );
             }
 
             // Adjust target path (making it absolute without leading slash) so that we can easily use it for zip checks later.
-            $target_path = $rels_reader->getAttribute('Target');
+            $target_path = $rels_reader->getAttributeNsId('Target');
             if (strpos($target_path, self::ZIP_DIR_SEP) === 0) {
                 // target_path is already absolute, but we need to remove the leading slash.
                 $target_path = substr($target_path, 1);
@@ -185,7 +168,7 @@ class RelationshipData
 
             // Assemble and store element data
             $element_data = new RelationshipElement();
-            $element_data->setId($rels_reader->getAttribute('Id'));
+            $element_data->setId($rels_reader->getAttributeNsId('Id'));
             $element_data->setOriginalPath($target_path);
             $element_data->setValidityViaZip($zip);
             switch ($type_regexp_matches[1]) {
@@ -196,7 +179,7 @@ class RelationshipData
                     $this->worksheets[] = $element_data;
                     break;
                 case 'sharedStrings':
-                    $this->sharedStrings[] = $element_data;
+                    $this->shared_strings[] = $element_data;
                     break;
                 case 'styles':
                     $this->styles[] = $element_data;
@@ -212,8 +195,8 @@ class RelationshipData
      * Returns the path to the .rels file for the given file path.
      * Example: xl/workbook.xml => xl/_rels/workbook.xml.rels
      *
-     * @param string $file_path
-     * @return string
+     * @param   string  $file_path
+     * @return  string
      */
     private static function toRelsFilePath($file_path)
     {

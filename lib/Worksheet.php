@@ -9,42 +9,11 @@ namespace Aspera\Spreadsheet\XLSX;
  */
 class Worksheet
 {
-    /**
-     * Internal ID of this worksheet (Note: Not to be confused with the access index)
-     *
-     * @var int $id
-     */
-    private $id;
-
-    /**
-     * Name of the worksheet.
-     *
-     * @var string $name
-     */
+    /** @var string */
     private $name;
 
-    /**
-     * Relationship ID of this worksheet for matching with workbook data
-     *
-     * @var string $relationship_id
-     */
+    /** @var string Relationship ID of this worksheet for matching with workbook data. */
     private $relationship_id;
-
-    /**
-     * @return int
-     */
-    public function getId()
-    {
-        return $this->id;
-    }
-
-    /**
-     * @param int $id
-     */
-    public function setId($id)
-    {
-        $this->id = $id;
-    }
 
     /**
      * @return string

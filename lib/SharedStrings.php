@@ -2,7 +2,6 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
-use XMLReader;
 use RuntimeException;
 use SplFixedArray;
 
@@ -14,89 +13,55 @@ use SplFixedArray;
 class SharedStrings
 {
     /**
-     *
      * Amount of array positions to add with each extension of the shared string cache array.
      * Larger values run into memory limits faster, lower values are a tiny bit worse on performance
      *
-     * @var int SHARED_STRING_COUNT_PER_FILE
+     * @var int
      */
     const SHARED_STRING_CACHE_ARRAY_SIZE_STEP = 100;
 
-    /**
-     * Filename (without path) of the shared strings XML file.
-     *
-     * @var string $shared_strings_filename
-     */
+    /** @var string Filename (without path) of the shared strings XML file. */
     private $shared_strings_filename;
 
-    /**
-     * Path to the directory containing all shared strings files used by this instance.
-     * Includes trailing slash.
-     *
-     * @var string $shared_strings_directory
-     */
+    /** @var string Path to the directory containing all shared strings files used by this instance. Includes trailing slash. */
     private $shared_strings_directory;
 
-    /**
-     * XML reader object for the shared strings XML file
-     *
-     * @var XMLReader $shared_strings_reader
-     */
+    /** @var OoxmlReader XML reader object for the shared strings XML file */
     private $shared_strings_reader;
 
-    /**
-     * Configuration of shared string reading and caching behaviour.
-     *
-     * @var SharedStringsConfiguration
-     */
+    /** @var SharedStringsConfiguration Configuration of shared string reading and caching behaviour. */
     private $shared_strings_configuration;
 
-    /**
-     * Shared strings cache, if the number of shared strings is low enough
-     *
-     * @var SplFixedArray $shared_string_cache
-     */
+    /** @var SplFixedArray Shared strings cache, if the number of shared strings is low enough */
     private $shared_string_cache;
 
     /**
      * Array of SharedStringsOptimizedFile instances containing filenames and associated data for shared strings that
      * were not saved to $shared_string_cache. Files contain values in seek-optimized format. (one entry per line, JSON encoded)
-     * Key per element: the index of the first string contained within the file
+     * Key per element: the index of the first string contained within the file.
      *
-     * @var array $prepared_shared_string_files
+     * @var array
      */
     private $prepared_shared_string_files = array();
 
-    /**
-     * The total number of shared strings available in the file.
-     *
-     * @var int $shared_string_count
-     */
+    /** @var int The total number of shared strings available in the file. */
     private $shared_string_count = 0;
 
-    /**
-     * The shared string index the shared string reader is currently pointing at.
-     *
-     * @var int $shared_string_index
-     */
+    /** @var int The shared string index the shared string reader is currently pointing at. */
     private $shared_string_index = 0;
 
-    /**
-     * Temporary cache for the last value that was read from the shared strings xml file.
-     *
-     * @var null $last_shared_string_value
-     */
+    /** @var string|null Temporary cache for the last value that was read from the shared strings xml file. */
     private $last_shared_string_value;
 
     /**
      * SharedStrings constructor. Prepares the data stored within the given shared string file for reading.
      *
-     * @param string                     $shared_strings_directory     Directory of the shared strings file
-     * @param string                     $shared_strings_filename      Filename of the shared strings file
-     * @param SharedStringsConfiguration $shared_strings_configuration Configuration for shared string reading and
-     *                                                                 caching behaviour
+     * @param   string                      $shared_strings_directory       Directory of the shared strings file.
+     * @param   string                      $shared_strings_filename        Filename of the shared strings file.
+     * @param   SharedStringsConfiguration  $shared_strings_configuration   Configuration for shared string reading and
+     *                                                                      caching behaviour.
      *
-     * @throws RuntimeException
+     * @throws  RuntimeException
      */
     public function __construct(
         $shared_strings_directory,
@@ -117,16 +82,17 @@ class SharedStrings
      */
     public function close()
     {
-        if ($this->shared_strings_reader && $this->shared_strings_reader instanceof XMLReader) {
+        if ($this->shared_strings_reader && $this->shared_strings_reader instanceof OoxmlReader) {
             $this->shared_strings_reader->close();
-            unset($this->shared_strings_reader);
+            $this->shared_strings_reader = null;
         }
         /** @var SharedStringsOptimizedFile $file_data */
         foreach ($this->prepared_shared_string_files as $file_data) {
             $file_data->closeHandle();
         }
 
-        unset($this->shared_strings_directory, $this->shared_strings_filename);
+        $this->shared_strings_directory = null;
+        $this->shared_strings_filename = null;
     }
 
     /**
@@ -155,10 +121,10 @@ class SharedStrings
     /**
      * Retrieves a shared string value by its index
      *
-     * @param int $target_index Shared string index
-     * @return string Shared string of the given index
+     * @param   int     $target_index   Shared string index
+     * @return  string  Shared string of the given index
      *
-     * @throws RuntimeException
+     * @throws  RuntimeException
      */
     public function getSharedString($target_index)
     {
@@ -188,10 +154,10 @@ class SharedStrings
      * Attempts to retrieve a string from the optimized shared string files.
      * May return null if unsuccessful.
      *
-     * @param int $target_index
-     * @return null|string
+     * @param   int $target_index
+     * @return  null|string
      *
-     * @throws RuntimeException
+     * @throws  RuntimeException
      */
     private function getStringFromOptimizedFile($target_index)
     {
@@ -256,98 +222,86 @@ class SharedStrings
     /**
      * Retrieves a shared string from the original shared strings XML file.
      *
-     * @param int $target_index
-     * @return null|string
+     * @param   int $target_index
+     * @return  null|string
      */
     private function getStringFromOriginalSharedStringFile($target_index)
     {
-        // If the desired index is before the current, rewind the XML
+        // If the desired index equals the current, return cached result.
+        if ($target_index === $this->shared_string_index && $this->last_shared_string_value !== null) {
+            return $this->last_shared_string_value;
+        }
+
+        // If the desired index is before the current, rewind the XML.
         if ($this->shared_strings_reader && $this->shared_string_index > $target_index) {
             $this->shared_strings_reader->close();
             $this->shared_strings_reader = null;
         }
 
-        // Intialize reader, if not already initialized
+        // Initialize reader, if not already initialized.
         if (!$this->shared_strings_reader) {
-            $this->shared_strings_reader = new XMLReader();
+            $this->shared_strings_reader = new OoxmlReader();
+            $this->shared_strings_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_XLSX_MAIN);
+            $this->shared_strings_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
             $this->shared_strings_reader->open($this->shared_strings_directory . $this->shared_strings_filename);
             $this->shared_string_index = -1;
             $this->last_shared_string_value = null;
         }
 
-        // If an index with the same value as the last already fetched is requested
-        // (any further traversing the tree would get us further away from the node)
-        if (($target_index === $this->shared_string_index) && ($this->last_shared_string_value !== null)) {
-            if (!$this->shared_strings_configuration->getKeepFileHandles()) {
+        // Move reader to the next <si> node, if it isn't already pointing at one.
+        if (!$this->shared_strings_reader->matchesElement('si') || $this->shared_strings_reader->isClosingTag()) {
+            $found_next_si_node = false;
+            while ($this->shared_strings_reader->read()) {
+                if ($this->shared_strings_reader->matchesElement('si') && !$this->shared_strings_reader->isClosingTag()) {
+                    $found_next_si_node = true;
+                    break;
+                }
+            }
+            if (!$found_next_si_node) {
+                // Unexpected EOF; The given sharedString index could not be found.
                 $this->shared_strings_reader->close();
                 $this->shared_strings_reader = null;
+                return '';
             }
-            return $this->last_shared_string_value;
-        }
-
-        // Move reader to the next <si> node, if it isn't already pointing at one.
-        $last_result = true;
-        $moved_forward = false;
-        $is_si = $this->shared_strings_reader->localName === 'si'
-            && $this->shared_strings_reader->namespaceURI === Reader::XMLNS_MAIN;
-        while ($last_result && (!$is_si || $this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT)) {
-            $moved_forward = true;
-            $last_result = $this->shared_strings_reader->read();
-            $is_si = $this->shared_strings_reader->localName === 'si'
-                && $this->shared_strings_reader->namespaceURI === Reader::XMLNS_MAIN;
-        }
-
-        if (!$last_result) {
-            // Unexpected EOF
-            $this->shared_strings_reader->close();
-            $this->shared_strings_reader = null;
-            return '';
-        }
-
-        if ($moved_forward) {
             $this->shared_string_index++;
         }
 
-        // Find the <si> node with the desired index
-        $last_result = true;
-        while ($last_result && $this->shared_string_index < $target_index) {
-            $last_result = $this->shared_strings_reader->next('si');
+        // Move to the <si> node with the desired index
+        $eof_reached = false;
+        while (!$eof_reached && $this->shared_string_index < $target_index) {
+            $eof_reached = !$this->shared_strings_reader->nextNsId('si');
             $this->shared_string_index++;
         }
-
-        if (!$last_result) {
-            // Unexpected EOF
+        if ($eof_reached) {
+            // Unexpected EOF; The given sharedString index could not be found.
             $this->shared_strings_reader->close();
             $this->shared_strings_reader = null;
             return '';
         }
 
         // Extract the value from the shared string
+        $matched_elements = array(
+            't'  => array('t'),
+            'si' => array('si')
+        );
         $value = '';
         while ($this->shared_strings_reader->read()) {
-            if ($this->shared_strings_reader->namespaceURI !== Reader::XMLNS_MAIN) {
-                continue;
-            }
-            switch ($this->shared_strings_reader->localName) {
+            switch ($this->shared_strings_reader->matchesOneOfList($matched_elements)) {
+                // <t> - Read the shared string value contained within the element.
                 case 't':
-                    if ($this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT) {
+                    if ($this->shared_strings_reader->isClosingTag()) {
                         continue 2;
                     }
                     $value .= $this->shared_strings_reader->readString();
                     break;
+
+                // </si> - End of entry. Abort further reading.
                 case 'si':
-                    if ($this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT) {
+                    if ($this->shared_strings_reader->isClosingTag()) {
                         break 2;
                     }
                     break;
-                default:
-                    // nop
-                    break;
             }
-        }
-
-        if ($value) {
-            $this->last_shared_string_value = $value;
         }
 
         if (!$this->shared_strings_configuration->getKeepFileHandles()) {
@@ -355,6 +309,9 @@ class SharedStrings
             $this->shared_strings_reader = null;
         }
 
+        if ($value) {
+            $this->last_shared_string_value = $value;
+        }
         return $value;
     }
 
@@ -369,24 +326,27 @@ class SharedStrings
      */
     private function prepareSharedStrings()
     {
-        $this->shared_strings_reader = new XMLReader;
+        $this->shared_strings_reader = new OoxmlReader();
+        $this->shared_strings_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_XLSX_MAIN);
+        $this->shared_strings_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
         $this->shared_strings_reader->open($this->shared_strings_directory . $this->shared_strings_filename);
 
         // Obtain number of shared strings available
         while ($this->shared_strings_reader->read()) {
-            if ($this->shared_strings_reader->localName === 'sst'
-                && $this->shared_strings_reader->namespaceURI === Reader::XMLNS_MAIN) {
-                $this->shared_string_count = $this->shared_strings_reader->getAttribute('uniqueCount');
+            if ($this->shared_strings_reader->matchesElement('sst')) {
+                $this->shared_string_count = $this->shared_strings_reader->getAttributeNsId('uniqueCount');
                 break;
             }
         }
-
         if (!$this->shared_string_count) {
-            return; // No shared strings available, no preparation necessary
+            // No shared strings available, no preparation necessary
+            $this->shared_strings_reader->close();
+            $this->shared_strings_reader = null;
+            return;
         }
 
         if ($this->shared_strings_configuration->getUseCache()) {
-            // This is why we ask for at least 8 KB of memory; Lower values may already exceed the limit with this assignment:
+            // This is why we ask for at least 8 KB of memory. Lower values may already exceed the limit with this assignment:
             $this->shared_string_cache = new SplFixedArray(self::SHARED_STRING_CACHE_ARRAY_SIZE_STEP);
         }
 
@@ -395,36 +355,39 @@ class SharedStrings
         $string_value = '';
         $write_to_cache = $this->shared_strings_configuration->getUseCache();
         $cache_max_size_byte = $this->shared_strings_configuration->getCacheSizeKilobyte() * 1024;
-        $start_memory_byte = memory_get_usage(false); // Note: Get current memory usage as late as possible
+        $matched_elements = array(
+            'si' => array('si'),
+            't' => array('t')
+        );
+
+        $start_memory_byte = memory_get_usage(false); // Note: Get current memory usage as late as possible. Read: Now.
 
         // Work through the XML file and cache/reformat/move string data, according to configuration and situation
         while ($this->shared_strings_reader->read()) {
-            if ($this->shared_strings_reader->namespaceURI !== Reader::XMLNS_MAIN) {
-                continue;
-            }
-            switch ($this->shared_strings_reader->localName) {
-                case 'si':
-                    if ($this->shared_strings_reader->nodeType === XMLReader::END_ELEMENT) {
-                        if ($write_to_cache) {
-                            $cache_current_memory_byte = memory_get_usage(false) - $start_memory_byte;
-                            if ($cache_current_memory_byte > $cache_max_size_byte) {
-                                // transition from "cache everything" to "memory exhausted, stop caching":
-                                $this->shared_string_cache->setSize($string_index); // finalize array size
-                                $write_to_cache = false;
-                            }
-                        }
-                        $this->prepareSingleSharedString($string_index, $string_value, $write_to_cache);
-                        $string_index++;
-                        $string_value = '';
-                    }
-                    break;
+            switch ($this->shared_strings_reader->matchesOneOfList($matched_elements)) {
+                // <t> - Read shared string value portion contained within the element.
                 case 't':
-                    if ($this->shared_strings_reader->nodeType !== XMLReader::END_ELEMENT) {
+                    if (!$this->shared_strings_reader->isClosingTag()) {
                         $string_value .= $this->shared_strings_reader->readString();
                     }
                     break;
-                default:
-                    // nop
+
+                // </si> - Write previously read string value to cache.
+                case 'si':
+                    if (!$this->shared_strings_reader->isClosingTag()) {
+                        continue;
+                    }
+                    if ($write_to_cache) {
+                        $cache_current_memory_byte = memory_get_usage(false) - $start_memory_byte;
+                        if ($cache_current_memory_byte > $cache_max_size_byte) {
+                            // transition from "cache everything" to "memory exhausted, stop caching":
+                            $this->shared_string_cache->setSize($string_index); // finalize array size
+                            $write_to_cache = false;
+                        }
+                    }
+                    $this->prepareSingleSharedString($string_index, $string_value, $write_to_cache);
+                    $string_index++;
+                    $string_value = '';
                     break;
             }
         }
@@ -446,11 +409,11 @@ class SharedStrings
      * Stores the given shared string either in internal cache or in a seek optimized file, depending on the
      * current configuration and status of the internal cache.
      *
-     * @param int    $index
-     * @param string $string
-     * @param bool   $write_to_cache
+     * @param   int     $index
+     * @param   string  $string
+     * @param   bool    $write_to_cache
      *
-     * @throws RuntimeException
+     * @throws  RuntimeException
      */
     private function prepareSingleSharedString($index, $string, $write_to_cache = false)
     {

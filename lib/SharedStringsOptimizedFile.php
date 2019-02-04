@@ -11,39 +11,19 @@ use RuntimeException;
  */
 class SharedStringsOptimizedFile
 {
-    /**
-     * Complete path to the file.
-     *
-     * @var string $file
-     */
+    /** @var string Complete path to the file. */
     private $file = '';
 
-    /**
-     * File handle to access the file contents with.
-     *
-     * @var resource $handle
-     */
+    /** @var resource File handle to access the file contents with. */
     private $handle;
 
-    /**
-     * Index of the line the handle currently points at. (Only used during reading from the file)
-     *
-     * @var int $handle_current_index
-     */
+    /** @var int Index of the line the handle currently points at. (Only used during reading from the file) */
     private $handle_current_index = -1;
 
-    /**
-     * The shared string value corresponding to the current index. (Only used during reading from the file)
-     *
-     * @var string $value_at_current_index
-     */
+    /** @var string The shared string value corresponding to the current index. (Only used during reading from the file) */
     private $value_at_current_index = '';
 
-    /**
-     * Total number of shared strings contained within the file.
-     *
-     * @var int $count
-     */
+    /** @var int Total number of shared strings contained within the file. */
     private $count = 0;
 
     /**
@@ -146,10 +126,10 @@ class SharedStringsOptimizedFile
      * Opens a file handle to the file with the given file access mode.
      * If a file handle is currently still open, closes it first.
      *
-     * @param string $mode
-     * @return resource The newly opened file handle
+     * @param   string      $mode
+     * @return  resource    The newly opened file handle
      *
-     * @throws RuntimeException
+     * @throws  RuntimeException
      */
     public function openHandle($mode)
     {
@@ -181,9 +161,9 @@ class SharedStringsOptimizedFile
     /**
      * Properly rewinds the current file handle and all associated internal data.
      *
-     * @return resource The rewound file handle
+     * @return  resource    The rewound file handle
      *
-     * @throws RuntimeException
+     * @throws  RuntimeException
      */
     public function rewindHandle()
     {
