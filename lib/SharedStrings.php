@@ -240,12 +240,7 @@ class SharedStrings
 
         // Initialize reader, if not already initialized.
         if (!$this->shared_strings_reader) {
-            $this->shared_strings_reader = new OoxmlReader();
-            $this->shared_strings_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_XLSX_MAIN);
-            $this->shared_strings_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
-            $this->shared_strings_reader->open($this->shared_strings_directory . $this->shared_strings_filename);
-            $this->shared_string_index = -1;
-            $this->last_shared_string_value = null;
+            $this->initSharedStringsReader();
         }
 
         // Move reader to the next <si> node, if it isn't already pointing at one.
@@ -316,6 +311,20 @@ class SharedStrings
     }
 
     /**
+     * Initializes the shared strings XML reader object with the proper settings.
+     * Also initializes all related tracking properties.
+     */
+    private function initSharedStringsReader()
+    {
+        $this->shared_strings_reader = new OoxmlReader();
+        $this->shared_strings_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_XLSX_MAIN);
+        $this->shared_strings_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
+        $this->shared_strings_reader->open($this->shared_strings_directory . $this->shared_strings_filename);
+        $this->shared_string_index = -1;
+        $this->last_shared_string_value = null;
+    }
+
+    /**
      * Perform optimizations to increase performance of shared string determination operations.
      * Loads shared string data into RAM up to the configured memory limit. Stores additional shared string data
      * in seek-optimized additional files on the filesystem in order to lower seek times.
@@ -326,10 +335,7 @@ class SharedStrings
      */
     private function prepareSharedStrings()
     {
-        $this->shared_strings_reader = new OoxmlReader();
-        $this->shared_strings_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_XLSX_MAIN);
-        $this->shared_strings_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
-        $this->shared_strings_reader->open($this->shared_strings_directory . $this->shared_strings_filename);
+        $this->initSharedStringsReader();
 
         // Obtain number of shared strings available
         while ($this->shared_strings_reader->read()) {

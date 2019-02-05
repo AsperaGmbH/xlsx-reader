@@ -248,8 +248,11 @@ class Reader implements Iterator, Countable
             $this->worksheet_reader = null;
         }
 
-        // Closing the shared string handler will also close all still opened shared string temporary work files.
-        $this->shared_strings->close();
+        if ($this->shared_strings && $this->shared_strings instanceof SharedStrings) {
+            // Closing the shared string handler will also close all still opened shared string temporary work files.
+            $this->shared_strings->close();
+            $this->shared_strings = null;
+        }
 
         $this->deleteTempfiles();
 
