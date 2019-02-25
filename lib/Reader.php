@@ -150,6 +150,16 @@ class Reader implements Iterator, Countable
     /** @var array List of custom formats defined by the user; array key = format index */
     private $customized_formats = array();
 
+    /** @var string Format to use when outputting dates, regardless of originally set formatting.
+     *              (Note: Will also be used if the original formatting omits time information, but the data value contains time information.) */
+    private $enforced_date_format;
+
+    /** @var string Format to use when outputting time information, regardless of originally set formatting. */
+    private $enforced_time_format;
+
+    /** @var string Format to use when outputting datetime values, regardless of originally set formatting. */
+    private $enforced_datetime_format;
+
     /** @var array Cache for already processed format strings. */
     private $parsed_format_cache = array();
 
@@ -196,9 +206,17 @@ class Reader implements Iterator, Countable
         if (!empty($options['SharedStringsConfiguration'])) {
             $this->shared_strings_configuration = $options['SharedStringsConfiguration'];
         }
-
         if (!empty($options['CustomFormats'])) {
             $this->initCustomFormats($options['CustomFormats']);
+        }
+        if (!empty($options['ForceDateFormat'])) {
+            $this->enforced_date_format = $options['ForceDateFormat'];
+        }
+        if (!empty($options['ForceTimeFormat'])) {
+            $this->enforced_time_format = $options['ForceTimeFormat'];
+        }
+        if (!empty($options['ForceDateTimeFormat'])) {
+            $this->enforced_datetime_format = $options['ForceDateTimeFormat'];
         }
 
         $this->skip_empty_cells = !empty($options['SkipEmptyCells']);
@@ -819,7 +837,25 @@ class Reader implements Iterator, Countable
                 $value->add(new DateInterval('P' . $days . 'D' . ($seconds ? 'T' . $seconds . 'S' : '')));
 
                 if (!$this->return_date_time_objects) {
-                    $value = $value->format($format['Code']);
+                    // Determine if the format is a date/time/datetime format and apply enforced formatting accordingly
+                    $contains_date = preg_match('#[DdFjlmMnoStwWmYyz]#u', $format['Code']);
+                    $contains_time = preg_match('#[aABgGhHisuv]#u', $format['Code']);
+                    if ($contains_date) {
+                        if ($contains_time) {
+                            if ($this->enforced_datetime_format) {
+                                $value = $value->format($this->enforced_datetime_format);
+                            }
+                        } else if ($this->enforced_date_format) {
+                            $value = $value->format($this->enforced_date_format);
+                        }
+                    } else if ($this->enforced_time_format) {
+                        $value = $value->format($this->enforced_time_format);
+                    }
+
+                    if ($value instanceof DateTime) {
+                        // No format enforcement for this value type found. Format as declared.
+                        $value = $value->format($format['Code']);
+                    }
                 } // else: A DateTime object is returned
             } elseif ($format['Type'] === 'Euro') {
                 $value = 'EUR ' . sprintf('%1.2f', $value);
