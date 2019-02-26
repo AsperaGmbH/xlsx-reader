@@ -241,6 +241,12 @@ class Reader implements Iterator, Countable
             throw new RuntimeException('XLSXReader: File not readable (' . $file_path . ')');
         }
 
+        if (!mkdir($this->temp_dir, 0777, true) || !file_exists($this->temp_dir)) {
+            throw new RuntimeException(
+                'XLSXReader: Could neither create nor confirm existance of temporary directory (' . $this->temp_dir . ')'
+            );
+        }
+
         $zip = new ZipArchive;
         $status = $zip->open($file_path);
         if ($status !== true) {
@@ -1035,7 +1041,10 @@ class Reader implements Iterator, Countable
             $worksheet_path_zip = $worksheet->getOriginalPath();
             $worksheet_path_conv = str_replace(RelationshipData::ZIP_DIR_SEP, DIRECTORY_SEPARATOR, $worksheet_path_zip);
             $worksheet_path_unzipped = $this->temp_dir . $worksheet_path_conv;
-            $zip->extractTo($this->temp_dir, $worksheet_path_zip);
+            if (!$zip->extractTo($this->temp_dir, $worksheet_path_zip)) {
+                $message = 'XLSXReader: Could not extract file [' . $worksheet_path_zip . '] to directory [' . $this->temp_dir . '].';
+                $this->reportZipExtractionFailure($zip, $message);
+            }
             $worksheet->setAccessPath($worksheet_path_unzipped);
             $this->temp_files[] = $worksheet_path_unzipped;
         }
@@ -1072,7 +1081,11 @@ class Reader implements Iterator, Countable
             $path_to_extracted_file = $dir_of_extracted_file . $filename_of_extracted_file;
 
             // Extract file and note it in relevant variables
-            $zip->extractTo($this->temp_dir, $inzip_path);
+            if (!$zip->extractTo($this->temp_dir, $inzip_path)) {
+                $message = 'XLSXReader: Could not extract file [' . $inzip_path . '] to directory [' . $this->temp_dir . '].';
+                $this->reportZipExtractionFailure($zip, $message);
+            }
+
             $first_shared_string_element->setAccessPath($path_to_extracted_file);
             $this->temp_files[] = $path_to_extracted_file;
 
@@ -1087,6 +1100,7 @@ class Reader implements Iterator, Countable
             $this->temp_files = array_merge($this->temp_files, $this->shared_strings->getTempFiles());
         }
     }
+
     /**
      * Reads and prepares information on styles declared by the document for later usage.
      *
@@ -1181,5 +1195,29 @@ class Reader implements Iterator, Countable
             @rmdir($this->temp_dir . 'xl');
             @rmdir($this->temp_dir);
         }
+    }
+
+    /**
+     * Gather data on zip extractTo() fault and throw an appropriate Exception.
+     *
+     * @param   ZipArchive  $zip
+     * @param   string      $message    Optional error message to prefix the error details with.
+     *
+     * @throws  RuntimeException
+     */
+    private function reportZipExtractionFailure($zip, $message = '')
+    {
+        $status_code = $zip->status;
+        $status_message = $zip->getStatusString();
+        if ($status_code || $status_message) {
+            $message .= ' Status from ZipArchive:';
+            if ($status_code) {
+                $message .= ' Code [' . $status_code . '];';
+            }
+            if ($status_message) {
+                $message .= ' Message [' . $status_message . '];';
+            }
+        }
+        throw new RuntimeException($message);
     }
 }
