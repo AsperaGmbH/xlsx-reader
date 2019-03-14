@@ -1137,7 +1137,7 @@ class Reader implements Iterator, Countable
                         $current_scope_is_num_fmts = !$styles_reader->isClosingTag();
                         break;
                     case 'numFmt':
-                        if (!$current_scope_is_num_fmts) {
+                        if (!$current_scope_is_num_fmts || $styles_reader->isClosingTag()) {
                             break;
                         }
                         $format_code = (string) $styles_reader->getAttributeNsId('formatCode');
@@ -1150,7 +1150,7 @@ class Reader implements Iterator, Countable
                         $current_scope_is_cell_xfs = !$styles_reader->isClosingTag();
                         break;
                     case 'xf':
-                        if (!$current_scope_is_cell_xfs) {
+                        if (!$current_scope_is_cell_xfs || $styles_reader->isClosingTag()) {
                             break;
                         }
                         // Check if the found number format should actually be applied.
