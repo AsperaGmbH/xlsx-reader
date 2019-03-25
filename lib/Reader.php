@@ -470,6 +470,7 @@ class Reader implements Iterator, Countable
             if ($current_row_column_count > 0 && !$this->skip_empty_cells) {
                 $this->current_row = array_fill(0, $current_row_column_count, '');
             }
+            return $this->current_row;
         }
 
         // Variables for empty cell handling.
