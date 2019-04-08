@@ -123,6 +123,9 @@ class Reader implements Iterator, Countable
     /** @var bool Do not format date/time values and return DateTime objects instead. Default false. */
     private $return_date_time_objects;
 
+    /** @var bool Output XLSX-style column names instead of numeric column identifiers. Default false. */
+    private $output_column_names;
+
     /** @var bool Do not consider empty cell values in output. Default false. */
     private $skip_empty_cells;
 
@@ -221,6 +224,7 @@ class Reader implements Iterator, Countable
 
         $this->skip_empty_cells = !empty($options['SkipEmptyCells']);
         $this->return_date_time_objects = !empty($options['ReturnDateTimeObjects']);
+        $this->output_column_names = !empty($options['OutputColumnNames']);
 
         $this->initBaseDate();
         $this->initLocale();
@@ -404,7 +408,7 @@ class Reader implements Iterator, Countable
             $this->next();
         }
 
-        return $this->current_row;
+        return self::adjustRowOutput($this->current_row);
     }
 
     /**
@@ -447,7 +451,7 @@ class Reader implements Iterator, Countable
 
                 // Do not read further than here if the current 'row' node is not the one to be read
                 if ((int) $this->worksheet_reader->getAttributeNsId('r') !== $this->row_number) {
-                    return $this->current_row;
+                    return self::adjustRowOutput($this->current_row);
                 }
                 break;
             }
@@ -470,7 +474,7 @@ class Reader implements Iterator, Countable
             if ($current_row_column_count > 0 && !$this->skip_empty_cells) {
                 $this->current_row = array_fill(0, $current_row_column_count, '');
             }
-            return $this->current_row;
+            return self::adjustRowOutput($this->current_row);
         }
 
         // Variables for empty cell handling.
@@ -574,7 +578,7 @@ class Reader implements Iterator, Countable
             $this->current_row[] = null;
         }
 
-        return $this->current_row;
+        return self::adjustRowOutput($this->current_row);
     }
 
     /**
@@ -613,7 +617,6 @@ class Reader implements Iterator, Countable
      * Takes the column letter and converts it to a numerical index (0-based)
      *
      * @param   string  $letter Letter(s) to convert
-     *
      * @return  mixed   Numeric index (0-based) or boolean false if it cannot be calculated
      */
     public static function indexFromColumnLetter($letter)
@@ -633,11 +636,28 @@ class Reader implements Iterator, Countable
     }
 
     /**
+     * Converts the given column index to an XLSX-style [A-Z] column identifier string.
+     *
+     * @param   int $index
+     * @return  string
+     */
+    public static function columnLetterFromIndex($index)
+    {
+        $dividend = $index + 1; // Internal counting starts at 0; For easy calculation, it needs to start at 1.
+        $output_string = '';
+        while ($dividend > 0) {
+            $modulo = ($dividend - 1) % 26;
+            $output_string = chr($modulo + 65) . $output_string;
+            $dividend = floor(($dividend - $modulo) / 26);
+        }
+        return $output_string;
+    }
+
+    /**
      * Helper function for greatest common divisor calculation in case GMP extension is not enabled.
      *
      * @param   int $int_1
      * @param   int $int_2
-     *
      * @return  int Greatest common divisor
      */
     private static function GCD($int_1, $int_2)
@@ -657,6 +677,28 @@ class Reader implements Iterator, Countable
         }
 
         return $divisor;
+    }
+
+    /**
+     * If configured, replaces numeric column identifiers in output array with XLSX-style [A-Z] column identifiers.
+     * If not configured, returns the input array unchanged.
+     *
+     * @param   array $column_values
+     * @return  array
+     */
+    private function adjustRowOutput($column_values)
+    {
+        if (!$this->output_column_names) {
+            // Column names not desired in output; Nothing to do here.
+            return $column_values;
+        }
+
+        $column_values_with_keys = array();
+        foreach ($column_values as $k => $v) {
+            $column_values_with_keys[self::columnLetterFromIndex($k)] = $v;
+        }
+
+        return $column_values_with_keys;
     }
 
     /**
