@@ -77,12 +77,16 @@ foreach ($sheets as $index => $sheet_data) {
 $reader->close();
 ```
 
-As extra configuration options we have:
+Extra configuration options available when constructing a new Reader() object:
 - TempDir: provided temporary directory (used for unzipping all files like Styles.xml, Worksheet.xml...) must be writable and accessible by the XLSX Reader. 
 - SkipEmptyCells: will skip empty values within any cell. If an entire row does not contain any value, only one empty (NULL) entry will be returned. 
 - ReturnDateTimeObjects: will not return formatted date-time strings, DateTime objects instead.
 - SharedStringsConfiguration: explained in "Notes about library performance".
 - CustomFormats: matrix that will overwrite any format read by the parser. Array format must match the BUILT-IN formats list documented by Microsoft.
+- ForceDateFormat: A date format that will be used for all date values read from the document.
+- ForceTimeFormat: A time format that will be used for all time values read from the document.
+- ForceDateTimeFormat: A datetime format that will be used for all datetime values read from the document.
+- OutputColumnNames: If true, read data will be returned using alphabetical column indexes (A, B, AA, ZX, ...) instead of numeric indexes.
 
 If a sheet is changed to the same that is currently open, the position in the file still reverts to the beginning, so as to conform
 to the same behavior as when changed to a different sheet.

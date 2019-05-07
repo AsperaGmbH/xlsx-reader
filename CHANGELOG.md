@@ -1,9 +1,37 @@
+### v.0.7.4  2019-05-07
+- Added the option to use alphabetical column names (A, B, AA, ZX) instead of numeric indexes in returned row contents, using the parameter "OutputColumnNames".
+- Fixed a bug that caused leading zeros in text cell content to get removed if the cell was set to text via an apostrophe prefix.
+
+### v.0.7.3  2019-03-25
+- Fixed an issue that prevented empty rows from being properly output in all appropriate cases.
+
+### v.0.7.2  2019-03-14
+- Fixed an issue that caused format parsing to cease working for some files.
+
+### v.0.7.1  2019-02-27
+- New configuration parameters to control automatic re-formatting of found Date/Time values: forceDateFormat, forceTimeFormat, forceDateTimeFormat
+- Improved handling of potential errors when working with subdirectories of the configured temporary directory
+- Fixed composer.json lacking ext-xmlreader requirement
+
+### v.0.7.0  2019-02-05
+- Improved support for different XLSX file generators:
+  - Improved awareness of XML namespaces.
+- Improved support for newer OOXML editions:
+  - Namespace URIs from newer versions of the OOXML standard are now recognized and handled accordingly.
+- Dropped requirement for SimpleXMLElement.
+- Minor improvements in handling used document resources.
+
+### v.0.6.3  2018-12-04
+- Bugfix: Check if current row, that is to be read, is also the one which the read() function takes, return empty row if not.
+
+### v.0.6.2  2018-11-20
+- Bugfix: differentiate between internal sheet ID and positioning ordering of the sheet within the document
+
 ### v.0.6.1  2018-05-16
 - Removed unneccessary test files.
 - Minor code quality improvements.
 
 ### v.0.6.0  2018-05-01
-
 - Added option 'SkipEmptyCells' in order to consider or not possible empty values in cells. 
 - Added option 'CustomFormats' to define and overwrite format values.
 - Ensure deletion of temporary files after run.
