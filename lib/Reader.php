@@ -713,17 +713,19 @@ class Reader implements Iterator, Countable
     private function formatValue($value, $format_index)
     {
         if (!is_numeric($value)) {
+            // Only numeric values are formatted.
             return $value;
         }
 
         if (isset($this->styles[$format_index]) && ($this->styles[$format_index] !== false)) {
             $format_index = $this->styles[$format_index];
         } else {
+            // Invalid format_index or the style was explicitly declared as "don't format anything".
             return $value;
         }
 
-        // A special case for the "General" format
         if ($format_index === 0) {
+            // Special case for the "General" format
             return $this->generalFormat($value);
         }
 
@@ -1196,13 +1198,15 @@ class Reader implements Iterator, Countable
                         if (!$current_scope_is_cell_xfs || $styles_reader->isClosingTag()) {
                             break;
                         }
-                        // Check if the found number format should actually be applied.
                         if ($styles_reader->getAttributeNsId('applyNumberFormat')) {
+                            // Number formatting has been enabled for this format.
                             // If format ID >= 164, it is a custom format and should be read from styleSheet\numFmts
                             $this->styles[] = (int) $styles_reader->getAttributeNsId('numFmtId');
+                        } else if ($styles_reader->getAttributeNsId('quotePrefix')) {
+                            // "quotePrefix" automatically preceeds the cell content with a ' symbol. This enforces a text format.
+                            $this->styles[] = false; // false = "Do not format anything".
                         } else {
-                            // If not, use "General" format (ID: 0)
-                            $this->styles[] = 0;
+                            $this->styles[] = 0; // 0 = "General" format
                         }
                         break;
                 }
