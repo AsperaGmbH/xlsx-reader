@@ -381,7 +381,7 @@ class SharedStrings
                 // </si> - Write previously read string value to cache.
                 case 'si':
                     if (!$this->shared_strings_reader->isClosingTag()) {
-                        continue;
+                        break;
                     }
                     if ($write_to_cache) {
                         $cache_current_memory_byte = memory_get_usage(false) - $start_memory_byte;
