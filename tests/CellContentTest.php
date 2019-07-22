@@ -31,7 +31,7 @@ class CellContentTest extends TestCase
         $reader->close();
 
         self::assertSame(
-            array('', 'Value', '0123', '0123', '   '),
+            array('', 'Value', '0123', '0123', '   ', '268.02'),
             $output_cells,
             'The retrieved sheet content was not as expected.'
         );

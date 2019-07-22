@@ -960,7 +960,8 @@ class Reader implements Iterator, Countable
                         } else {
                             $value = sprintf($format['Pattern'], $value);
                         }
-                        $value = preg_replace('{(0+)(\.?)(0*)}', $value, $format['Code']);
+                        $format_code = preg_replace('{\[\$.*\]}', '', $format['Code']);
+                        $value = preg_replace('{(0+)(\.?)(0*)}', $value, $format_code);
                     }
                 }
 
