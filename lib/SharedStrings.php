@@ -141,7 +141,7 @@ class SharedStrings
         // Read from optimized files?
         if ($this->shared_strings_configuration->getUseOptimizedFiles()) {
             $result = $this->getStringFromOptimizedFile($target_index);
-            if ($result) {
+            if ($result !== null) {
                 return $result;
             }
         }
@@ -304,9 +304,7 @@ class SharedStrings
             $this->shared_strings_reader = null;
         }
 
-        if ($value) {
-            $this->last_shared_string_value = $value;
-        }
+        $this->last_shared_string_value = $value;
         return $value;
     }
 
