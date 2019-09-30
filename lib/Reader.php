@@ -885,7 +885,15 @@ class Reader implements Iterator, Countable
                 }
 
                 $value = clone self::$base_date;
-                $value->add(new DateInterval('P' . $days . 'D' . ($seconds ? 'T' . $seconds . 'S' : '')));
+                if ($days < 0) {
+                    // Negative value, subtract interval
+                    $days = abs($days) + 1;
+                    $seconds = abs($seconds);
+                    $value->sub(new DateInterval('P' . $days . 'D' . ($seconds ? 'T' . $seconds . 'S' : '')));
+                } else {
+                    // Positive value, add interval
+                    $value->add(new DateInterval('P' . $days . 'D' . ($seconds ? 'T' . $seconds . 'S' : '')));
+                }
 
                 if (!$this->return_date_time_objects) {
                     // Determine if the format is a date/time/datetime format and apply enforced formatting accordingly
