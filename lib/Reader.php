@@ -884,8 +884,9 @@ class Reader implements Iterator, Countable
                     $seconds = (int) round($time * 86400, 0);
                 }
 
+                $original_value = $value;
                 $value = clone self::$base_date;
-                if ($days < 0) {
+                if ($original_value < 0) {
                     // Negative value, subtract interval
                     $days = abs($days) + 1;
                     $seconds = abs($seconds);
@@ -1207,10 +1208,23 @@ class Reader implements Iterator, Countable
                         if (!$current_scope_is_cell_xfs || $styles_reader->isClosingTag()) {
                             break;
                         }
-                        if ($styles_reader->getAttributeNsId('applyNumberFormat')) {
+
+                        // Determine if number formatting is set for this cell.
+                        $num_fmt_id = null;
+                        if ($styles_reader->getAttributeNsId('numFmtId')) {
+                            $applyNumberFormat = $styles_reader->getAttributeNsId('applyNumberFormat');
+                            if ($applyNumberFormat === null || $applyNumberFormat === '1' || $applyNumberFormat === 'true') {
+                                /* Number formatting is enabled either implicitly ('applyNumberFormat' not given)
+                                 * or explicitly ('applyNumberFormat' is a true value). */
+                                $num_fmt_id = (int) $styles_reader->getAttributeNsId('numFmtId');
+                            }
+                        }
+
+                        // Determine and store correct formatting style.
+                        if ($num_fmt_id !== null) {
                             // Number formatting has been enabled for this format.
                             // If format ID >= 164, it is a custom format and should be read from styleSheet\numFmts
-                            $this->styles[] = (int) $styles_reader->getAttributeNsId('numFmtId');
+                            $this->styles[] = $num_fmt_id;
                         } else if ($styles_reader->getAttributeNsId('quotePrefix')) {
                             // "quotePrefix" automatically preceeds the cell content with a ' symbol. This enforces a text format.
                             $this->styles[] = false; // false = "Do not format anything".
