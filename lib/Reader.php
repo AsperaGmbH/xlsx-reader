@@ -173,16 +173,6 @@ class Reader implements Iterator, Countable
     }
 
     /**
-     * Set the currency character code to use for the output of locale-oriented formatted values
-     *
-     * @param string $new_character
-     */
-    public function setCurrencyCode($new_character)
-    {
-        $this->number_format->setCurrencyCode($new_character);
-    }
-
-    /**
      * Retrieves an array with information about sheets in the current file
      *
      * @return array List of sheets (key is sheet index, value is of type Worksheet). Sheet's index starts with 0.
@@ -735,7 +725,7 @@ class Reader implements Iterator, Countable
                             $xf_num_fmt_ids[] = $num_fmt_id;
                         } else if ($styles_reader->getAttributeNsId('quotePrefix')) {
                             // "quotePrefix" automatically prepends the cell content with a ' symbol. This enforces a text format.
-                            $xf_num_fmt_ids[] = false; // false = "Do not format anything".
+                            $xf_num_fmt_ids[] = null; // null = "Do not format anything".
                         } else {
                             $xf_num_fmt_ids[] = 0; // 0 = "General" format
                         }
