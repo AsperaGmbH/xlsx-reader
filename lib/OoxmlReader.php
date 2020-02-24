@@ -39,6 +39,12 @@ class OoxmlReader extends XMLReader
     /** @var string One of the NS_ constants that will be used if methods requiring a NsId for an attribute do not get one delivered. */
     private $default_namespace_identifier_attributes;
 
+    public function __construct()
+    {
+        $this->initNamespaceList();
+        // Note: No parent::__construct() - XMLReader does not have its own constructor.
+    }
+
     /**
      * Initialize $this->namespace_list.
      */
@@ -91,12 +97,6 @@ class OoxmlReader extends XMLReader
             throw new InvalidArgumentException('unknown namespace identifier [' . $namespace_identifier . ']');
         }
         $this->default_namespace_identifier_attributes = $namespace_identifier;
-    }
-
-    public function __construct()
-    {
-        $this->initNamespaceList();
-        // Note: No parent::__construct() - XMLReader does not have its own constructor.
     }
 
     /**

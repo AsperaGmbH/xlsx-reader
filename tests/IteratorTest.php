@@ -20,6 +20,9 @@ class IteratorTest extends PHPUnitTestCase
     /** @var XLSXReader */
     private $reader;
 
+    /**
+     * @throws Exception
+     */
     public function setUp()
     {
         $this->reader = new XLSXReader();
@@ -176,11 +179,11 @@ class IteratorTest extends PHPUnitTestCase
             array(),
             array(
                 '10000.4',
-                '10000.40 €',
+                '10,000.40 €',
                 '18/05/1927',
                 '05-19-27',
                 '9:36:00 AM',
-                '10000.4'
+                '- Wednesday 09:36 -'
             ),
             array(),
             array(
