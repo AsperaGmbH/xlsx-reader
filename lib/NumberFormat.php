@@ -232,11 +232,11 @@ class NumberFormat
     public function tryFormatValue($value, $xf_id)
     {
         if ($value !== '' && $xf_id && isset($this->xf_num_fmt_ids[$xf_id])) {
-            $value = $this->formatValue($value, $xf_id);
-        } elseif ($value === 0) {
-            $value = $this->generalFormat($value);
-        } // else: Do not format value, for example due to quotePrefix being set.
+            return $this->formatValue($value, $xf_id);
+        }
 
+        /* Do not format value, either because quotePrefix is set ($xf_id = null),
+         * or because "general" format should be applied ($xf_id = 0), which just outputs the value as-is. */
         return $value;
     }
 
@@ -294,11 +294,6 @@ class NumberFormat
         } else {
             // Invalid format_index or the style was explicitly declared as "don't format anything".
             return $value;
-        }
-
-        if ($xf_id === 0) {
-            // Special case for the "General" format
-            return $this->generalFormat($value);
         }
 
         // Get definition of format for the given format_index.
@@ -688,21 +683,6 @@ class NumberFormat
                 $this->customized_formats[$format_index] = $format;
             }
         }
-    }
-
-    /**
-     * Attempts to approximate Excel's "general" format.
-     *
-     * @param   mixed   $value
-     * @return  mixed
-     */
-    private function generalFormat($value)
-    {
-        if (is_numeric($value)) {
-            $value = (float) $value;
-        }
-
-        return $value;
     }
 
     /**
