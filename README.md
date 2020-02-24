@@ -80,7 +80,8 @@ $reader->close();
 Extra configuration options available when constructing a new Reader() object:
 - TempDir: provided temporary directory (used for unzipping all files like Styles.xml, Worksheet.xml...) must be writable and accessible by the XLSX Reader. 
 - SkipEmptyCells: will skip empty values within any cell. If an entire row does not contain any value, only one empty (NULL) entry will be returned. 
-- ReturnDateTimeObjects: will not return formatted date-time strings, DateTime objects instead.
+- ReturnUnformatted: will return numeric values without number formatting. (Exception: Date/Time values. Those are controlled by the ReturnDateTimeObjects parameter.)
+- ReturnDateTimeObjects: will return DateTime objects instead of formatted date-time strings.
 - SharedStringsConfiguration: explained in "Notes about library performance".
 - CustomFormats: matrix that will overwrite any format read by the parser. Array format must match the BUILT-IN formats list documented by Microsoft.
 - ForceDateFormat: A date format that will be used for all date values read from the document.

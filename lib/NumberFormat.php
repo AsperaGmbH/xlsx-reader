@@ -122,6 +122,9 @@ class NumberFormat
     /** @var string Thousands separator character for output of locally formatted values. */
     private $thousand_separator;
 
+    /** @var bool Do not format anything. Returns numbers as-is. (Note: Does not affect Date/Time values.) */
+    private $return_unformatted;
+
     /** @var bool Do not format date/time values and return DateTime objects instead. Default false. */
     private $return_date_time_objects;
 
@@ -172,6 +175,7 @@ class NumberFormat
         if (!empty($options['ForceDateTimeFormat'])) {
             $this->enforced_datetime_format = $options['ForceDateTimeFormat'];
         }
+        $this->return_unformatted = !empty($options['ReturnUnformatted']);
         $this->return_date_time_objects = !empty($options['ReturnDateTimeObjects']);
 
         $this->initLocale();
@@ -336,6 +340,11 @@ class NumberFormat
                     // Note: Should never happen. Exception is just to be safe.
                     throw new RuntimeException('Specific datetime_type for format_index [' . $xf_id . '] is unknown.');
             }
+        }
+
+        // If formatting is not desired, return value as-is.
+        if ($this->return_unformatted) {
+            return $value;
         }
 
         // Apply format to value, going token by token.
