@@ -235,8 +235,7 @@ class NumberFormat
             return $this->formatValue($value, $xf_id);
         }
 
-        /* Do not format value, either because quotePrefix is set ($xf_id = null),
-         * or because "general" format should be applied ($xf_id = 0), which just outputs the value as-is. */
+        /* Do not format value, no style set or quotePrefix is set. ($xf_id = null, starts at 1) */
         return $value;
     }
 
@@ -289,15 +288,17 @@ class NumberFormat
      */
     public function formatValue($value, $xf_id)
     {
+        $num_fmt_id = 0;
         if (isset($this->xf_num_fmt_ids[$xf_id]) && $this->xf_num_fmt_ids[$xf_id] !== null) {
-            $xf_id = $this->xf_num_fmt_ids[$xf_id];
-        } else {
-            // Invalid format_index or the style was explicitly declared as "don't format anything".
+            $num_fmt_id = $this->xf_num_fmt_ids[$xf_id];
+        }
+        if ($num_fmt_id === 0) {
+            // Invalid format_index or "general" format should be applied ($num_fmt_id = 0), which just outputs the value as-is.
             return $value;
         }
 
         // Get definition of format for the given format_index.
-        $section = $this->getFormatSectionForValue($value, $xf_id);
+        $section = $this->getFormatSectionForValue($value, $num_fmt_id);
 
         // If percentage values are expected, multiply value accordingly before formatting.
         if ($section->isPercentage()) {
@@ -333,7 +334,7 @@ class NumberFormat
                     break;
                 default:
                     // Note: Should never happen. Exception is just to be safe.
-                    throw new RuntimeException('Specific datetime_type for format_index [' . $xf_id . '] is unknown.');
+                    throw new RuntimeException('Specific datetime_type for format_index [' . $num_fmt_id . '] is unknown.');
             }
         }
 

@@ -12,6 +12,41 @@ use Aspera\Spreadsheet\XLSX\NumberFormat;
 class CustomNumberFormatTest extends TestCase
 {
     /**
+     * Tests if the "general" format is correctly identified and applied.
+     *
+     * @dataProvider provideValuesForGeneralFormat
+     *
+     * @param  string $value
+     *
+     * @throws Exception
+     */
+    public function testGeneralFormat($value)
+    {
+        $cell_format = new NumberFormat();
+        $cell_format->injectXfNumFmtIds(
+            array(456 => 0) // Fake xf
+        );
+        $actual_output = $cell_format->formatValue($value, 456); // Apply numFmt of fake xf
+        self::assertSame(
+            $value, // General format should never change anything about the input value.
+            $actual_output,
+            'Unexpected formatting result for value [' . $value . '] with general format (number format 0).'
+        );
+    }
+
+    /**
+     * @return array
+     */
+    public function provideValuesForGeneralFormat()
+    {
+        return array(
+            'number'  => array('123'),
+            'decimal' => array('123.45'),
+            'string'  => array('abc')
+        );
+    }
+
+    /**
      * @dataProvider provideFormats
      *
      * @param  string $value
