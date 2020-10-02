@@ -279,13 +279,13 @@ class Reader implements Iterator, Countable
 
                 $this->row_open = true;
 
-                /* Getting the row spanning area (stored as e.g., 1:12)
+                /* Getting the row spanning area (stored as e.g. "1:12", or more rarely, "1:3 6:8 11:12")
                  * so that the last cells will be present, even if empty. */
                 $row_spans = $this->worksheet_reader->getAttributeNsId('spans');
 
                 if ($row_spans) {
                     $row_spans = explode(':', $row_spans);
-                    $current_row_column_count = $row_spans[1];
+                    $current_row_column_count = array_pop($row_spans); // Always get the last segment, regardless of spans structure.
                 } else {
                     $current_row_column_count = 0;
                 }
@@ -313,7 +313,7 @@ class Reader implements Iterator, Countable
             $row_spans = $this->worksheet_reader->getAttributeNsId('spans');
             if ($row_spans) {
                 $row_spans = explode(':', $row_spans);
-                $current_row_column_count = $row_spans[1];
+                $current_row_column_count = array_pop($row_spans); // Always get the last segment, regardless of spans structure.
             } else {
                 $current_row_column_count = 0;
             }
