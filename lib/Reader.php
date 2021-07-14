@@ -53,8 +53,8 @@ class Reader implements Iterator, Countable
     /** @var bool Internal storage for the result of the valid() method related to the Iterator interface. */
     private $valid = false;
 
-    /** @var bool Whether the reader is currently looking at an element within a <row> node. */
-    private $row_open = false;
+    /** @var bool Whether the reader is currently pointing at a starting <row> node. */
+    private $reader_points_at_new_row = false;
 
     /** @var int Current row number in the file. */
     private $row_number = 0;
@@ -73,6 +73,8 @@ class Reader implements Iterator, Countable
      *          If true, row content will not contain empty cells
      *      - SharedStringsConfiguration (SharedStringsConfiguration)
      *          Configuration options to control shared string reading and caching behaviour
+     *      - OutputColumnNames (bool)
+     *          If true, output columns will use Excel-style column names (A-ZZ) instead of numbers as column keys.
      *
      * @throws Exception
      * @throws RuntimeException
@@ -236,7 +238,7 @@ class Reader implements Iterator, Countable
         $this->worksheet_reader->open($this->worksheet_path);
 
         $this->valid = true;
-        $this->row_open = false;
+        $this->reader_points_at_new_row = false;
         $this->current_row = false;
         $this->row_number = 0;
     }
@@ -267,59 +269,45 @@ class Reader implements Iterator, Countable
     public function next()
     {
         $this->row_number++;
-
         $this->current_row = array();
 
-        // Walk through the document until the beginning of the first spreadsheet row.
-        if (!$this->row_open) {
-            while ($this->valid = $this->worksheet_reader->read()) {
-                if (!$this->worksheet_reader->matchesElement('row')) {
-                    continue;
-                }
-
-                $this->row_open = true;
-
-                /* Getting the row spanning area (stored as e.g. "1:12", or more rarely, "1:3 6:8 11:12")
-                 * so that the last cells will be present, even if empty. */
-                $row_spans = $this->worksheet_reader->getAttributeNsId('spans');
-
-                if ($row_spans) {
-                    $row_spans = explode(':', $row_spans);
-                    $current_row_column_count = array_pop($row_spans); // Always get the last segment, regardless of spans structure.
-                } else {
-                    $current_row_column_count = 0;
-                }
-
-                // If configured: Return empty strings for empty values
-                if ($current_row_column_count > 0 && !$this->skip_empty_cells) {
-                    $this->current_row = array_fill(0, $current_row_column_count, '');
-                }
-
-                // Do not read further than here if the current 'row' node is not the one to be read
-                if ((int) $this->worksheet_reader->getAttributeNsId('r') !== $this->row_number) {
-                    return self::adjustRowOutput($this->current_row);
-                }
-                break;
-            }
-
-            // No (further) rows found for reading.
-            if (!$this->row_open) {
-                return array();
+        // Ensure that the read pointer is pointing at an opening <row> element.
+        while (!$this->reader_points_at_new_row && $this->valid = $this->worksheet_reader->read()) {
+            if ($this->worksheet_reader->matchesElement('row')) {
+                $this->reader_points_at_new_row = true;
             }
         }
+        if (!$this->reader_points_at_new_row) {
+            // No (further) rows found for reading.
+            return array();
+        }
 
-        // Do not read further than here if the current 'row' node is not the one to be read
+        /* Get the row spanning area (stored as e.g. "1:12", or more rarely, "1:3 6:8 11:12")
+         * so that the last cells will be present, even if empty. */
+        $row_spans = $this->worksheet_reader->getAttributeNsId('spans');
+        if ($row_spans) {
+            $row_spans = explode(':', $row_spans);
+            $current_row_column_count = array_pop($row_spans); // Always get the last segment, regardless of spans structure.
+        } else {
+            $current_row_column_count = 0;
+        }
+
+        // If configured: Return empty strings for empty values
+        if ($current_row_column_count > 0 && !$this->skip_empty_cells) {
+            $this->current_row = array_fill(0, $current_row_column_count, '');
+        }
+
         if ((int) $this->worksheet_reader->getAttributeNsId('r') !== $this->row_number) {
-            $row_spans = $this->worksheet_reader->getAttributeNsId('spans');
-            if ($row_spans) {
-                $row_spans = explode(':', $row_spans);
-                $current_row_column_count = array_pop($row_spans); // Always get the last segment, regardless of spans structure.
-            } else {
-                $current_row_column_count = 0;
-            }
-            if ($current_row_column_count > 0 && !$this->skip_empty_cells) {
-                $this->current_row = array_fill(0, $current_row_column_count, '');
-            }
+            // We just skipped over one or multiple empty row(s). Keep current reader state and return empty cells.
+            return self::adjustRowOutput($this->current_row);
+        }
+
+        // From here on out, successive next() calls must start with a read() for the next row.
+        $this->reader_points_at_new_row = false;
+
+        // Handle self-closing row tags (e.g. <row r="1"/>) caused by e.g. usage of thick borders in adjacent cells.
+        $this->worksheet_reader->moveToElement(); // Necessary for isEmptyElement to work correctly.
+        if ($this->worksheet_reader->isEmptyElement) {
             return self::adjustRowOutput($this->current_row);
         }
 
@@ -341,7 +329,6 @@ class Reader implements Iterator, Countable
                 // </row> tag: Finish row reading.
                 case 'row':
                     if ($this->worksheet_reader->isClosingTag()) {
-                        $this->row_open = false;
                         break 2;
                     }
                     break;
