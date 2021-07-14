@@ -15,7 +15,7 @@ use Aspera\Spreadsheet\XLSX\Reader;
  */
 class FilepartLocationTest extends TestCase
 {
-    const TEST_FILE = 'input_files/filepart_location_test.xlsx';
+    const TEST_FILE = __DIR__ . '/input_files/filepart_location_test.xlsx';
 
     /**
      * Attempt reading a file that has none of its files in the usual folders, except for the ones that absolutely require it.

@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 class TempDirTest extends PHPUnitTestCase
 {
     /** @var string FILE_PATH XLSX File to be used for testing. */
-    const FILE_PATH = 'input_files/iterator_test.xlsx';
+    const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
 
     /** @var string TEMP_DIR_NAME Directory name of the temporary work directory. */
     const TEMP_DIR_NAME = 'temp_new_folder';

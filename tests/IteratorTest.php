@@ -15,7 +15,7 @@ use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
  */
 class IteratorTest extends PHPUnitTestCase
 {
-    const FILE_PATH = 'input_files\iterator_test.xlsx';
+    const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
 
     /** @var XLSXReader */
     private $reader;

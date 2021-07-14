@@ -15,7 +15,7 @@ use Aspera\Spreadsheet\XLSX\Reader;
  */
 class DateFormatTest extends TestCase
 {
-    const TEST_FILE = 'input_files/date_format_test.xlsx';
+    const TEST_FILE = __DIR__ . '/input_files/date_format_test.xlsx';
 
     /**
      * Enforce some date/time formats and check whether the reader acts accordingly.

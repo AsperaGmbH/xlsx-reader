@@ -16,7 +16,7 @@ use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
  */
 class SheetTest extends PHPUnitTestCase
 {
-    const FILE_PATH = 'input_files\multiple_sheets_test.xlsx';
+    const FILE_PATH = __DIR__ . '/input_files/multiple_sheets_test.xlsx';
 
     /** @var XLSXReader */
     private $reader;

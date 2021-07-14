@@ -10,7 +10,7 @@ use Aspera\Spreadsheet\XLSX\Reader;
 
 class CellContentTest extends TestCase
 {
-    const TEST_FILE = 'input_files/cell_content_test.xlsx';
+    const TEST_FILE = __DIR__ . '/input_files/cell_content_test.xlsx';
 
     /**
      * Check if potentially problematic values are read correctly.

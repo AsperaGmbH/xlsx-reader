@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
 class SharedStringsTest extends TestCase
 {
     /** @var string FILE_PATH Path to the test file. */
-    const FILE_PATH = 'input_files/shared_strings_test.xlsx';
+    const FILE_PATH = __DIR__ . '/input_files/shared_strings_test.xlsx';
 
     /** @var int SHARED_STRING_ENTRY_COUNT Total number of shared strings in the test file's shared string list. */
     const SHARED_STRING_ENTRY_COUNT = 25005;
