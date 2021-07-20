@@ -2,14 +2,14 @@
   "name": "aspera/xlsx-reader",
   "description": "Spreadsheet reader library for Microsoft Excel XLSX files",
   "keywords": ["spreadsheet", "xls", "xlsx", "excel"],
-  "homepage": "https://bitbucket-prod.aspera.usu.grp/projects/SMARTTRACK/repos/xlsx-reader/",
+  "homepage": "https://github.com/AsperaGmbH/xlsx-reader/",
   "type": "library",
   "license": ["MIT"],
   "authors": [
     {
-      "name": "Aspera GmbH",
-      "email": "info@aspera.com",
-      "homepage": "https://www.aspera.com"
+      "name": "USU Technologies GmbH",
+      "email": "info@usu.com",
+      "homepage": "https://www.usu.com/"
     },
     {
       "name": "Martins Pilsetnieks",
@@ -18,7 +18,7 @@
     }
   ],
   "support": {
-    "email": "info@aspera.com"
+    "email": "info@usu.com"
   },
   "require": {
     "php": ">= 5.6.0",

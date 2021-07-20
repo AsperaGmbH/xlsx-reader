@@ -1,3 +1,48 @@
+### v.0.9.0  2021-07-20
+Breaking changes:
+- Reader configuration options must now be supplied to the Reader constructor via a ReaderConfiguration instance.
+  Supplying configuration options via an array is no longer supported.
+- When the "ReturnUnformatted" option is set, percentage values are now returned as strings instead of numbers.
+  This aligns their behavior with that of other values.
+- setDecimalSeparator() and setThousandsSeparator() methods have been removed, as they no longer had any function.
+- Forced date/time format '' (empty string) gets interpreted correctly now.
+
+Non-breaking changes:
+- New configuration option "ReturnPercentageDecimal".
+  When set to true, percentage values will be returned using their technical, internal representation ('50%' => '0.5')
+  rather than how they are displayed within a document ('50%' => '50').
+- Remove unnecessary restriction of custom formats to predetermined formats from the official specification documents.
+- SharedStringsConfiguration calls can now be chained.
+- Fix potential resource leaks caused by not closing reader instances.
+- Update README.md to reflect the current code state.
+
+### v.0.8.2  2021-07-14
+- Added support for empty rows with attributes (or: self-closing row tags).
+- Minor improvement of test handling.
+
+### v.0.8.1  2020-10-05
+- Added support for multi-range row span values, fixing issues caused by sheets that use them.
+
+### v.0.8.0  2020-03-09
+Breaking changes:
+- Public-facing method "setCurrencyCode" has been removed, as the currency_code value had no effect to begin with.
+
+Non-breaking changes:
+- New configuration option "ReturnUnformatted". If set to true, cell values will be returned without number formatting applied. (Note: Date/Time values are still controlled by the "ReturnDateTimeObjects" option.)
+- Number format parsing has been improved. The reader is now capable of parsing more complex number formats.
+- General format now outputs cell values as-is, instead of attempting to cast them to a float.
+
+### v.0.7.7  2019-10-08
+- Fixed issues regarding negative date/time values, causing very early date definitions to lead to unexpected errors.
+- Fixed number formatting not being applied in all expected cases.
+
+### v.0.7.6  2019-09-11
+- Fixed a bug that caused empty shared strings to be treated incorrectly under certain conditions.
+
+### v.0.7.5  2019-07-23
+- Fixed a bug that caused cell formats making use of currency strings and language ids to break.
+- Fixed a "continue in switch" warning in PHP 7.3.
+
 ### v.0.7.4  2019-05-07
 - Added the option to use alphabetical column names (A, B, AA, ZX) instead of numeric indexes in returned row contents, using the parameter "OutputColumnNames".
 - Fixed a bug that caused leading zeros in text cell content to get removed if the cell was set to text via an apostrophe prefix.
