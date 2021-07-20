@@ -4,19 +4,16 @@ namespace Aspera\Spreadsheet\XLSX\Tests;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use Exception;
 use ReflectionClass;
 use ReflectionException;
-use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
+use Aspera\Spreadsheet\XLSX\Reader;
+use Aspera\Spreadsheet\XLSX\ReaderConfiguration;
 use Aspera\Spreadsheet\XLSX\SharedStrings;
 use Aspera\Spreadsheet\XLSX\SharedStringsConfiguration;
 use PHPUnit\Framework\TestCase;
 
-
-/**
- * Test shared/inline string behaviour and configuration.
- *
- * @author Aspera GmbH
- */
+/** Test shared/inline string behaviour and configuration. */
 class SharedStringsTest extends TestCase
 {
     /** @var string FILE_PATH Path to the test file. */
@@ -47,18 +44,17 @@ class SharedStringsTest extends TestCase
      *
      * @param bool $use_cache
      * @param bool $use_optimized_files
-     * @throws \Exception
+     *
+     * @throws Exception
      */
     public function testValues($use_cache, $use_optimized_files)
     {
-        // Initialize reader
-        $shared_strings_config = new SharedStringsConfiguration();
-        $shared_strings_config->setUseCache($use_cache);
-        $shared_strings_config->setUseOptimizedFiles($use_optimized_files);
-        $shared_strings_config->setCacheSizeKilobyte(self::CACHE_MAX_SIZE_KB);
-        $xlsx_reader = new XLSXReader(array(
-            'SharedStringsConfiguration' => $shared_strings_config
-        ));
+        $xlsx_reader = new Reader((new ReaderConfiguration())
+            ->setSharedStringsConfiguration((new SharedStringsConfiguration())
+                ->setUseCache($use_cache)
+                ->setUseOptimizedFiles($use_optimized_files)
+                ->setCacheSizeKilobyte(self::CACHE_MAX_SIZE_KB))
+        );
 
         $xlsx_reader->open(self::FILE_PATH);
 
@@ -88,9 +84,10 @@ class SharedStringsTest extends TestCase
      *
      * @dataProvider dataProviderForTestMemoryConfiguration
      *
-     * @param $use_cache
-     * @param $use_large_cache
-     * @throws ReflectionException
+     * @param bool $use_cache
+     * @param bool $use_large_cache
+     *
+     * @throws Exception
      */
     public function testMemoryConfiguration($use_cache, $use_large_cache)
     {
@@ -113,12 +110,12 @@ class SharedStringsTest extends TestCase
         }
 
         // Initialize reader
-        $shared_strings_config = new SharedStringsConfiguration();
-        $shared_strings_config->setUseCache($use_cache);
-        $shared_strings_config->setCacheSizeKilobyte($cache_size_kb);
-        $xlsx_reader = new XLSXReader(array(
-            'SharedStringsConfiguration' => $shared_strings_config
-        ));
+        $xlsx_reader = new Reader((new ReaderConfiguration())
+            ->setSharedStringsConfiguration((new SharedStringsConfiguration())
+                ->setUseCache($use_cache)
+                ->setCacheSizeKilobyte($cache_size_kb)
+            )
+        );
         $xlsx_reader->open(self::FILE_PATH);
 
         // Get shared strings cache from shared strings object
@@ -171,7 +168,8 @@ class SharedStringsTest extends TestCase
      *
      * @param bool $use_optimized_files
      * @param bool $use_many_entries_per_file
-     * @throws ReflectionException
+     *
+     * @throws Exception
      */
     public function testOptimizedFileConfiguration($use_optimized_files, $use_many_entries_per_file)
     {
@@ -180,13 +178,13 @@ class SharedStringsTest extends TestCase
         $expected_file_count = ceil(self::SHARED_STRING_ENTRY_COUNT / $entries_per_file);
 
         // Initialize reader
-        $shared_strings_config = new SharedStringsConfiguration();
-        $shared_strings_config->setUseCache(false);
-        $shared_strings_config->setUseOptimizedFiles($use_optimized_files);
-        $shared_strings_config->setOptimizedFileEntryCount($entries_per_file);
-        $xlsx_reader = new XLSXReader(array(
-            'SharedStringsConfiguration' => $shared_strings_config
-        ));
+        $xlsx_reader = new Reader((new ReaderConfiguration())
+            ->setSharedStringsConfiguration((new SharedStringsConfiguration())
+                ->setUseCache(false)
+                ->setUseOptimizedFiles($use_optimized_files)
+                ->setOptimizedFileEntryCount($entries_per_file)
+            )
+        );
         $xlsx_reader->open(self::FILE_PATH);
 
         // Get optimized shared strings file list from shared strings object

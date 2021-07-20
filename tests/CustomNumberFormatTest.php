@@ -7,6 +7,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Aspera\Spreadsheet\XLSX\NumberFormat;
+use Aspera\Spreadsheet\XLSX\ReaderConfiguration;
 
 /** Check whether number formatting works properly for all sorts of custom formats. */
 class CustomNumberFormatTest extends TestCase
@@ -22,7 +23,7 @@ class CustomNumberFormatTest extends TestCase
      */
     public function testGeneralFormat($value)
     {
-        $cell_format = new NumberFormat();
+        $cell_format = new NumberFormat(new ReaderConfiguration());
         $cell_format->injectXfNumFmtIds(
             array(456 => 0) // Fake xf
         );
@@ -57,7 +58,7 @@ class CustomNumberFormatTest extends TestCase
      */
     public function testFormat($value, $format, $expected_output)
     {
-        $cell_format = new NumberFormat();
+        $cell_format = new NumberFormat(new ReaderConfiguration());
         $cell_format->injectXfNumFmtIds(
             array(456 => 789) // Fake xf
         );

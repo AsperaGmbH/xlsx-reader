@@ -9,28 +9,23 @@ use ZipArchive;
 use Exception;
 use InvalidArgumentException;
 
-/**
- * Class for parsing XLSX files.
- *
- * @author Aspera GmbH
- * @author Martins Pilsetnieks
- */
+/** Class for reading XLSX file contents. */
 class Reader implements Iterator, Countable
 {
     /** @var NumberFormat */
     private $number_format;
 
-    /** @var SharedStringsConfiguration Configuration of shared strings handling. */
-    private $shared_strings_configuration = null;
+    /** @var ReaderConfiguration */
+    private $configuration;
 
-    /** @var bool Output XLSX-style column names instead of numeric column identifiers. Default false. */
-    private $output_column_names;
-
-    /** @var bool Do not consider empty cell values in output. Default false. */
-    private $skip_empty_cells;
-
-    /** @var string Full path of the temporary directory that is going to be used to store unzipped files. */
-    private $temp_dir;
+    /**
+     * Full path to the directory that should be used for all file operations.
+     * Not to be confused with ReaderConfiguration::$temp_dir, which is the user-supplied temporary directory,
+     * which is a parent directory of $temp_dir_reader.
+     *
+     * @var string
+     */
+    private $temp_dir_reader = '';
 
     /** @var array Temporary files created while reading the document. */
     private $temp_files = array();
@@ -63,40 +58,24 @@ class Reader implements Iterator, Countable
     private $current_row = false;
 
     /**
-     * @param array $options Reader configuration; Permitted values:
-     *      - TempDir (string)
-     *          Path to directory to write temporary work files to
-     *      - ReturnDateTimeObjects (bool)
-     *          If true, date/time data will be returned as PHP DateTime objects.
-     *          Otherwise, they will be returned as strings.
-     *      - SkipEmptyCells (bool)
-     *          If true, row content will not contain empty cells
-     *      - SharedStringsConfiguration (SharedStringsConfiguration)
-     *          Configuration options to control shared string reading and caching behaviour
-     *      - OutputColumnNames (bool)
-     *          If true, output columns will use Excel-style column names (A-ZZ) instead of numbers as column keys.
+     * @param array $configuration Reader configuration. See documentation of ReaderConfiguration for details.
      *
-     * @throws Exception
      * @throws RuntimeException
      */
-    public function __construct(array $options = null)
+    public function __construct(ReaderConfiguration $configuration = null)
     {
-        if (!isset($options['TempDir'])) {
-            $options['TempDir'] = null;
+        if (!isset($configuration)) {
+            $configuration = new ReaderConfiguration();
         }
-        $this->initTempDir($options['TempDir']);
+        $this->configuration = $configuration;
+        $this->number_format = new NumberFormat($configuration);
 
-        $this->number_format = new NumberFormat($options);
+        $this->initTempDir($configuration->getTempDir());
+    }
 
-        if (!empty($options['SharedStringsConfiguration'])) {
-            if (!($options['SharedStringsConfiguration'] instanceof SharedStringsConfiguration)) {
-                throw new InvalidArgumentException('SharedStringsConfiguration has an invalid type.');
-            }
-            $this->shared_strings_configuration = $options['SharedStringsConfiguration'];
-        }
-
-        $this->skip_empty_cells = !empty($options['SkipEmptyCells']);
-        $this->output_column_names = !empty($options['OutputColumnNames']);
+    public function __destruct()
+    {
+        $this->close();
     }
 
     /**
@@ -112,9 +91,9 @@ class Reader implements Iterator, Countable
             throw new RuntimeException('XLSXReader: File not readable (' . $file_path . ')');
         }
 
-        if (!mkdir($this->temp_dir, 0777, true) || !file_exists($this->temp_dir)) {
+        if (!mkdir($this->temp_dir_reader, 0777, true) || !file_exists($this->temp_dir_reader)) {
             throw new RuntimeException(
-                'XLSXReader: Could neither create nor confirm existance of temporary directory (' . $this->temp_dir . ')'
+                'XLSXReader: Could neither create nor confirm existance of temporary directory (' . $this->temp_dir_reader . ')'
             );
         }
 
@@ -127,7 +106,7 @@ class Reader implements Iterator, Countable
         $this->relationship_data = new RelationshipData($zip);
         $this->initWorkbookData($zip);
         $this->initWorksheets($zip);
-        $this->initSharedStrings($zip, $this->shared_strings_configuration);
+        $this->initSharedStrings($zip, $this->configuration->getSharedStringsConfiguration());
         $this->initStyles($zip);
 
         $zip->close();
@@ -293,7 +272,7 @@ class Reader implements Iterator, Countable
         }
 
         // If configured: Return empty strings for empty values
-        if ($current_row_column_count > 0 && !$this->skip_empty_cells) {
+        if ($current_row_column_count > 0 && !$this->configuration->getSkipEmptyCells()) {
             $this->current_row = array_fill(0, $current_row_column_count, '');
         }
 
@@ -361,7 +340,7 @@ class Reader implements Iterator, Countable
                     $style_id = (int) $this->worksheet_reader->getAttributeNsId('s');
 
                     // If configured: Return empty strings for empty values.
-                    if (!$this->skip_empty_cells) {
+                    if (!$this->configuration->getSkipEmptyCells()) {
                         $this->current_row[$cell_index] = '';
                     }
                     break;
@@ -380,7 +359,7 @@ class Reader implements Iterator, Countable
                     }
 
                     // Skip empty values when specified as early as possible
-                    if ($value === '' && $this->skip_empty_cells) {
+                    if ($value === '' && $this->configuration->getSkipEmptyCells()) {
                         break;
                     }
 
@@ -398,12 +377,12 @@ class Reader implements Iterator, Countable
 
         /* If configured: Return empty strings for empty values.
          * Only empty cells inbetween and on the left side are added. */
-        if (($max_index + 1 > $cell_count) && !$this->skip_empty_cells) {
+        if (($max_index + 1 > $cell_count) && !$this->configuration->getSkipEmptyCells()) {
             $this->current_row += array_fill(0, $max_index + 1, '');
             ksort($this->current_row);
         }
 
-        if (empty($this->current_row) && $this->skip_empty_cells) {
+        if (empty($this->current_row) && $this->configuration->getSkipEmptyCells()) {
             $this->current_row[] = null;
         }
 
@@ -491,7 +470,7 @@ class Reader implements Iterator, Countable
      */
     private function adjustRowOutput($column_values)
     {
-        if (!$this->output_column_names) {
+        if (!$this->configuration->getOutputColumnNames()) {
             // Column names not desired in output; Nothing to do here.
             return $column_values;
         }
@@ -509,18 +488,17 @@ class Reader implements Iterator, Countable
      * A new folder will be created within the given directory, which will contain all work files,
      * and which will be cleaned up after the process have finished.
      *
-     * @param string|null $base_temp_dir
+     * @param string $base_temp_dir
      */
-    private function initTempDir($base_temp_dir) {
-        if ($base_temp_dir === null) {
-            $base_temp_dir = sys_get_temp_dir();
-        }
+    private function initTempDir($base_temp_dir)
+    {
         if (!is_writable($base_temp_dir)) {
-            throw new RuntimeException('XLSXReader: Provided temporary directory (' . $base_temp_dir . ') is not writable');
+            throw new RuntimeException('XLSXReader: Temporary directory (' . $base_temp_dir . ') is not writable');
         }
         $base_temp_dir = rtrim($base_temp_dir, DIRECTORY_SEPARATOR);
+
         /** @noinspection NonSecureUniqidUsageInspection */
-        $this->temp_dir = $base_temp_dir . DIRECTORY_SEPARATOR . uniqid() . DIRECTORY_SEPARATOR;
+        $this->temp_dir_reader = $base_temp_dir . DIRECTORY_SEPARATOR . uniqid() . DIRECTORY_SEPARATOR;
     }
 
     /**
@@ -578,9 +556,9 @@ class Reader implements Iterator, Countable
             /** @var RelationshipElement $worksheet */
             $worksheet_path_zip = $worksheet->getOriginalPath();
             $worksheet_path_conv = str_replace(RelationshipData::ZIP_DIR_SEP, DIRECTORY_SEPARATOR, $worksheet_path_zip);
-            $worksheet_path_unzipped = $this->temp_dir . $worksheet_path_conv;
-            if (!$zip->extractTo($this->temp_dir, $worksheet_path_zip)) {
-                $message = 'XLSXReader: Could not extract file [' . $worksheet_path_zip . '] to directory [' . $this->temp_dir . '].';
+            $worksheet_path_unzipped = $this->temp_dir_reader . $worksheet_path_conv;
+            if (!$zip->extractTo($this->temp_dir_reader, $worksheet_path_zip)) {
+                $message = 'XLSXReader: Could not extract file [' . $worksheet_path_zip . '] to directory [' . $this->temp_dir_reader . '].';
                 $this->reportZipExtractionFailure($zip, $message);
             }
             $worksheet->setAccessPath($worksheet_path_unzipped);
@@ -598,11 +576,11 @@ class Reader implements Iterator, Countable
      * and potentially create temporary work files for easy retrieval of shared string data.
      *
      * @param ZipArchive                 $zip
-     * @param SharedStringsConfiguration $shared_strings_configuration Optional, default null
+     * @param SharedStringsConfiguration $shared_strings_configuration
      */
     private function initSharedStrings(
         ZipArchive $zip,
-        SharedStringsConfiguration $shared_strings_configuration = null
+        SharedStringsConfiguration $shared_strings_configuration
     ) {
         $shared_strings = $this->relationship_data->getSharedStrings();
         if (count($shared_strings) > 0) {
@@ -614,13 +592,14 @@ class Reader implements Iterator, Countable
             // Determine target directory and path for the extracted file
             $inzip_path = $first_shared_string_element->getOriginalPath();
             $inzip_path_for_outzip = str_replace(RelationshipData::ZIP_DIR_SEP, DIRECTORY_SEPARATOR, $inzip_path);
-            $dir_of_extracted_file = $this->temp_dir . dirname($inzip_path_for_outzip) . DIRECTORY_SEPARATOR;
+            $dir_of_extracted_file = $this->temp_dir_reader . dirname($inzip_path_for_outzip) . DIRECTORY_SEPARATOR;
             $filename_of_extracted_file = basename($inzip_path_for_outzip);
             $path_to_extracted_file = $dir_of_extracted_file . $filename_of_extracted_file;
 
             // Extract file and note it in relevant variables
-            if (!$zip->extractTo($this->temp_dir, $inzip_path)) {
-                $message = 'XLSXReader: Could not extract file [' . $inzip_path . '] to directory [' . $this->temp_dir . '].';
+            if (!$zip->extractTo($this->temp_dir_reader, $inzip_path)) {
+                $message = 'XLSXReader: Could not extract file [' . $inzip_path . ']'
+                    . ' to directory [' . $this->temp_dir_reader . '].';
                 $this->reportZipExtractionFailure($zip, $message);
             }
 
@@ -736,10 +715,10 @@ class Reader implements Iterator, Countable
         }
 
         // Better safe than sorry - shouldn't try deleting '.' or '/', or '..'.
-        if (strlen($this->temp_dir) > 2) {
-            @rmdir($this->temp_dir . 'xl' . DIRECTORY_SEPARATOR . 'worksheets');
-            @rmdir($this->temp_dir . 'xl');
-            @rmdir($this->temp_dir);
+        if (strlen($this->temp_dir_reader) > 2) {
+            @rmdir($this->temp_dir_reader . 'xl' . DIRECTORY_SEPARATOR . 'worksheets');
+            @rmdir($this->temp_dir_reader . 'xl');
+            @rmdir($this->temp_dir_reader);
         }
     }
 

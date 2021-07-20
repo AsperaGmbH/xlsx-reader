@@ -5,14 +5,11 @@ namespace Aspera\Spreadsheet\XLSX\Tests;
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Exception;
-use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
+use Aspera\Spreadsheet\XLSX\Reader;
+use Aspera\Spreadsheet\XLSX\ReaderConfiguration;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 
-/**
- * Test temporary work directory functionality
- *
- * @author Aspera GmbH
- */
+/** Test temporary work directory functionality */
 class TempDirTest extends PHPUnitTestCase
 {
     /** @var string FILE_PATH XLSX File to be used for testing. */
@@ -21,7 +18,7 @@ class TempDirTest extends PHPUnitTestCase
     /** @var string TEMP_DIR_NAME Directory name of the temporary work directory. */
     const TEMP_DIR_NAME = 'temp_new_folder';
 
-    /** @var XLSXReader $reader Reader used by all tests in this test class. */
+    /** @var Reader $reader Reader used by all tests in this test class. */
     private static $reader;
 
     /**
@@ -34,9 +31,9 @@ class TempDirTest extends PHPUnitTestCase
         // Create target directory and configure reader to use it.
         $temp_dir_path = self::getTempDirPath();
         @mkdir($temp_dir_path);
-        self::$reader = new XLSXReader(array(
-            'TempDir' => $temp_dir_path
-        ));
+        self::$reader = new Reader((new ReaderConfiguration())
+            ->setTempDir($temp_dir_path)
+        );
         self::$reader->open(self::FILE_PATH);
     }
 

@@ -5,11 +5,7 @@ namespace Aspera\Spreadsheet\XLSX;
 use RuntimeException;
 use SplFixedArray;
 
-/**
- * Class to handle strings inside of XLSX files which are put to a specific shared strings file.
- *
- * @author Aspera GmbH
- */
+/** Class to handle strings inside of XLSX files which are put to a specific shared strings file. */
 class SharedStrings
 {
     /**
@@ -66,9 +62,9 @@ class SharedStrings
     public function __construct(
         $shared_strings_directory,
         $shared_strings_filename,
-        SharedStringsConfiguration $shared_strings_configuration = null
+        SharedStringsConfiguration $shared_strings_configuration
     ) {
-        $this->shared_strings_configuration = $shared_strings_configuration ?: new SharedStringsConfiguration();
+        $this->shared_strings_configuration = $shared_strings_configuration;
         $this->shared_strings_directory = $shared_strings_directory;
         $this->shared_strings_filename = $shared_strings_filename;
         if (is_readable($this->shared_strings_directory . $this->shared_strings_filename)) {

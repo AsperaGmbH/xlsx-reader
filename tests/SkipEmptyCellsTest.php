@@ -7,13 +7,10 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Exception;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Aspera\Spreadsheet\XLSX\Worksheet;
-use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
+use Aspera\Spreadsheet\XLSX\Reader;
+use Aspera\Spreadsheet\XLSX\ReaderConfiguration;
 
-/**
- * Make sure the SkipEmptyCells option works how it should.
- *
- * @author Aspera GmbH
- */
+/** Make sure the SkipEmptyCells option works how it should. */
 class SkipEmptyCellsTest extends PHPUnitTestCase
 {
     const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
@@ -30,11 +27,9 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
      */
     public function testSkipEmptyCellsOption($skip_empty_cells, $exp_num_cols)
     {
-        $options = array(
-            'SkipEmptyCells' => $skip_empty_cells
+        $reader = new Reader((new ReaderConfiguration())
+            ->setSkipEmptyCells($skip_empty_cells)
         );
-
-        $reader = new XLSXReader($options);
         $reader->open(self::FILE_PATH);
 
         $sheet_index = null;

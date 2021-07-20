@@ -7,6 +7,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Aspera\Spreadsheet\XLSX\Reader;
+use Aspera\Spreadsheet\XLSX\ReaderConfiguration;
 
 class CellContentTest extends TestCase
 {
@@ -20,9 +21,9 @@ class CellContentTest extends TestCase
      */
     public function testCellContent()
     {
-        $reader = new Reader(array(
-            'OutputColumnNames' => true
-        ));
+        $reader = new Reader((new ReaderConfiguration())
+            ->setOutputColumnNames(true)
+        );
         $reader->open(self::TEST_FILE);
         $output_cells = array();
         while ($row = $reader->next()) {

@@ -116,33 +116,11 @@ class NumberFormat
     /** @var DateTime Standardized base date for the document's date/time values. */
     private static $base_date;
 
-    /** @var string Decimal separator character for output of locally formatted values. */
-    private $decimal_separator;
-
-    /** @var string Thousands separator character for output of locally formatted values. */
-    private $thousand_separator;
-
-    /** @var bool Do not format anything. Returns numbers as-is. (Note: Does not affect Date/Time values.) */
-    private $return_unformatted;
-
-    /** @var bool Do not format date/time values and return DateTime objects instead. Default false. */
-    private $return_date_time_objects;
-
-    /** @var string Format to use when outputting dates, regardless of originally set formatting.
-     *              (Note: Will also be used if the original formatting omits time information, but the data value contains time information.) */
-    private $enforced_date_format;
-
-    /** @var string Format to use when outputting time information, regardless of originally set formatting. */
-    private $enforced_time_format;
-
-    /** @var string Format to use when outputting datetime values, regardless of originally set formatting. */
-    private $enforced_datetime_format;
+    /** @var ReaderConfiguration */
+    private $configuration;
 
     /** @var array List of number formats defined by the current XLSX file; array key = format index */
     private $number_formats = array();
-
-    /** @var array List of custom formats defined by the user; array key = format index */
-    private $customized_formats = array();
 
     /**
      * "numFmtId" attribute values of all cellXfs > xf elements.
@@ -157,29 +135,11 @@ class NumberFormat
     private $parsed_format_cache = array();
 
     /**
-     * @param  array $options
-     *
-     * @throws Exception
+     * @param ReaderConfiguration $configuration
      */
-    public function __construct($options = array())
+    public function __construct($configuration)
     {
-        if (!empty($options['CustomFormats'])) {
-            $this->initCustomFormats($options['CustomFormats']);
-        }
-        if (!empty($options['ForceDateFormat'])) {
-            $this->enforced_date_format = $options['ForceDateFormat'];
-        }
-        if (!empty($options['ForceTimeFormat'])) {
-            $this->enforced_time_format = $options['ForceTimeFormat'];
-        }
-        if (!empty($options['ForceDateTimeFormat'])) {
-            $this->enforced_datetime_format = $options['ForceDateTimeFormat'];
-        }
-        $this->return_unformatted = !empty($options['ReturnUnformatted']);
-        $this->return_date_time_objects = !empty($options['ReturnDateTimeObjects']);
-
-        $this->initLocale();
-
+        $this->configuration = $configuration;
         self::initBaseDate();
         self::$gmp_gcd_available = function_exists('gmp_gcd');
     }
@@ -198,28 +158,6 @@ class NumberFormat
     public function injectNumberFormats($number_formats)
     {
         $this->number_formats = $number_formats;
-    }
-
-    /**
-     * @param string $decimal_separator
-     */
-    public function setDecimalSeparator($decimal_separator)
-    {
-        if (!is_string($decimal_separator)) {
-            throw new InvalidArgumentException('Given argument is not a string.');
-        }
-        $this->decimal_separator = $decimal_separator;
-    }
-
-    /**
-     * @param string $thousand_separator
-     */
-    public function setThousandsSeparator($thousand_separator)
-    {
-        if (!is_string($thousand_separator)) {
-            throw new InvalidArgumentException('Given argument is not a string.');
-        }
-        $this->thousand_separator = $thousand_separator;
     }
 
     /**
@@ -301,8 +239,8 @@ class NumberFormat
         $section = $this->getFormatSectionForValue($value, $num_fmt_id);
 
         // If percentage values are expected, multiply value accordingly before formatting.
-        if ($section->isPercentage()) {
-            $value *= 100;
+        if ($section->isPercentage() && !$this->configuration->getReturnPercentageDecimal()) {
+            $value = (string) ($value * 100);
         }
 
         // If this is a datetime format, prepare datetime values. (And return them immediately, if such is requested.)
@@ -311,25 +249,25 @@ class NumberFormat
             $datetime = $this->convertNumberToDateTime($value);
 
             // Return DateTime objects as-is?
-            if ($this->return_date_time_objects) {
+            if ($this->configuration->getReturnDateTimeObjects()) {
                 return $datetime;
             }
 
             // Handle enforced date/time/datetime format.
             switch ($section->getDateTimeType()) {
                 case 'date':
-                    if ($this->enforced_date_format) {
-                        return $datetime->format($this->enforced_date_format);
+                    if ($this->configuration->getForceDateFormat() !== null) {
+                        return $datetime->format($this->configuration->getForceDateFormat());
                     }
                     break;
                 case 'time':
-                    if ($this->enforced_time_format) {
-                        return $datetime->format($this->enforced_time_format);
+                    if ($this->configuration->getForceTimeFormat() !== null) {
+                        return $datetime->format($this->configuration->getForceTimeFormat());
                     }
                     break;
                 case 'datetime':
-                    if ($this->enforced_datetime_format) {
-                        return $datetime->format($this->enforced_datetime_format);
+                    if ($this->configuration->getForceDateTimeFormat() !== null) {
+                        return $datetime->format($this->configuration->getForceDateTimeFormat());
                     }
                     break;
                 default:
@@ -339,7 +277,8 @@ class NumberFormat
         }
 
         // If formatting is not desired, return value as-is.
-        if ($this->return_unformatted) {
+        if ($this->configuration->getReturnUnformatted()
+            || ($section->isPercentage() && $this->configuration->getReturnPercentageDecimal())) {
             return $value;
         }
 
@@ -619,8 +558,8 @@ class NumberFormat
 
         // Look up base format definition via format index.
         $format_code = null;
-        if (array_key_exists($format_index, $this->customized_formats)) {
-            $format_code = $this->customized_formats[$format_index];
+        if (array_key_exists($format_index, $this->configuration->getCustomFormats())) {
+            $format_code = $this->configuration->getCustomFormats()[$format_index];
         } elseif (array_key_exists($format_index, self::BUILTIN_FORMATS)) {
             $format_code = self::BUILTIN_FORMATS[$format_index];
         } elseif (isset($this->number_formats[$format_index])) {
@@ -671,19 +610,6 @@ class NumberFormat
         $this->parsed_format_cache[$format_index] = $sections;
 
         return $sections;
-    }
-
-    /**
-     * @param   array $custom_formats
-     * @return  void
-     */
-    public function initCustomFormats(array $custom_formats)
-    {
-        foreach ($custom_formats as $format_index => $format) {
-            if (array_key_exists($format_index, self::BUILTIN_FORMATS) !== false) {
-                $this->customized_formats[$format_index] = $format;
-            }
-        }
     }
 
     /**
@@ -1291,14 +1217,5 @@ class NumberFormat
         self::$base_date->setTimezone(new DateTimeZone('UTC'));
         self::$base_date->setDate(1900, 1, 0);
         self::$base_date->setTime(0, 0, 0);
-    }
-
-    /**
-     * Pre-fill locale related data using current system locale.
-     */
-    private function initLocale() {
-        $locale = localeconv();
-        $this->decimal_separator = $locale['decimal_point'];
-        $this->thousand_separator = $locale['thousands_sep'];
     }
 }
