@@ -8,8 +8,6 @@ use ZipArchive;
 /**
  * Functionality to work with relationship data (.rels files)
  * Also contains all relationship data it previously evaluated for structured retrieval.
- *
- * @author Aspera GmbH
  */
 class RelationshipData
 {

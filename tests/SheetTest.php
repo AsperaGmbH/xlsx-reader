@@ -7,18 +7,14 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Exception;
 use Aspera\Spreadsheet\XLSX\Worksheet;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
-use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
+use Aspera\Spreadsheet\XLSX\Reader;
 
-/**
- * Tests regarding basic worksheet handling functionality.
- *
- * @author Aspera GmbH
- */
+/** Tests regarding basic worksheet handling functionality. */
 class SheetTest extends PHPUnitTestCase
 {
     const FILE_PATH = __DIR__ . '/input_files/multiple_sheets_test.xlsx';
 
-    /** @var XLSXReader */
+    /** @var Reader */
     private $reader;
 
     /**
@@ -26,7 +22,7 @@ class SheetTest extends PHPUnitTestCase
      */
     public function setUp()
     {
-        $this->reader = new XLSXReader();
+        $this->reader = new Reader();
         $this->reader->open(self::FILE_PATH);
     }
 

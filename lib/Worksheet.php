@@ -2,11 +2,7 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
-/**
- * Data object for worksheet related data
- *
- * @author Aspera GmbH
- */
+/** Data object for worksheet related data */
 class Worksheet
 {
     /** @var string */

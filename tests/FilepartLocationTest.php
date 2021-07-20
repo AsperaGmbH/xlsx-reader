@@ -8,11 +8,7 @@ use Exception;
 use PHPUnit\Framework\TestCase;
 use Aspera\Spreadsheet\XLSX\Reader;
 
-/**
- * Ensure that the reader can work with files using a different internal file part structure than the commonly used one.
- *
- * @author Aspera GmbH
- */
+/** Ensure that the reader can work with files using a different internal file part structure than the commonly used one. */
 class FilepartLocationTest extends TestCase
 {
     const TEST_FILE = __DIR__ . '/input_files/filepart_location_test.xlsx';

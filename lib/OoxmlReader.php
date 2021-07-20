@@ -11,8 +11,6 @@ use InvalidArgumentException;
  * matching overhead, this makes custom-made documents that are employing their own namespace rules a bit
  * complicated to read correctly. To mitigate the impact of that, this wrapper of XMLReader supplies methods
  * that deal with these issues automatically.
- *
- * @author Aspera GmbH
  */
 class OoxmlReader extends XMLReader
 {

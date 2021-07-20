@@ -4,11 +4,7 @@ namespace Aspera\Spreadsheet\XLSX;
 
 use ZipArchive;
 
-/**
- * Data object containing all data related to a single 1:1 relationship declaration
- *
- * @author Aspera GmbH
- */
+/** Data object containing all data related to a single 1:1 relationship declaration */
 class RelationshipElement
 {
     /** @var string Internal identifier of this file part */

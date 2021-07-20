@@ -6,18 +6,14 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use Exception;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
-use Aspera\Spreadsheet\XLSX\Reader as XLSXReader;
+use Aspera\Spreadsheet\XLSX\Reader;
 
-/**
- * Tests ensuring that the Reader properly implements the Iterator interface
- *
- * @author Aspera GmbH
- */
+/** Tests ensuring that the Reader properly implements the Iterator interface */
 class IteratorTest extends PHPUnitTestCase
 {
     const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
 
-    /** @var XLSXReader */
+    /** @var Reader */
     private $reader;
 
     /**
@@ -25,7 +21,7 @@ class IteratorTest extends PHPUnitTestCase
      */
     public function setUp()
     {
-        $this->reader = new XLSXReader();
+        $this->reader = new Reader();
         $this->reader->open(self::FILE_PATH);
     }
 

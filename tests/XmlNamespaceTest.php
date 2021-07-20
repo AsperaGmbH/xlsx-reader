@@ -8,11 +8,7 @@ use Exception;
 use PHPUnit\Framework\TestCase;
 use Aspera\Spreadsheet\XLSX\Reader;
 
-/**
- * Ensure that the reader can work with files making use of XML namespaces.
- *
- * @author Aspera GmbH
- */
+/** Ensure that the reader can work with files making use of XML namespaces. */
 class XmlNamespaceTest extends TestCase
 {
     /**
