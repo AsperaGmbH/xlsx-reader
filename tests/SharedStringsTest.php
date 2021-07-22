@@ -42,10 +42,10 @@ class SharedStringsTest extends TestCase
      *
      * @dataProvider dataProviderForTestValues
      *
-     * @param bool $use_cache
-     * @param bool $use_optimized_files
+     * @param   bool $use_cache
+     * @param   bool $use_optimized_files
      *
-     * @throws Exception
+     * @throws  Exception
      */
     public function testValues($use_cache, $use_optimized_files)
     {
@@ -84,8 +84,8 @@ class SharedStringsTest extends TestCase
      *
      * @dataProvider dataProviderForTestMemoryConfiguration
      *
-     * @param bool $use_cache
-     * @param bool $use_large_cache
+     * @param  bool $use_cache
+     * @param  bool $use_large_cache
      *
      * @throws Exception
      */
@@ -166,8 +166,8 @@ class SharedStringsTest extends TestCase
      *
      * @dataProvider dataProviderForTestOptimizedFileConfiguration
      *
-     * @param bool $use_optimized_files
-     * @param bool $use_many_entries_per_file
+     * @param  bool $use_optimized_files
+     * @param  bool $use_many_entries_per_file
      *
      * @throws Exception
      */
@@ -215,9 +215,10 @@ class SharedStringsTest extends TestCase
     /**
      * From the given object, return the value of the given property, regardless of its access modifier.
      *
-     * @param object $target_object        Object to retrieve the property value from
-     * @param string $target_property_name Name of the property of which the value should be returned
+     * @param  object $target_object        Object to retrieve the property value from
+     * @param  string $target_property_name Name of the property of which the value should be returned
      * @return mixed
+     *
      * @throws ReflectionException
      */
     private static function getAccessibleProperty($target_object, $target_property_name)

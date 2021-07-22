@@ -49,7 +49,7 @@ class ReaderConfiguration
     /**
      * Full path to directory to write temporary work files to. Default: sys_get_temp_dir()
      *
-     * @param string $temp_dir
+     * @param  string $temp_dir
      * @return self
      *
      * @throws InvalidArgumentException
@@ -67,7 +67,7 @@ class ReaderConfiguration
     /**
      * If true, output will omit empty cells.
      *
-     * @param bool $skip_empty_cells
+     * @param  bool $skip_empty_cells
      * @return self
      *
      * @throws InvalidArgumentException
@@ -85,7 +85,7 @@ class ReaderConfiguration
     /**
      * If true, output will use Excel-style column names (A-ZZ) instead of numbers as column keys.
      *
-     * @param bool $output_column_names
+     * @param  bool $output_column_names
      * @return self
      *
      * @throws InvalidArgumentException
@@ -103,7 +103,7 @@ class ReaderConfiguration
     /**
      * Configuration options to control shared string reading and caching behaviour.
      *
-     * @param SharedStringsConfiguration $shared_strings_configuration
+     * @param  SharedStringsConfiguration $shared_strings_configuration
      * @return self
      *
      * @throws InvalidArgumentException
@@ -124,7 +124,7 @@ class ReaderConfiguration
      * A list of user-defined formats, overriding those given in the XLSX file itself.
      * Given as key_value pairs of format: [format_index (int)] => format_code (string)
      *
-     * @param array $custom_formats
+     * @param  array $custom_formats
      * @return self
      *
      * @throws InvalidArgumentException
@@ -152,7 +152,7 @@ class ReaderConfiguration
      * Note that a cell's type is defined by its format, not content.
      * If a cell contains time information, but its format contains no time information, the value is considered a date.
      *
-     * @param string|null $force_date_format
+     * @param  string|null $force_date_format
      * @return self
      *
      * @throws InvalidArgumentException
@@ -173,7 +173,7 @@ class ReaderConfiguration
      * Note that a cell's type is defined by its format, not content.
      * If a cell contains time information, but its format contains no time information, the value is considered a date.
      *
-     * @param string|null $force_time_format
+     * @param  string|null $force_time_format
      * @return self
      *
      * @throws InvalidArgumentException
@@ -194,7 +194,7 @@ class ReaderConfiguration
      * Note that a cell's type is defined by its format, not content.
      * If a cell contains time information, but its format contains no time information, the value is considered a date.
      *
-     * @param string|null $force_date_time_format
+     * @param  string|null $force_date_time_format
      * @return self
      *
      * @throws InvalidArgumentException
@@ -213,7 +213,7 @@ class ReaderConfiguration
      * Do not format anything. Returns numbers as-is. (e.g. 42967 25% => 25)
      * (Note: Does not affect returned Date/Time instances or percentage value multiplication.)
      *
-     * @param bool $return_unformatted
+     * @param  bool $return_unformatted
      * @return self
      *
      * @throws InvalidArgumentException
@@ -232,7 +232,7 @@ class ReaderConfiguration
      * If true, percentage values will be returned as decimal point values. (e.g. 0-100% => 0-1, 25% => 0.25)
      * Takes precedence over the value of $return_unformatted.
      *
-     * @param bool $return_percentage_decimal
+     * @param  bool $return_percentage_decimal
      * @return self
      *
      * @throws InvalidArgumentException
@@ -251,7 +251,7 @@ class ReaderConfiguration
      * If true, return date/time values as PHP DateTime objects, not strings.
      * Takes precedence over the value of $return_unformatted.
      *
-     * @param bool $return_date_time_objects
+     * @param  bool $return_date_time_objects
      * @return self
      *
      * @throws InvalidArgumentException
