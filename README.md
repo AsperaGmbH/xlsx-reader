@@ -68,6 +68,8 @@ $reader->close();
 
 Options to tune the reader's behavior and output can be specified via a ReaderConfiguration instance.
 
+For a full list of supported options and their effects, consult the in-code documentation of ReaderConfiguration.
+
 ```php
 <?php
 use Aspera\Spreadsheet\XLSX\Reader;
@@ -94,6 +96,8 @@ exhausted, the file system is used for further optimization strategies.
 To configure this behavior in detail, e.g. to increase the amount of memory available to the reader, a SharedStringsConfiguration
 instance can be attached to the ReaderConfiguration instance supplied to the reader's constructor.
 
+For a full list of supported options and their effects, consult the in-code documentation of SharedStringsConfiguration.
+
 ```php
 <?php
 use Aspera\Spreadsheet\XLSX\Reader;
@@ -103,7 +107,7 @@ use Aspera\Spreadsheet\XLSX\SharedStringsConfiguration;
 $shared_strings_configuration = (new SharedStringsConfiguration())
     ->setCacheSizeKilobyte(16 * 1024)
     ->setUseOptimizedFiles(false);
-// For a full list of supported options, consult the in-code documentation of SharedStringsConfiguration.
+// For a full list of supported options and their effects, consult the in-code documentation of SharedStringsConfiguration.
 
 $reader_configuration = (new ReaderConfiguration())
   ->setSharedStringsConfiguration($shared_strings_configuration);
