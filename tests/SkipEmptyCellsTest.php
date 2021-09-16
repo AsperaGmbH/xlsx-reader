@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Aspera\Spreadsheet\XLSX\Worksheet;
 use Aspera\Spreadsheet\XLSX\Reader;
 use Aspera\Spreadsheet\XLSX\ReaderConfiguration;
+use Aspera\Spreadsheet\XLSX\ReaderSkipConfiguration;
 
 /** Make sure the SkipEmptyCells option works how it should. */
 class SkipEmptyCellsTest extends PHPUnitTestCase
@@ -18,8 +19,8 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
     /**
      * Make sure that the SkipEmptyCells option is properly considered by the reader.
      *
-     * @param bool $skip_empty_cells
-     * @param int  $exp_num_cols
+     * @param int $skip_empty_cells
+     * @param int $exp_num_cols
      *
      * @dataProvider dataProviderEmptyCells
      *
@@ -59,12 +60,16 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
     public function dataProviderEmptyCells()
     {
         return array(
-            'skip empty cells' => array(
-                'skipEmptyCells' => true,
+            'SKIP_NONE' => array(
+                'skipEmptyCells' => ReaderSkipConfiguration::SKIP_NONE,
+                'numTotalCols'   => [8, 0, 4]
+            ),
+            'SKIP_EMPTY' => array(
+                'skipEmptyCells' => ReaderSkipConfiguration::SKIP_EMPTY,
                 'numTotalCols'   => [5, 0, 1]
             ),
-            'include empty cells' => array(
-                'skipEmptyCells' => false,
+            'SKIP_TRAILING_EMPTY' => array(
+                'skipEmptyCells' => ReaderSkipConfiguration::SKIP_TRAILING_EMPTY,
                 'numTotalCols'   => [8, 0, 2]
             )
         );

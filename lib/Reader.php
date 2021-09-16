@@ -57,8 +57,17 @@ class Reader implements Iterator, Countable
     /** @var int Current row number in the file. */
     private $row_number = 0;
 
+    /** @var int Amount of rows skipped due to lookahead. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
+    private $skipped_empty_rows = 0;
+
     /** @var bool|array Contents of last read row. */
     private $current_row = false;
+
+    /** @var bool|array Contents of next filled row. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
+    private $next_filled_row = false;
+
+    /** @var array Structure of an empty row for this document. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
+    private $empty_row_structure = array();
 
     /**
      * @param array $configuration Reader configuration. See documentation of ReaderConfiguration for details.
@@ -253,9 +262,71 @@ class Reader implements Iterator, Countable
      */
     public function next()
     {
-        $this->row_number++;
         $this->current_row = array();
         $this->row_output_adjusted = false;
+
+        // Handle skipped empty rows due to previous lookahead as part of SKIP_TRAILING_EMPTY.
+        if ($this->skipped_empty_rows > 0) {
+            $this->row_number++;
+            $this->current_row = $this->empty_row_structure;
+            $this->skipped_empty_rows--;
+            return;
+        }
+        if ($this->next_filled_row) {
+            $this->row_number++;
+            $this->current_row = $this->next_filled_row;
+            $this->next_filled_row = false;
+            return;
+        }
+
+        $acceptable_current_state = false; // true when current() would return an acceptable value as per configuration.
+        $initial_row_number = $this->row_number;
+        while (!$acceptable_current_state) {
+            $this->read_next_row();
+
+            if (!$this->valid()) {
+                return; // EOF reached.
+            }
+
+            // Check if contents of current row fulfill skipEmptyRows requirements.
+            switch ($this->configuration->getSkipEmptyRows()) {
+                case ReaderSkipConfiguration::SKIP_NONE:
+                    $acceptable_current_state = true;
+                    break;
+                case ReaderSkipConfiguration::SKIP_EMPTY:
+                    if (implode('', $this->current_row) !== '') {
+                        $acceptable_current_state = true;
+                    }
+                    // This is an empty row that should not be output. Loop to next row.
+                    break;
+                case ReaderSkipConfiguration::SKIP_TRAILING_EMPTY:
+                    if (implode('', $this->current_row) === '') {
+                        // This is an empty row that MAY not be wanted in the output. Look ahead for more content.
+                        $this->skipped_empty_rows++;
+                        $this->empty_row_structure = $this->current_row;
+                    } else {
+                        $acceptable_current_state = true;
+                        if ($this->skipped_empty_rows > 0) {
+                            // Intermediate rows were skipped by lookahead. Start returning them.
+                            $this->next_filled_row = $this->current_row;
+                            $this->current_row = $this->empty_row_structure;
+                            $this->row_number = $initial_row_number + 1;
+                            $this->skipped_empty_rows--;
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Reads to and through the next <row> and updates this instance's fields accordingly.
+     *
+     * @throws Exception
+     */
+    private function read_next_row()
+    {
+        $this->row_number++;
 
         // Ensure that the read pointer is pointing at an opening <row> element.
         while (!$this->reader_points_at_new_row && $this->valid = $this->worksheet_reader->read()) {
@@ -279,7 +350,9 @@ class Reader implements Iterator, Countable
         }
 
         // If configured: Return empty strings for empty values
-        if ($current_row_column_count > 0 && !$this->configuration->getSkipEmptyCells()) {
+        if (    $current_row_column_count > 0
+            &&  $this->configuration->getSkipEmptyCells() === ReaderSkipConfiguration::SKIP_NONE
+        ) {
             $this->current_row = array_fill(0, $current_row_column_count, '');
         }
 
@@ -347,7 +420,7 @@ class Reader implements Iterator, Countable
                     $style_id = (int) $this->worksheet_reader->getAttributeNsId('s');
 
                     // If configured: Return empty strings for empty values.
-                    if (!$this->configuration->getSkipEmptyCells()) {
+                    if ($this->configuration->getSkipEmptyCells() === ReaderSkipConfiguration::SKIP_NONE) {
                         $this->current_row[$cell_index] = '';
                     }
                     break;
@@ -366,7 +439,9 @@ class Reader implements Iterator, Countable
                     }
 
                     // Skip empty values when specified as early as possible
-                    if ($value === '' && $this->configuration->getSkipEmptyCells()) {
+                    if (    $value === ''
+                        &&  $this->configuration->getSkipEmptyCells() !== ReaderSkipConfiguration::SKIP_NONE
+                    ) {
                         break;
                     }
 
@@ -384,9 +459,21 @@ class Reader implements Iterator, Countable
 
         /* If configured: Return empty strings for empty values.
          * Only empty cells inbetween and on the left side are added. */
-        if (($max_index + 1 > $cell_count) && !$this->configuration->getSkipEmptyCells()) {
+        if (    $max_index + 1 > $cell_count
+            &&  $this->configuration->getSkipEmptyCells() !== ReaderSkipConfiguration::SKIP_EMPTY
+        ) {
             $this->current_row += array_fill(0, $max_index + 1, '');
             ksort($this->current_row);
+        }
+
+        // If requested, remove trailing empty cells.
+        if ($this->configuration->getSkipEmptyCells() === ReaderSkipConfiguration::SKIP_TRAILING_EMPTY) {
+            foreach (array_reverse(array_keys($this->current_row)) as $k) {
+                if ($this->current_row[$k] !== '') {
+                    break;
+                }
+                unset($this->current_row[$k]);
+            }
         }
     }
 

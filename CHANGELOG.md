@@ -1,3 +1,14 @@
+### v.0.10.0  ????-??-??
+Breaking changes:
+- next() no longer returns the current row. Use current() instead.
+- SkipEmptyCells needs to be supplied as a ReaderSkipConfiguration constant now.
+
+Non-breaking changes:
+- New configuration option "SkipEmptyRows".
+  Use it to exclude either all empty rows or all empty rows at the end of the document from the output. 
+  Use ReaderSkipConfiguration values to configure it.
+- Configuration option "SkipEmptyCells" can now be configured to only skip trailing empty cells.
+
 ### v.0.9.0  2021-07-20
 Breaking changes:
 - Reader configuration options must now be supplied to the Reader constructor via a ReaderConfiguration instance.

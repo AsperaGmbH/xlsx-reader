@@ -74,10 +74,11 @@ For a full list of supported options and their effects, consult the in-code docu
 <?php
 use Aspera\Spreadsheet\XLSX\Reader;
 use Aspera\Spreadsheet\XLSX\ReaderConfiguration;
+use Aspera\Spreadsheet\XLSX\ReaderSkipConfiguration;
 
 $reader_configuration = (new ReaderConfiguration())
   ->setTempDir('C:/Temp/')
-  ->setSkipEmptyCells(true)
+  ->setSkipEmptyCells(ReaderSkipConfiguration::SKIP_EMPTY)
   ->setReturnDateTimeObjects(true)
   ->setCustomFormats(array(20 => 'hh:mm'));
 // For a full list of supported options and their effects, consult the in-code documentation of ReaderConfiguration.

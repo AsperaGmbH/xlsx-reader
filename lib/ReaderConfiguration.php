@@ -10,8 +10,11 @@ class ReaderConfiguration
     /** @var string */
     private $temp_dir = '';
 
-    /** @var bool */
-    private $skip_empty_cells = false;
+    /** @var int */
+    private $skip_empty_cells = ReaderSkipConfiguration::SKIP_NONE;
+
+    /** @var int */
+    private $skip_empty_rows = ReaderSkipConfiguration::SKIP_NONE;
 
     /** @var bool */
     private $output_column_names = false;
@@ -65,19 +68,39 @@ class ReaderConfiguration
     }
 
     /**
-     * If true, output will omit empty cells.
+     * Configuration of empty cell output.
+     * Use ReaderSkipConfiguration constants to configure.
      *
-     * @param  bool $skip_empty_cells
+     * @param  int $skip_empty_cells A ReaderSkipConfiguration constant.
      * @return self
      *
      * @throws InvalidArgumentException
      */
     public function setSkipEmptyCells($skip_empty_cells)
     {
-        if (!is_bool($skip_empty_cells)) {
-            throw new InvalidArgumentException('SkipEmptyCells needs to be a boolean.');
+        if (!is_numeric($skip_empty_cells)) {
+            throw new InvalidArgumentException('SkipEmptyCells needs to be a ReaderSkipConfiguration constant.');
         }
         $this->skip_empty_cells = $skip_empty_cells;
+
+        return $this;
+    }
+
+    /**
+     * Configuration of empty row output.
+     * Use ReaderSkipConfiguration constants to configure.
+     *
+     * @param  int $skip_empty_rows A ReaderSkipConfiguration constant.
+     * @return self
+     *
+     * @throws InvalidArgumentException
+     */
+    public function setSkipEmptyRows($skip_empty_rows)
+    {
+        if (!is_numeric($skip_empty_rows)) {
+            throw new InvalidArgumentException('SkipEmptyRows needs to be a ReaderSkipConfiguration constant.');
+        }
+        $this->skip_empty_rows = $skip_empty_rows;
 
         return $this;
     }
@@ -275,11 +298,19 @@ class ReaderConfiguration
     }
 
     /**
-     * @return bool
+     * @return int
      */
     public function getSkipEmptyCells()
     {
         return $this->skip_empty_cells;
+    }
+
+    /**
+     * @return int
+     */
+    public function getSkipEmptyRows()
+    {
+        return $this->skip_empty_rows;
     }
 
     /**
