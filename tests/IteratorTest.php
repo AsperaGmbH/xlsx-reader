@@ -38,13 +38,15 @@ class IteratorTest extends PHPUnitTestCase
     public function testIterationFunctions()
     {
         $first_row_content = $this->reader->current();
-        $second_row_content = $this->reader->next();
+        $this->reader->next();
+        $second_row_content = $this->reader->current();
         self::assertNotEquals($first_row_content, $second_row_content, 'First and second row are identical');
 
         $this->reader->rewind();
         self::assertEquals($first_row_content, $this->reader->current(),
             'rewind() function did not rewind/reset the pointer. Target should be the first row');
-        self::assertNotEquals($first_row_content, $this->reader->next(),
+        $this->reader->next();
+        self::assertNotEquals($first_row_content, $this->reader->current(),
             'next() function did not move the pointer. Target should be the second row');
         self::assertEquals($second_row_content, $this->reader->current(),
             'current() function did not work. Target should be the second row');
@@ -71,8 +73,11 @@ class IteratorTest extends PHPUnitTestCase
         self::assertEquals(0, $current_row_number, 'Row number should be zero due to rewind()');
 
         // are count() and key() doing the same?
-        self::assertEquals($this->reader->count(), $this->reader->key(),
-            'Functions count() and key() should return the same');
+        self::assertEquals(
+            $this->reader->count(),
+            $this->reader->key(),
+            'Functions count() and key() should return the same'
+        );
     }
 
     /**

@@ -23,7 +23,7 @@ class EmptyRowsTest extends TestCase
         $reader = new Reader();
         $reader->open(self::TEST_FILE);
         $output_cells = array();
-        while ($row = $reader->next()) {
+        foreach ($reader as $row) {
             $output_cells[] = $row[1]; // All values to check for are in the 2nd column. Ignore all other columns.
         }
         $reader->close();

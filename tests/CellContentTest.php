@@ -26,7 +26,7 @@ class CellContentTest extends TestCase
         );
         $reader->open(self::TEST_FILE);
         $output_cells = array();
-        while ($row = $reader->next()) {
+        foreach ($reader as $row) {
             $output_cells[] = $row['B']; // Only the second column ("Value") is of interest.
         }
         $reader->close();

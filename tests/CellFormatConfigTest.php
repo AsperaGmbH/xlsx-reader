@@ -105,7 +105,7 @@ class CellFormatConfigTest extends TestCase
         $reader = new Reader($config);
         $reader->open(self::TEST_FILE);
         $output_rows = array();
-        while ($row = $reader->next()) {
+        foreach ($reader as $row) {
             $output_rows[] = $row[2]; // [2] = only the third column is of interest
         }
         $reader->close();

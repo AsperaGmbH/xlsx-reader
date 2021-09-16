@@ -51,6 +51,9 @@ class Reader implements Iterator, Countable
     /** @var bool Whether the reader is currently pointing at a starting <row> node. */
     private $reader_points_at_new_row = false;
 
+    /** @var bool If true, current row output was already adjusted by a previous call to current(). */
+    private $row_output_adjusted = false;
+
     /** @var int Current row number in the file. */
     private $row_number = 0;
 
@@ -235,13 +238,16 @@ class Reader implements Iterator, Countable
             $this->next();
         }
 
-        return self::adjustRowOutput($this->current_row);
+        if (!$this->row_output_adjusted) {
+            $this->current_row = self::adjustRowOutput($this->current_row);
+            $this->row_output_adjusted = true;
+        }
+
+        return $this->current_row;
     }
 
     /**
      * Move forward to next element.
-     *
-     * @return array|false
      *
      * @throws Exception
      */
@@ -249,6 +255,7 @@ class Reader implements Iterator, Countable
     {
         $this->row_number++;
         $this->current_row = array();
+        $this->row_output_adjusted = false;
 
         // Ensure that the read pointer is pointing at an opening <row> element.
         while (!$this->reader_points_at_new_row && $this->valid = $this->worksheet_reader->read()) {
@@ -258,7 +265,7 @@ class Reader implements Iterator, Countable
         }
         if (!$this->reader_points_at_new_row) {
             // No (further) rows found for reading.
-            return array();
+            return;
         }
 
         /* Get the row spanning area (stored as e.g. "1:12", or more rarely, "1:3 6:8 11:12")
@@ -278,7 +285,7 @@ class Reader implements Iterator, Countable
 
         if ((int) $this->worksheet_reader->getAttributeNsId('r') !== $this->row_number) {
             // We just skipped over one or multiple empty row(s). Keep current reader state and return empty cells.
-            return self::adjustRowOutput($this->current_row);
+            return;
         }
 
         // From here on out, successive next() calls must start with a read() for the next row.
@@ -287,7 +294,7 @@ class Reader implements Iterator, Countable
         // Handle self-closing row tags (e.g. <row r="1"/>) caused by e.g. usage of thick borders in adjacent cells.
         $this->worksheet_reader->moveToElement(); // Necessary for isEmptyElement to work correctly.
         if ($this->worksheet_reader->isEmptyElement) {
-            return self::adjustRowOutput($this->current_row);
+            return;
         }
 
         // Variables for empty cell handling.
@@ -385,8 +392,6 @@ class Reader implements Iterator, Countable
         if (empty($this->current_row) && $this->configuration->getSkipEmptyCells()) {
             $this->current_row[] = null;
         }
-
-        return self::adjustRowOutput($this->current_row);
     }
 
     /**

@@ -30,7 +30,7 @@ class XmlNamespaceTest extends TestCase
         $reader = new Reader();
         $reader->open(self::TEST_FILE);
 
-        $actual_row = $reader->next();
+        $actual_row = $reader->current();
         $expected_row = array('1.230000 €', 'test string');
         self::assertSame(
             $expected_row,
