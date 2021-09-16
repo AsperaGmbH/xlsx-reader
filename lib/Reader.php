@@ -388,10 +388,6 @@ class Reader implements Iterator, Countable
             $this->current_row += array_fill(0, $max_index + 1, '');
             ksort($this->current_row);
         }
-
-        if (empty($this->current_row) && $this->configuration->getSkipEmptyCells()) {
-            $this->current_row[] = null;
-        }
     }
 
     /**

@@ -43,8 +43,10 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
         self::assertNotNull($sheet_index, 'Could not locate worksheet with name "EmptyCellsSheet".');
         $reader->changeSheet($sheet_index);
 
-        $current = $reader->current();
-        $num_cols = count($current);
+        $num_cols = array();
+        foreach ($reader as $row) {
+            $num_cols[] = count($row);
+        }
 
         self::assertEquals($exp_num_cols, $num_cols, 'Number of cells differ');
 
@@ -57,13 +59,13 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
     public function dataProviderEmptyCells()
     {
         return array(
-            array(
+            'skip empty cells' => array(
                 'skipEmptyCells' => true,
-                'numTotalCols'   => 5
+                'numTotalCols'   => [5, 0, 1]
             ),
-            array(
+            'include empty cells' => array(
                 'skipEmptyCells' => false,
-                'numTotalCols'   => 8
+                'numTotalCols'   => [8, 0, 2]
             )
         );
     }
