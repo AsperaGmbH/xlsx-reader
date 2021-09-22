@@ -234,7 +234,12 @@ class ReaderConfiguration
 
     /**
      * Do not format anything. Returns numbers as-is. (e.g. 42967 25% => 25)
-     * (Note: Does not affect returned Date/Time instances or percentage value multiplication.)
+     *
+     * Note 1: Does not affect returned Date/Time instances or percentage value multiplication.
+     *
+     * Note 2: Be aware that rounding errors introduced by popular spreadsheet editors may cause the
+     * internally stored values to differ a lot from what would be shown as a result of formatting.
+     * Be further advised that values may sometimes be stored using E-notation.
      *
      * @param  bool $return_unformatted
      * @return self
@@ -254,6 +259,10 @@ class ReaderConfiguration
     /**
      * If true, percentage values will be returned as decimal point values. (e.g. 0-100% => 0-1, 25% => 0.25)
      * Takes precedence over the value of $return_unformatted.
+     *
+     * Note: Be aware that rounding errors introduced by popular spreadsheet editors may cause the
+     * internally stored values to differ a lot from what would be shown as a result of formatting.
+     * Be further advised that values may sometimes be stored using E-notation.
      *
      * @param  bool $return_percentage_decimal
      * @return self

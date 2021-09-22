@@ -22,7 +22,7 @@ class CellFormatConfigTest extends TestCase
      */
     public function dataProviderForFormatConfiguration()
     {
-        $return_base = array('', '08-20-17', '22:30', '8/20/17 22:30', '25.50%');
+        $return_base = array('', '08-20-17', '22:30', '8/20/17 22:30', '25.50%', '0.50%');
 
         return array(
             'enforce date formats'    => array(
@@ -73,7 +73,8 @@ class CellFormatConfigTest extends TestCase
                         1 => '42967',
                         2 => '0.9375',
                         3 => '42967.9375',
-                        4 => '25.5'
+                        4 => '25.5',
+                        5 => '0.5'
                     )
                 )
             ),
@@ -83,7 +84,8 @@ class CellFormatConfigTest extends TestCase
                 array_replace(
                     $return_base,
                     array(
-                        4 => '0.255'
+                        4 => '0.255',
+                        5 => '5.0000000000000001E-3' // Common Excel problem. Percentage values are divided by 100, which can cause floating point issues.
                     )
                 )
             )
