@@ -121,10 +121,12 @@ This reader's purpose is to allow reading of basic data (text, numbers, dates...
 there are no plans to extend support to include all features available for XLSX files. Only a minimal
 subset of XLSX capabilities is supported.
 
-In particular, the following should be noted in regards to unsupported features:
+In particular, the following should be noted in regard to unsupported features:
+- Display cell width is disregarded. As a result, in cases in which popular xlsx editors would shorten values using
+  scientific notation or "#####"-placeholders, the reader will return un-shortened values instead.
 - Files with multiple internal shared strings files are not supported.
 - Files with multiple internal styles definition files are not supported.
 - Fractions are only partially supported. The results delivered by the reader might be slightly off from the original input.
 
 ### Licensing
-All of the code in this library is licensed under the MIT license as included in the [LICENSE.md](LICENSE.md) file.
+All the code in this library is licensed under the MIT license as included in the [LICENSE.md](LICENSE.md) file.
