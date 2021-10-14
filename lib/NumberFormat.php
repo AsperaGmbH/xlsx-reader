@@ -292,12 +292,12 @@ class NumberFormat
             && $section->getDecimalFormat() !== '.' // else: e.g. [.E+0] - Nonsensical format. Fallback to non-scientific format.
         ) {
             $e_exponent = $this->getExponentForValueAndSection($value, $section);
-            $exponent_formatted = $this->formatExponentValue($e_exponent, $section);
+            $exponent_formatted = $this->mergeValueIntoNumericalFormat(abs($e_exponent), $section->getExponentFormat());
             $value *= 10 ** ($e_exponent * -1);
         }
 
         // Convert value to decimal, preparing it for inclusion in the actual format string.
-        $decimal_formatted = $this->applyExtractedDecimalFormat($value, $section);
+        $decimal_formatted = $this->formatDecimalValue($value, $section);
 
         // Formatted value's whole value may be of different length than format. Calculate difference.
         // (e.g.: "12345" formatted as "0.0" becomes "12345.0" -> 4 more characters in whole value than expected)
@@ -484,48 +484,15 @@ class NumberFormat
     }
 
     /**
-     * Formats the given exponent as defined by the given exponent format.
-     * (The portion of the scientific format that follows the [Ee][+-] token.)
-     *
-     * @param  int                 $e_exponent
-     * @param  NumberFormatSection $section
-     * @return string
-     */
-    private function formatExponentValue($e_exponent, $section)
-    {
-        $exponent_format = $section->getExponentFormat();
-
-        // Replace $exponent_format contents character-by-character, right-to-left.
-        $exponent_formatted = '';
-        $exponent_i = strlen((string) abs($e_exponent)) - 1;
-        for ($format_i = strlen($exponent_format) - 1; $format_i >= 0; $format_i--) {
-            $format_character = substr($exponent_format, $format_i, 1);
-            if ($exponent_i >= 0) {
-                $exponent_formatted = substr((string) abs($e_exponent), $exponent_i, 1) . $exponent_formatted;
-                $exponent_i--;
-            } else if ($format_character === '0') {
-                $exponent_formatted = '0' . $exponent_formatted;
-            } else if ($format_character === '?') {
-                $exponent_formatted = ' ' . $exponent_formatted;
-            }
-        }
-        if ($exponent_i >= 0) {
-            // Exponent is wider than exponent format. Prepend remaining digits to exponent.
-            $exponent_formatted = substr((string) abs($e_exponent), 0, $exponent_i + 1) . $exponent_formatted;
-        }
-
-        return $exponent_formatted;
-    }
-
-    /**
-     * Applies the given decimal format info to the given number.
+     * Applies the given, semantical decimal format info (read: not the included token codes) to the given number.
      * Does not consider parts of the format that aren't directly related to decimal formatting.
+     * e.g.: For the format [000"m" 000"k" 000.00], only [000000000.00] is considered.
      *
      * @param  mixed               $number
      * @param  NumberFormatSection $section
      * @return string
      */
-    private function applyExtractedDecimalFormat($number, $section)
+    private function formatDecimalValue($number, $section)
     {
         $format_left = str_replace(',', '', $section->getFormatLeft());
         $format_right = str_replace(',', '', $section->getFormatRight());
@@ -1062,20 +1029,7 @@ class NumberFormat
      */
     private function getFormatSectionForValue($value, $format_index)
     {
-        $sections = $this->getFormatSections($format_index);
-        return $this->getSectionForValue($value, $sections);
-    }
-
-    /**
-     * @param  string                $value
-     * @param  NumberFormatSection[] $sections_ordered
-     * @return NumberFormatSection
-     *
-     * @throws RuntimeException
-     */
-    private function getSectionForValue($value, $sections_ordered)
-    {
-        foreach ($sections_ordered as $section) {
+        foreach ($this->getFormatSections($format_index) as $section) {
             switch ($section->getPurpose()) {
                 case 'default':
                     // "default" counts for everything.
