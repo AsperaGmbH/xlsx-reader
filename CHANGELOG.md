@@ -8,6 +8,12 @@ Non-breaking changes:
   Use it to exclude either all empty rows or all empty rows at the end of the document from the output. 
   Use ReaderSkipConfiguration values to configure it.
 - Configuration option "SkipEmptyCells" can now be configured to only skip trailing empty cells.
+- Added support for scientific notation format.
+- Fraction formatting support was enhanced.
+- Fixed: "General" format does not output values as decimal, if they are stored using scientific notation internally.
+- Fixed: Assorted edge cases in number formatting.
+- Added notes to documentation of "ReturnUnformatted" and "ReturnPercentageDecimal" about possible gotchas.
+- Internal refactorings.
 
 ### v.0.9.0  2021-07-20
 Breaking changes:
