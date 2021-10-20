@@ -284,9 +284,9 @@ class NumberFormatTokenizer
                 continue;
             }
 
-            if (    $token->isScientificNotationE()
-                &&  !$token->isQuoted()
-                &&  !$token->isInSquareBrackets()
+            if ($token->isScientificNotationE()
+                && !$token->isQuoted()
+                && !$token->isInSquareBrackets()
             ) {
                 // This token should be kept seperated from the rest to make formatting easier.
                 $prevent_merge_of_passed_token = true;
@@ -449,6 +449,7 @@ class NumberFormatTokenizer
                 }
             }
         }
+
         return $condition;
     }
 
@@ -470,6 +471,7 @@ class NumberFormatTokenizer
                 }
             }
         }
+
         return null; // Format type uncertain, should probably not be applied.
     }
 
@@ -510,6 +512,7 @@ class NumberFormatTokenizer
                 }
             }
         }
+
         return false;
     }
 
@@ -529,6 +532,7 @@ class NumberFormatTokenizer
                 return true;
             }
         }
+
         return false;
     }
 
