@@ -1,4 +1,4 @@
-### v.0.10.0  ????-??-??
+### v.0.10.0  2021-10-22
 Breaking changes:
 - next() no longer returns the current row. Use current() instead.
 - SkipEmptyCells needs to be supplied as a ReaderSkipConfiguration constant now.
