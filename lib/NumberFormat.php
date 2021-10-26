@@ -177,8 +177,10 @@ class NumberFormat
         }
 
         // If formatting is not desired, return value as-is.
-        if ($this->configuration->getReturnUnformatted()
-            || ($section->isPercentage() && $this->configuration->getReturnPercentageDecimal())) {
+        // Note: returnUnformatted for date/time values must be handled in applyDateTimeFormat(), due to additional constraints.
+        $return_unformatted = $this->configuration->getReturnUnformatted() && !$section->getDateTimeType();
+        $return_percentage_decimal = $section->isPercentage() && $this->configuration->getReturnPercentageDecimal();
+        if ($return_unformatted || $return_percentage_decimal) {
             return $value;
         }
 
@@ -902,6 +904,11 @@ class NumberFormat
             default:
                 // Note: Should never happen. Exception is just to be safe.
                 throw new RuntimeException('Specific datetime_type for format_index [' . $num_fmt_id . '] is unknown.');
+        }
+
+        // Check returnUnformatted HERE, so that returnDateTimeObjects and force...Format can take precedence.
+        if ($this->configuration->getReturnUnformatted()) {
+            return $value;
         }
 
         $output = '';

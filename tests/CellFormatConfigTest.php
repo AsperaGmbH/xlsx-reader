@@ -40,12 +40,14 @@ class CellFormatConfigTest extends TestCase
                 )
             ),
             'return datetime objects' => array(
-                (new ReaderConfiguration())->setReturnDateTimeObjects(true),
+                (new ReaderConfiguration())
+                    ->setReturnDateTimeObjects(true)
+                    ->setForceDateTimeFormat('Y-m-d His'), // Should have no effect, overruled by returnDateTimeObjects.
                 array_replace(
                     $return_base,
                     array(
                         1 => new DateTime('2017-08-20', new DateTimeZone('UTC')),
-                        2 => new DateTime('1899-12-31 22:30:00', new DateTimeZone('UTC')), // From base date: 1900-01-00
+                        2 => new DateTime('1899-12-31 22:30:00', new DateTimeZone('UTC')), // From base date: 1900-01-00 <- note the 0 day
                         3 => new DateTime('2017-08-20 22:30:00', new DateTimeZone('UTC'))
                     )
                 )
@@ -86,6 +88,36 @@ class CellFormatConfigTest extends TestCase
                     array(
                         4 => '0.255',
                         5 => '5.0000000000000001E-3' // Common Excel problem. Percentage values are divided by 100, which can cause floating point issues.
+                    )
+                )
+            ),
+            'return unformatted is overruled by datetime force format' => array(
+                (new ReaderConfiguration())
+                    ->setReturnUnformatted(true)
+                    ->setForceDateTimeFormat('Y-m-d His'),
+                array_replace(
+                    $return_base,
+                    array(
+                        1 => '42967', // date value, not datetime value. Therefore, returnUnformatted applies here.
+                        2 => '0.9375', // Same situation for time values.
+                        3 => '2017-08-20 223000', // datetime value, forceDateTimeFormat applies here.
+                        4 => '25.5',
+                        5 => '0.5'
+                    )
+                )
+            ),
+            'return unformatted is overruled by return datetime objects' => array(
+                (new ReaderConfiguration())
+                    ->setReturnUnformatted(true)
+                    ->setReturnDateTimeObjects(true),
+                array_replace(
+                    $return_base,
+                    array(
+                        1 => new DateTime('2017-08-20', new DateTimeZone('UTC')),
+                        2 => new DateTime('1899-12-31 22:30:00', new DateTimeZone('UTC')), // From base date: 1900-01-00 <- note the 0 day
+                        3 => new DateTime('2017-08-20 22:30:00', new DateTimeZone('UTC')),
+                        4 => '25.5',
+                        5 => '0.5'
                     )
                 )
             )
