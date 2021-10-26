@@ -1,3 +1,6 @@
+### v.0.10.1  2021-10-26
+- Fixed an issue that made returnUnformatted overrule all configuration options for date/time values.
+
 ### v.0.10.0  2021-10-22
 Breaking changes:
 - next() no longer returns the current row. Use current() instead.
