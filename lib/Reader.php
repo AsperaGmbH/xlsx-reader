@@ -216,6 +216,7 @@ class Reader implements Iterator, Countable
      * Rewind the Iterator to the first element.
      * Similar to the reset() function for arrays in PHP.
      */
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         if ($this->worksheet_reader instanceof OoxmlReader) {
@@ -241,6 +242,7 @@ class Reader implements Iterator, Countable
      *
      * @throws Exception
      */
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if ($this->row_number === 0 && $this->current_row === false) {
@@ -260,6 +262,7 @@ class Reader implements Iterator, Countable
      *
      * @throws Exception
      */
+    #[\ReturnTypeWillChange]
     public function next()
     {
         $this->current_row = array();
@@ -482,6 +485,7 @@ class Reader implements Iterator, Countable
      *
      * @return mixed either an integer or a string
      */
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->row_number;
@@ -493,6 +497,7 @@ class Reader implements Iterator, Countable
      *
      * @return boolean FALSE if there's nothing more to iterate over
      */
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return $this->valid;
@@ -504,6 +509,7 @@ class Reader implements Iterator, Countable
      * Ostensibly should return the count of the contained items but this just returns the number
      * of rows read so far. It's not really correct but at least coherent.
      */
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return $this->row_number;
