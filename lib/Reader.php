@@ -3,14 +3,13 @@
 namespace Aspera\Spreadsheet\XLSX;
 
 use Iterator;
-use Countable;
 use RuntimeException;
 use ZipArchive;
 use Exception;
 use InvalidArgumentException;
 
 /** Class for reading XLSX file contents. */
-class Reader implements Iterator, Countable
+class Reader implements Iterator
 {
     /** @var NumberFormat */
     private $number_format;
@@ -501,18 +500,6 @@ class Reader implements Iterator, Countable
     public function valid()
     {
         return $this->valid;
-    }
-
-    // !Countable interface method
-
-    /**
-     * Ostensibly should return the count of the contained items but this just returns the number
-     * of rows read so far. It's not really correct but at least coherent.
-     */
-    #[\ReturnTypeWillChange]
-    public function count()
-    {
-        return $this->row_number;
     }
 
     /**

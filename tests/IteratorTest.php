@@ -54,7 +54,6 @@ class IteratorTest extends PHPUnitTestCase
 
     /**
      * Tests that the return value of the method key() is actually increasing/decreasing.
-     * Notice that key() and count() do the same functionality based on the current implementation.
      *
      * @depends testIterationFunctions
      * @throws  Exception
@@ -71,13 +70,6 @@ class IteratorTest extends PHPUnitTestCase
         $this->reader->rewind();
         $current_row_number = $this->reader->key();
         self::assertEquals(0, $current_row_number, 'Row number should be zero due to rewind()');
-
-        // are count() and key() doing the same?
-        self::assertEquals(
-            $this->reader->count(),
-            $this->reader->key(),
-            'Functions count() and key() should return the same'
-        );
     }
 
     /**
