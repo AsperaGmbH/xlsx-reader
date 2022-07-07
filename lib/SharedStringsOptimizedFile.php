@@ -63,14 +63,6 @@ class SharedStringsOptimizedFile
     }
 
     /**
-     * @param int $handle_current_index
-     */
-    public function setHandleCurrentIndex($handle_current_index)
-    {
-        $this->handle_current_index = $handle_current_index;
-    }
-
-    /**
      * Increase current index of handle by 1.
      */
     public function increaseHandleCurrentIndex()
@@ -100,14 +92,6 @@ class SharedStringsOptimizedFile
     public function getCount()
     {
         return $this->count;
-    }
-
-    /**
-     * @param int $count
-     */
-    public function setCount($count)
-    {
-        $this->count = $count;
     }
 
     /**

@@ -145,26 +145,6 @@ class Reader implements Iterator
     }
 
     /**
-     * Set the decimal separator to use for the output of locale-oriented formatted values
-     *
-     * @param string $new_character
-     */
-    public function setDecimalSeparator($new_character)
-    {
-        $this->number_format->setDecimalSeparator($new_character);
-    }
-
-    /**
-     * Set the thousands separator to use for the output of locale-oriented formatted values
-     *
-     * @param string $new_character
-     */
-    public function setThousandsSeparator($new_character)
-    {
-        $this->number_format->setThousandsSeparator($new_character);
-    }
-
-    /**
      * Retrieves an array with information about sheets in the current file
      *
      * @return array List of sheets (key is sheet index, value is of type Worksheet). Sheet's index starts with 0.
