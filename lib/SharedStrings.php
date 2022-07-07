@@ -2,6 +2,8 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
+use Exception;
+use LogicException;
 use RuntimeException;
 use SplFixedArray;
 
@@ -87,8 +89,11 @@ class SharedStrings
             @unlink($file_data->getFile());
         }
 
-        $this->shared_strings_directory = null;
         $this->shared_strings_filename = null;
+        $this->shared_strings_directory = null;
+        $this->shared_strings_configuration = null;
+        $this->shared_string_cache = null;
+        $this->prepared_shared_string_files = array();
     }
 
     /**
@@ -105,10 +110,14 @@ class SharedStrings
      * @param   int     $target_index   Shared string index
      * @return  string  Shared string of the given index
      *
-     * @throws  RuntimeException
+     * @throws  Exception
      */
     public function getSharedString($target_index)
     {
+        if ($this->shared_strings_filename === null) {
+            throw new LogicException('SharedStrings instance was already closed.');
+        }
+
         // If index of the desired string is larger than possible, don't even bother.
         if ($this->shared_string_count && ($target_index >= $this->shared_string_count)) {
             return '';
