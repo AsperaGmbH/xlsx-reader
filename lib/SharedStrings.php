@@ -73,8 +73,7 @@ class SharedStrings
     }
 
     /**
-     * Closes all file pointers managed by this SharedStrings instance.
-     * Note: Does not unlink temporary files. Use getTempFiles() to retrieve the list of created temp files.
+     * Closes all file pointers and deletes all temporary files created by this SharedStrings instance.
      */
     public function close()
     {
@@ -85,6 +84,7 @@ class SharedStrings
         /** @var SharedStringsOptimizedFile $file_data */
         foreach ($this->prepared_shared_string_files as $file_data) {
             $file_data->closeHandle();
+            @unlink($file_data->getFile());
         }
 
         $this->shared_strings_directory = null;
@@ -97,21 +97,6 @@ class SharedStrings
     public function setSharedStringsConfiguration(SharedStringsConfiguration $configuration)
     {
         $this->shared_strings_configuration = $configuration;
-    }
-
-    /**
-     * Returns a list of all temporary work files created in this SharedStrings instance.
-     *
-     * @return array List of temporary files; With absolute paths.
-     */
-    public function getTempFiles()
-    {
-        $ret = array();
-        /** @var SharedStringsOptimizedFile $file_details */
-        foreach ($this->prepared_shared_string_files as $file_details) {
-            $ret[] = $file_details->getFile();
-        }
-        return $ret;
     }
 
     /**

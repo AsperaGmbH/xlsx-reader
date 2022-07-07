@@ -673,9 +673,6 @@ class Reader implements Iterator
                 $filename_of_extracted_file,
                 $shared_strings_configuration
             );
-
-            // Extend temp_files with files created by SharedStrings
-            $this->temp_files = array_merge($this->temp_files, $this->shared_strings->getTempFiles());
         }
     }
 
