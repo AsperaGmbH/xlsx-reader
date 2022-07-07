@@ -136,27 +136,27 @@ class SharedStringsTest extends TestCase
 
         // Check against configured values
         if ($use_cache) {
-            if ($shared_strings_cache_count == 0) {
-                self::fail('Cache is enabled but contents are empty.');
-            }
-            if ($shared_strings_cache_count < $min_entry_count) {
-                self::fail(
-                    'Cache size is lower than expected.'
-                    . ' Expected at least ' . $min_entry_count . ' entries.'
-                    . ' Actual entry count is ' . $shared_strings_cache_count . '.'
-                );
-            }
-            if ($shared_strings_cache_count > $max_entry_count) {
-                self::fail(
-                    'Cache size is higher than expected.'
-                    . ' Maximum allowed entry count is ' . $max_entry_count . '.'
-                    . ' Actual entry count is ' . $shared_strings_cache_count . '.'
-                );
-            }
+            self::assertNotEmpty(
+                $shared_strings_cache_count,
+                'Cache is enabled but contents are empty.'
+            );
+            self::assertTrue(
+                $shared_strings_cache_count >= $min_entry_count,
+                'Cache size is lower than expected.'
+                . ' Expected at least ' . $min_entry_count . ' entries.'
+                . ' Actual entry count is ' . $shared_strings_cache_count . '.'
+            );
+            self::assertTrue(
+                $shared_strings_cache_count <= $max_entry_count,
+                'Cache size is higher than expected.'
+                . ' Maximum allowed entry count is ' . $max_entry_count . '.'
+                . ' Actual entry count is ' . $shared_strings_cache_count . '.'
+            );
         } else {
-            if ($shared_strings_cache_count > 0) {
-                self::fail('Cache is disabled but still contains contents.');
-            }
+            self::assertEmpty(
+                $shared_strings_cache_count,
+                'Cache is disabled but still contains contents.'
+            );
         }
     }
 
@@ -207,20 +207,22 @@ class SharedStringsTest extends TestCase
 
         // Check number of created prepared files
         if ($use_optimized_files) {
-            if ($prepared_files_count == 0) {
-                self::fail('No optimized shared string files were created, despite the configuration requesting it.');
-            }
-            if ($prepared_files_count != $expected_file_count) {
-                self::fail(
-                    'The optimized shared string entry count configuration seems to be disregarded.'
-                    . ' Expected ' . $expected_file_count . ' files to be created,'
-                    . ' found ' . $prepared_files_count . '.'
-                );
-            }
+            self::assertNotEmpty(
+                $prepared_files_count,
+                'No optimized shared string files were created, despite the configuration requesting it.'
+            );
+            self::assertEquals(
+                $prepared_files_count,
+                $expected_file_count,
+                'The optimized shared string entry count configuration seems to be disregarded.'
+                . ' Expected ' . $expected_file_count . ' files to be created,'
+                . ' found ' . $prepared_files_count . '.'
+            );
         } else {
-            if ($prepared_files_count > 0) {
-                self::fail('Optimized shared string files were created, despite the configuration denying it.');
-            }
+            self::assertEmpty(
+                $prepared_files_count,
+                'Optimized shared string files were created, despite the configuration denying it.'
+            );
         }
         $xlsx_reader->close();
     }

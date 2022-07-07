@@ -24,6 +24,8 @@ class TempDirTest extends PHPUnitTestCase
     /**
      * Create temporary work directory and initialize the reader, creating temporary files in the process.
      *
+     * @doesNotPerformAssertions
+     *
      * @throws Exception
      */
     public function testPrepare()
@@ -85,6 +87,8 @@ class TempDirTest extends PHPUnitTestCase
 
     /**
      * Remove the temporary work directory.
+     *
+     * @doesNotPerformAssertions
      *
      * @throws Exception
      */
