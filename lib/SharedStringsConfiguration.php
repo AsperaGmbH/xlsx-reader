@@ -7,34 +7,52 @@ use InvalidArgumentException;
 /** Holds all configuration options related to shared string related behaviour */
 class SharedStringsConfiguration
 {
-    /** @var bool */
+    /**
+     * If true: Allow caching shared strings to RAM to increase performance.
+     *
+     * @var bool
+     */
     private $use_cache = true;
 
-    /** @var int */
+    /**
+     * Maximum allowed RAM consumption for shared string cache, in kilobyte. (Minimum: 8 KB)
+     * See setCacheSizeKilobyte() for more information.
+     *
+     * @var int
+     */
     private $cache_size_kilobyte = 256;
 
-    /** @var bool */
+    /**
+     * If true: Allow creation of new files to reduce seek times for non-cached shared strings.
+     *
+     * @var bool
+     */
     private $use_optimized_files = true;
 
-    /** @var int */
+    /**
+     * Amount of shared strings to store per seek optimized shared strings file.
+     * See setOptimizedFileEntryCount() for more information.
+     *
+     * @var int
+     */
     private $optimized_file_entry_count = 2500;
 
-    /** @var bool */
+    /**
+     * If true: file pointers to shared string files are kept open for more efficient reads.
+     * Causes higher memory consumption, especially if $optimized_file_entry_count is low.
+     *
+     * @var bool
+     */
     private $keep_file_handles = true;
 
     /**
      * If true: Allow caching shared strings to RAM to increase performance.
      *
-     * @param   bool    $new_use_cache_value
+     * @param   bool $new_use_cache_value
      * @return  self
-     *
-     * @throws  InvalidArgumentException
      */
-    public function setUseCache($new_use_cache_value)
+    public function setUseCache(bool $new_use_cache_value): self
     {
-        if (!is_bool($new_use_cache_value)) {
-            throw new InvalidArgumentException('Invalid parameter value; Expected a boolean.');
-        }
         $this->use_cache = $new_use_cache_value;
 
         return $this;
@@ -51,12 +69,12 @@ class SharedStringsConfiguration
      *
      * @throws  InvalidArgumentException
      */
-    public function setCacheSizeKilobyte($new_max_size)
+    public function setCacheSizeKilobyte(int $new_max_size): self
     {
-        if (!is_numeric($new_max_size) || $new_max_size < 8) {
+        if ($new_max_size < 8) {
             throw new InvalidArgumentException('Invalid parameter value; Expected a positive number equal to or greater than 8.');
         }
-        $this->cache_size_kilobyte = (int)$new_max_size;
+        $this->cache_size_kilobyte = $new_max_size;
 
         return $this;
     }
@@ -64,16 +82,11 @@ class SharedStringsConfiguration
     /**
      * If true: Allow creation of new files to reduce seek times for non-cached shared strings.
      *
-     * @param   bool    $new_use_files_value
+     * @param   bool $new_use_files_value
      * @return  self
-     *
-     * @throws  InvalidArgumentException
      */
-    public function setUseOptimizedFiles($new_use_files_value)
+    public function setUseOptimizedFiles(bool $new_use_files_value): self
     {
-        if (!is_bool($new_use_files_value)) {
-            throw new InvalidArgumentException('Invalid parameter value; Expected a boolean.');
-        }
         $this->use_optimized_files = $new_use_files_value;
 
         return $this;
@@ -92,9 +105,9 @@ class SharedStringsConfiguration
      *
      * @throws  InvalidArgumentException
      */
-    public function setOptimizedFileEntryCount($new_entry_count)
+    public function setOptimizedFileEntryCount(int $new_entry_count): self
     {
-        if (!is_numeric($new_entry_count) || $new_entry_count <= 0) {
+        if ($new_entry_count <= 0) {
             throw new InvalidArgumentException('Invalid parameter value; Expected a positive number.');
         }
         $this->optimized_file_entry_count = $new_entry_count;
@@ -106,16 +119,11 @@ class SharedStringsConfiguration
      * If true: file pointers to shared string files are kept open for more efficient reads.
      * Causes higher memory consumption, especially if $optimized_file_entry_count is low.
      *
-     * @param   bool    $new_keep_file_pointers_value
+     * @param   bool $new_keep_file_pointers_value
      * @return  self
-     *
-     * @throws  InvalidArgumentException
      */
-    public function setKeepFileHandles($new_keep_file_pointers_value)
+    public function setKeepFileHandles(bool $new_keep_file_pointers_value): self
     {
-        if (!is_bool($new_keep_file_pointers_value)) {
-            throw new InvalidArgumentException('Invalid parameter value; Expected a boolean.');
-        }
         $this->keep_file_handles = $new_keep_file_pointers_value;
 
         return $this;
@@ -124,7 +132,7 @@ class SharedStringsConfiguration
     /**
      * @return bool
      */
-    public function getUseCache()
+    public function getUseCache(): bool
     {
         return $this->use_cache;
     }
@@ -132,7 +140,7 @@ class SharedStringsConfiguration
     /**
      * @return int
      */
-    public function getCacheSizeKilobyte()
+    public function getCacheSizeKilobyte(): int
     {
         return $this->cache_size_kilobyte;
     }
@@ -140,7 +148,7 @@ class SharedStringsConfiguration
     /**
      * @return bool
      */
-    public function getUseOptimizedFiles()
+    public function getUseOptimizedFiles(): bool
     {
         return $this->use_optimized_files;
     }
@@ -148,7 +156,7 @@ class SharedStringsConfiguration
     /**
      * @return int
      */
-    public function getOptimizedFileEntryCount()
+    public function getOptimizedFileEntryCount(): int
     {
         return $this->optimized_file_entry_count;
     }
@@ -156,7 +164,7 @@ class SharedStringsConfiguration
     /**
      * @return bool
      */
-    public function getKeepFileHandles()
+    public function getKeepFileHandles(): bool
     {
         return $this->keep_file_handles;
     }

@@ -22,13 +22,13 @@ class RelationshipData
     /** @var RelationshipElement Workbook file meta information. Only one element exists per file. */
     private $workbook;
 
-    /** @var array Worksheet files meta information, saved as a list of RelationshipElement instances. */
+    /** @var RelationshipElement[] Worksheet files meta information. */
     private $worksheets = array();
 
-    /** @var array SharedStrings files meta information, saved as a list of RelationshipElement instances. */
+    /** @var RelationshipElement[] SharedStrings files meta information. */
     private $shared_strings = array();
 
-    /** @var array Styles files meta information, saved as a list of RelationshipElement instances. */
+    /** @var RelationshipElement[] Styles files meta information. */
     private $styles = array();
 
     /**
@@ -46,12 +46,11 @@ class RelationshipData
     }
 
     /**
-     * Returns data of all found valid shared string elements.
-     * Returns array of RelationshipElement elements.
+     * Returns relationship data of valid shared string elements.
      *
-     * @return array[RelationshipElement]
+     * @return RelationshipElement[]
      */
-    public function getSharedStrings()
+    public function getSharedStrings(): array
     {
         $return_list = array();
         foreach ($this->shared_strings as $shared_string_element) {
@@ -63,12 +62,11 @@ class RelationshipData
     }
 
     /**
-     * Returns all worksheet data of all found valid worksheet elements.
-     * Returns array of RelationshipElement elements.
+     * Returns relationship data of valid worksheet elements.
      *
-     * @return array
+     * @return RelationshipElement[]
      */
-    public function getWorksheets()
+    public function getWorksheets(): array
     {
         $return_list = array();
         foreach ($this->worksheets as $worksheet_element) {
@@ -80,12 +78,11 @@ class RelationshipData
     }
 
     /**
-     * Returns all styles data of all found valid styles elements.
-     * Returns array of RelationshipElement elements
+     * Returns relationship data of valid styles elements.
      *
-     * @return array
+     * @return RelationshipElement[]
      */
-    public function getStyles()
+    public function getStyles(): array
     {
         $return_list = array();
         foreach ($this->styles as $styles_element) {
@@ -97,7 +94,7 @@ class RelationshipData
     }
 
     /**
-     * Navigates through the XLSX file using .rels files, gathering up found file parts along the way.
+     * Navigates through the XLSX file using .rels files, gathering found file parts along the way.
      * Results are saved in internal variables for later retrieval.
      *
      * @param   ZipArchive  $zip    Handle to zip file to read relationship data from
@@ -129,7 +126,7 @@ class RelationshipData
      *
      * @throws  RuntimeException
      */
-    private function evaluateRelationshipFromZip(ZipArchive $zip, $file_zipname)
+    private function evaluateRelationshipFromZip(ZipArchive $zip, string $file_zipname)
     {
         if ($zip->locateName($file_zipname) === false) {
             throw new RuntimeException('Could not read relationship data. File [' . $file_zipname . '] could not be found.');
@@ -196,12 +193,12 @@ class RelationshipData
      * @param   string  $file_path
      * @return  string
      */
-    private static function toRelsFilePath($file_path)
+    private static function toRelsFilePath(string $file_path): string
     {
         // Normalize directory separator character
         $file_path = str_replace('\\', self::ZIP_DIR_SEP, $file_path);
 
-        // Split path in 2 parts around last dir seperator: [path/to/file]/[file.xml]
+        // Split path in 2 parts around last dir separator: [path/to/file]/[file.xml]
         $last_slash_pos = strrpos($file_path, '/');
         if ($last_slash_pos === false) {
             // No final slash; file.xml => _rels/file.xml.rels

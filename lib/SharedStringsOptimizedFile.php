@@ -25,7 +25,7 @@ class SharedStringsOptimizedFile
     /**
      * @return string
      */
-    public function getFile()
+    public function getFile(): string
     {
         return $this->file;
     }
@@ -33,7 +33,7 @@ class SharedStringsOptimizedFile
     /**
      * @param string $file
      */
-    public function setFile($file)
+    public function setFile(string $file)
     {
         $this->file = $file;
     }
@@ -57,7 +57,7 @@ class SharedStringsOptimizedFile
     /**
      * @return int
      */
-    public function getHandleCurrentIndex()
+    public function getHandleCurrentIndex(): int
     {
         return $this->handle_current_index;
     }
@@ -73,7 +73,7 @@ class SharedStringsOptimizedFile
     /**
      * @return string
      */
-    public function getValueAtCurrentIndex()
+    public function getValueAtCurrentIndex(): string
     {
         return $this->value_at_current_index;
     }
@@ -81,7 +81,7 @@ class SharedStringsOptimizedFile
     /**
      * @param string $value_at_current_index
      */
-    public function setValueAtCurrentIndex($value_at_current_index)
+    public function setValueAtCurrentIndex(string $value_at_current_index)
     {
         $this->value_at_current_index = $value_at_current_index;
     }
@@ -89,7 +89,7 @@ class SharedStringsOptimizedFile
     /**
      * @return int
      */
-    public function getCount()
+    public function getCount(): int
     {
         return $this->count;
     }
@@ -111,7 +111,7 @@ class SharedStringsOptimizedFile
      *
      * @throws  RuntimeException
      */
-    public function openHandle($mode)
+    public function openHandle(string $mode)
     {
         $this->closeHandle();
         $new_handle = @fopen($this->getFile(), $mode);

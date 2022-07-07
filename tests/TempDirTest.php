@@ -31,8 +31,9 @@ class TempDirTest extends PHPUnitTestCase
         // Create target directory and configure reader to use it.
         $temp_dir_path = self::getTempDirPath();
         @mkdir($temp_dir_path);
-        self::$reader = new Reader((new ReaderConfiguration())
-            ->setTempDir($temp_dir_path)
+        self::$reader = new Reader(
+            (new ReaderConfiguration())
+                ->setTempDir($temp_dir_path)
         );
         self::$reader->open(self::FILE_PATH);
     }
@@ -101,14 +102,9 @@ class TempDirTest extends PHPUnitTestCase
      * @return string
      * @throws Exception
      */
-    private static function getTempDirPath()
+    private static function getTempDirPath(): string
     {
         $temp_dir_path = sys_get_temp_dir();
-        if (!is_string($temp_dir_path)) {
-            throw new Exception(
-                'Path to temporary work directory could not be determined. sys_get_temp_dir() returned invalid value.'
-            );
-        }
         if ($temp_dir_path !== '') {
             $temp_dir_path = str_replace(chr(92), '/', $temp_dir_path);
             if (mb_substr($temp_dir_path, -1) !== '/') {

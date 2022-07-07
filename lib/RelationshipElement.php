@@ -22,7 +22,7 @@ class RelationshipElement
     /**
      * @return string
      */
-    public function getId()
+    public function getId(): string
     {
         return $this->id;
     }
@@ -30,7 +30,7 @@ class RelationshipElement
     /**
      * @param string $id
      */
-    public function setId($id)
+    public function setId(string $id)
     {
         $this->id = $id;
     }
@@ -38,7 +38,7 @@ class RelationshipElement
     /**
      * @return bool
      */
-    public function isValid()
+    public function isValid(): bool
     {
         return $this->is_valid;
     }
@@ -46,7 +46,7 @@ class RelationshipElement
     /**
      * @param bool $is_valid
      */
-    public function setIsValid($is_valid)
+    public function setIsValid(bool $is_valid)
     {
         $this->is_valid = $is_valid;
     }
@@ -54,7 +54,7 @@ class RelationshipElement
     /**
      * @return string
      */
-    public function getOriginalPath()
+    public function getOriginalPath(): string
     {
         return $this->original_path;
     }
@@ -62,7 +62,7 @@ class RelationshipElement
     /**
      * @param string $original_path
      */
-    public function setOriginalPath($original_path)
+    public function setOriginalPath(string $original_path)
     {
         $this->original_path = $original_path;
     }
@@ -70,7 +70,7 @@ class RelationshipElement
     /**
      * @return string
      */
-    public function getAccessPath()
+    public function getAccessPath(): string
     {
         return $this->access_path;
     }
@@ -78,7 +78,7 @@ class RelationshipElement
     /**
      * @param string $access_path
      */
-    public function setAccessPath($access_path)
+    public function setAccessPath(string $access_path)
     {
         $this->access_path = $access_path;
     }
@@ -88,7 +88,7 @@ class RelationshipElement
      *
      * @param ZipArchive $zip
      */
-    public function setValidityViaZip($zip)
+    public function setValidityViaZip(ZipArchive $zip)
     {
         $this->setIsValid($zip->locateName($this->getOriginalPath()) !== false);
     }

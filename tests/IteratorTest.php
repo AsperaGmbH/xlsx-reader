@@ -40,16 +40,31 @@ class IteratorTest extends PHPUnitTestCase
         $first_row_content = $this->reader->current();
         $this->reader->next();
         $second_row_content = $this->reader->current();
-        self::assertNotEquals($first_row_content, $second_row_content, 'First and second row are identical');
+        self::assertNotEquals(
+            $first_row_content,
+            $second_row_content,
+            'First and second row are identical'
+        );
 
         $this->reader->rewind();
-        self::assertEquals($first_row_content, $this->reader->current(),
-            'rewind() function did not rewind/reset the pointer. Target should be the first row');
+        self::assertEquals(
+            $first_row_content,
+            $this->reader->current(),
+            'rewind() function did not rewind/reset the pointer. Target should be the first row'
+        );
+
         $this->reader->next();
-        self::assertNotEquals($first_row_content, $this->reader->current(),
-            'next() function did not move the pointer. Target should be the second row');
-        self::assertEquals($second_row_content, $this->reader->current(),
-            'current() function did not work. Target should be the second row');
+        self::assertNotEquals(
+            $first_row_content,
+            $this->reader->current(),
+            'next() function did not move the pointer. Target should be the second row'
+        );
+
+        self::assertEquals(
+            $second_row_content,
+            $this->reader->current(),
+            'current() function did not work. Target should be the second row'
+        );
     }
 
     /**
@@ -89,7 +104,10 @@ class IteratorTest extends PHPUnitTestCase
         self::assertEquals($this->getExpectedArray(), $read_file, 'File has not been read correctly');
     }
 
-    private function getExpectedArray()
+    /**
+     * @return array[]
+     */
+    private function getExpectedArray(): array
     {
         return array(
             array(

@@ -21,8 +21,9 @@ class CellContentTest extends TestCase
      */
     public function testCellContent()
     {
-        $reader = new Reader((new ReaderConfiguration())
-            ->setOutputColumnNames(true)
+        $reader = new Reader(
+            (new ReaderConfiguration())
+                ->setOutputColumnNames(true)
         );
         $reader->open(self::TEST_FILE);
         $output_cells = array();

@@ -22,7 +22,7 @@ class CustomNumberFormatTest extends TestCase
      *
      * @throws Exception
      */
-    public function testGeneralFormat($value, $expected_output)
+    public function testGeneralFormat(string $value, string $expected_output)
     {
         $cell_format = new NumberFormat(new ReaderConfiguration());
         $cell_format->injectXfNumFmtIds(
@@ -39,7 +39,7 @@ class CustomNumberFormatTest extends TestCase
     /**
      * @return array
      */
-    public function provideValuesForGeneralFormat()
+    public function provideValuesForGeneralFormat(): array
     {
         return array(
             'number'         => array('123', '123'),
@@ -59,7 +59,7 @@ class CustomNumberFormatTest extends TestCase
      *
      * @throws Exception
      */
-    public function testFormat($value, $format, $expected_output)
+    public function testFormat(string $value, string $format, string $expected_output)
     {
         $cell_format = new NumberFormat(new ReaderConfiguration());
         $cell_format->injectXfNumFmtIds(
@@ -77,9 +77,9 @@ class CustomNumberFormatTest extends TestCase
     }
 
     /**
-     * @return array
+     * @return array[]
      */
-    public function provideFormats()
+    public function provideFormats(): array
     {
         // Note that language info ( [$€-THIS_RANDOM_INTEGER_RIGHT_HERE] ) is always ignored.
         return array(
@@ -501,8 +501,8 @@ class CustomNumberFormatTest extends TestCase
                 '12 A 3C'
             ),
 
-            /* Marking least significant digits as "optional" does not make much sense, and it leads to a lot of very
-             * confusing behavior. On top of that, it's difficult to find a "sane" solution for such formats.
+            /* Marking the least significant digits as "optional" does not make much sense, and it leads to a lot of
+             * very confusing behavior. On top of that, it's difficult to find a "sane" solution for such formats.
              * As such, the reader currently does not deliver any results that resemble those of popular editors here.
              * This case is left commented here, in case anyone's ever wondering about this.
              *

@@ -2,6 +2,8 @@
 
 namespace Aspera\Spreadsheet\XLSX;
 
+use RuntimeException;
+
 class NumberFormatTokenizer
 {
     /** @var array Conversion matrix to convert XLSX date formats to PHP date formats. */
@@ -41,7 +43,7 @@ class NumberFormatTokenizer
      * @param  string $format_string The full format string, including all sections, completely unparsed
      * @return NumberFormatSection[]
      */
-    public function prepareFormatSections($format_string)
+    public function prepareFormatSections(string $format_string): array
     {
         $sections_tokenized = array();
         foreach ($this->splitSections($format_string) as $section_index => $section_string) {
@@ -51,7 +53,7 @@ class NumberFormatTokenizer
         }
         $sections = $this->assignSectionPurposes($sections_tokenized);
 
-        foreach ($sections as $section_index => $section) {
+        foreach ($sections as $section) {
             // Remove color and condition definitions. (They're either useless to us, or pre-parsed already.)
             $this->removeColorsAndConditions($section);
 
@@ -97,7 +99,7 @@ class NumberFormatTokenizer
      *
      * @throws RuntimeException
      */
-    private function splitSections($format_string)
+    private function splitSections(string $format_string): array
     {
         $offset = 0;
         $start_pos = 0;
@@ -127,7 +129,6 @@ class NumberFormatTokenizer
                     throw new RuntimeException(
                         'Unexpected character [' . $match_character . '] matched at position [' . $match_offset . '].'
                     );
-                    break;
             }
         }
 
@@ -147,7 +148,7 @@ class NumberFormatTokenizer
      *
      * @throws RuntimeException
      */
-    private function convertFormatSectionToTokens($section_string)
+    private function convertFormatSectionToTokens(string $section_string): array
     {
         /** @var NumberFormatToken[] $tokens */
         $tokens = array();
@@ -190,7 +191,7 @@ class NumberFormatTokenizer
                         $escaped_character = substr($section_string, $match_offset + 1, 1);
                         $tokens[] = (new NumberFormatToken($escaped_character))
                             ->setIsQuoted(true)
-                            ->setSquareBracketIndex($is_square_bracketed ? $square_bracket_index : null);
+                            ->setSquareBracketIndex(null);
 
                         // Move offset to beyond the escaped character, to implicitly avoid it being matched in next loop iteration.
                         $last_tokenized_character = $match_offset + 1;
@@ -251,7 +252,6 @@ class NumberFormatTokenizer
                     throw new RuntimeException(
                         'Unexpected character [' . $match_character . '] matched at position [' . $match_offset . '].'
                     );
-                    break;
             }
         }
 
@@ -315,7 +315,7 @@ class NumberFormatTokenizer
      * @return NumberFormatSection[] Same as input, but extended with $purpose and additional (default/duplicate) formats,
      *                               ordered by priority of applicability.
      */
-    private function assignSectionPurposes($sections)
+    private function assignSectionPurposes(array $sections): array
     {
         /* Some basic rules on format purposes and default formats:
          *  - Format sections are checked for applicability in order of appearance.
@@ -349,7 +349,7 @@ class NumberFormatTokenizer
         foreach ($sections as $section) {
             $section_tokens = $section->getTokens();
             $format_type = $this->detectFormatType($section_tokens);
-            if (!$format_type) {
+            if ($format_type === '') {
                 if (count($section_tokens) === 0) {
                     // Empty format. Indicates not showing anything for this value type. Treat as number format.
                     $format_type = 'number';
@@ -360,7 +360,7 @@ class NumberFormatTokenizer
                 }
             }
             $condition = $this->detectCondition($section_tokens);
-            if ($condition) {
+            if ($condition !== '') {
                 $section->setPurpose($condition);
                 $sections_in_order[] = $section;
                 $contains_condition = true;
@@ -434,11 +434,11 @@ class NumberFormatTokenizer
      * Checks the given section for a format condition and returns it, if one is found.
      *
      * @param  NumberFormatToken[] $section_tokens
-     * @return string|null
+     * @return string
      */
-    private function detectCondition($section_tokens)
+    private function detectCondition(array $section_tokens): string
     {
-        $condition = null;
+        $condition = '';
         foreach ($section_tokens as $token) {
             // Condition has to appear within square-bracketed areas.
             if ($token->isInSquareBrackets()) {
@@ -457,9 +457,9 @@ class NumberFormatTokenizer
      * Checks the given section for indicators of it being used for a particular value type.
      *
      * @param  NumberFormatToken[] $section_tokens
-     * @return string|null Either "text", "number" or null.
+     * @return string Either "text", "number" or empty string for uncertain format type.
      */
-    private function detectFormatType($section_tokens)
+    private function detectFormatType(array $section_tokens): string
     {
         foreach ($section_tokens as $tokens) {
             if (!$tokens->isQuoted() && !$tokens->isInSquareBrackets()) {
@@ -472,7 +472,7 @@ class NumberFormatTokenizer
             }
         }
 
-        return null; // Format type uncertain, should probably not be applied.
+        return ''; // Format type uncertain, should probably not be applied.
     }
 
     /**
@@ -480,7 +480,7 @@ class NumberFormatTokenizer
      *
      * @param NumberFormatSection $section
      */
-    private function removeColorsAndConditions($section)
+    private function removeColorsAndConditions(NumberFormatSection $section)
     {
         // Note: The color/conditions definitions are usually at the start of the section. e.g.: "[red][<1000]0,00"
         $tokens = $section->getTokens();
@@ -502,7 +502,7 @@ class NumberFormatTokenizer
      * @param  NumberFormatSection $section
      * @return bool
      */
-    private function isDateTimeFormat($section)
+    private function isDateTimeFormat(NumberFormatSection $section): bool
     {
         // Note: Either of these formats are exclusive. For example: You can't use decimal and fraction in the same format.
         foreach ($section->getTokens() as $token) {
@@ -522,7 +522,7 @@ class NumberFormatTokenizer
      * @param  NumberFormatSection $section
      * @return bool
      */
-    private function detectIfPercentage($section)
+    private function detectIfPercentage(NumberFormatSection $section): bool
     {
         foreach ($section->getTokens() as $token) {
             if (!$token->isQuoted()
@@ -548,7 +548,7 @@ class NumberFormatTokenizer
      *
      * @param  NumberFormatSection $section
      */
-    private function prepareNumericFormat($section)
+    private function prepareNumericFormat(NumberFormatSection $section)
     {
         $format_left = ''; // For decimals: Characters before decimal. For fractions: Characters before slash.
         $format_right = ''; // For decimals: Characters after decimal. For fractions: Characters after slash.
@@ -569,7 +569,7 @@ class NumberFormatTokenizer
             }
         }
 
-        // Step 2: Walk through all tokens and assign found format characters to their semantical sections.
+        // Step 2: Walk through all tokens and assign found format characters to their semantic sections.
         $decimal_character_passed = false;
         $e_token_passed = false;
         $fraction_char_detected = false;
@@ -599,7 +599,7 @@ class NumberFormatTokenizer
             if ($token->isInSquareBrackets()) {
                 if (strpos($code, '$') === 0) {
                     preg_match('{\$([^-]*)}', $code, $matches);
-                    $tokens[$token_index]
+                    $token
                         ->setCode($matches[1])
                         ->setIsQuoted(true)
                         ->setSquareBracketIndex(null);
@@ -614,7 +614,7 @@ class NumberFormatTokenizer
             // Purposefully ignored here, due to there not being a fixed column size to fill against.
             $code = str_replace('*', '', $code);
 
-            $tokens[$token_index]->setCode($code); // Note: No further manipulation of code contents from here on out.
+            $token->setCode($code); // Note: No further manipulation of code contents from here on out.
 
             if (preg_match('{[Ee][+-]}', $code, $matches)) {
                 // Scientific format detected. Number formats after the E+/e- position must be interpreted as exponent.
@@ -724,7 +724,7 @@ class NumberFormatTokenizer
      *
      * @param NumberFormatSection $section
      */
-    private function prepareDateTimeFormat($section)
+    private function prepareDateTimeFormat(NumberFormatSection $section)
     {
         // Determine if the contained time data should be displayed in 12h format.
         $time_12h = false;
@@ -741,7 +741,7 @@ class NumberFormatTokenizer
         $contains_date = false;
         $contains_time = false;
         $tokens = $section->getTokens();
-        foreach ($tokens as $token_index => $token) {
+        foreach ($tokens as $token) {
             if ($token->isQuoted()) {
                 continue;
             }
@@ -749,7 +749,7 @@ class NumberFormatTokenizer
             // For currency/language info: Keep currency symbol, remove the rest.
             if ($token->isInSquareBrackets() && strpos($token->getCode(), '$') === 0) {
                 preg_match('{\$([^-]*)-\d+}', $token->getCode(), $matches);
-                $tokens[$token_index]
+                $token
                     ->setCode($matches[1])
                     ->setIsQuoted(true)
                     ->setSquareBracketIndex(null);
@@ -765,7 +765,7 @@ class NumberFormatTokenizer
                 } else {
                     $code = strtr($code, self::DATE_REPLACEMENTS['24H']);
                 }
-                $tokens[$token_index]->setCode($code);
+                $token->setCode($code);
 
                 // Determine more specific date/time/datetime specification.
                 $contains_date = $contains_date || preg_match('#[DdFjlmMnoStwWYyz]#u', $code);

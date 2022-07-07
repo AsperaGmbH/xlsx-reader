@@ -10,26 +10,26 @@ class NumberFormatSection {
     /** @var NumberFormatToken[] */
     private $tokens;
 
-    /** @var string Purpose of this section. Can be a condition (e.g: >=-20) or a default_ definition. (e.g.: default_number) */
+    /** @var string Section purpose. Can be a condition (e.g: >=-20) or a default_ definition. (e.g.: default_number) */
     private $purpose;
 
-    /** @var string|null Type of this number format. Possible values: null, decimal, fraction */
-    private $number_type;
+    /** @var string|null Type of this number format. Possible values: null, 'decimal', 'fraction' */
+    private $number_type = null;
 
     /** @var string Specific date/time type value for this section. Possible values: date, time, datetime */
-    private $dateTimeType;
+    private $dateTimeType = '';
 
     /** @var bool If true, this value is intended to convert its value to a percentage value. (multiply by 100) */
-    private $is_percentage;
+    private $is_percentage = false;
 
     /** @var bool If true, a minus sign should be automatically prepended to the formatted value. */
-    private $prepend_minus_sign;
+    private $prepend_minus_sign = false;
 
     /** @var int Amount of thousands to scale the output value down by. */
-    private $thousands_scale;
+    private $thousands_scale = 0;
 
     /** @var bool If true, will include thousands separators in the formatted output. */
-    private $use_thousands_separators;
+    private $use_thousands_separators = false;
 
     /** @var string Contains only characters related to the decimal format. */
     private $decimal_format = '';
@@ -48,9 +48,9 @@ class NumberFormatSection {
 
     /**
      * @param NumberFormatToken[] $tokens
-     * @param string|null         $purpose
+     * @param string              $purpose
      */
-    public function __construct($tokens, $purpose = null)
+    public function __construct(array $tokens, string $purpose = '')
     {
         $this->tokens = $tokens;
         $this->purpose = $purpose;
@@ -60,7 +60,7 @@ class NumberFormatSection {
      * @param  NumberFormatToken[] $tokens
      * @return $this
      */
-    public function setTokens($tokens)
+    public function setTokens(array $tokens): self
     {
         $this->tokens = $tokens;
         return $this;
@@ -69,7 +69,7 @@ class NumberFormatSection {
     /**
      * @return NumberFormatToken[]
      */
-    public function getTokens()
+    public function getTokens(): array
     {
         return $this->tokens;
     }
@@ -78,7 +78,7 @@ class NumberFormatSection {
      * @param  string $purpose
      * @return $this
      */
-    public function setPurpose($purpose)
+    public function setPurpose(string $purpose): self
     {
         $this->purpose = $purpose;
         return $this;
@@ -87,7 +87,7 @@ class NumberFormatSection {
     /**
      * @return string
      */
-    public function getPurpose()
+    public function getPurpose(): string
     {
         return $this->purpose;
     }
@@ -96,7 +96,7 @@ class NumberFormatSection {
      * @param  string|null $number_type
      * @return $this
      */
-    public function setNumberType($number_type)
+    public function setNumberType(string $number_type = null): self
     {
         $this->number_type = $number_type;
         return $this;
@@ -114,7 +114,7 @@ class NumberFormatSection {
      * @param  string $dateTimeType
      * @return $this
      */
-    public function setDateTimeType($dateTimeType)
+    public function setDateTimeType(string $dateTimeType): self
     {
         $this->dateTimeType = $dateTimeType;
         return $this;
@@ -123,7 +123,7 @@ class NumberFormatSection {
     /**
      * @return string
      */
-    public function getDateTimeType()
+    public function getDateTimeType(): string
     {
         return $this->dateTimeType;
     }
@@ -132,7 +132,7 @@ class NumberFormatSection {
      * @param  bool $is_percentage
      * @return $this
      */
-    public function setIsPercentage($is_percentage)
+    public function setIsPercentage(bool $is_percentage): self
     {
         $this->is_percentage = $is_percentage;
         return $this;
@@ -141,7 +141,7 @@ class NumberFormatSection {
     /**
      * @return bool
      */
-    public function isPercentage()
+    public function isPercentage(): bool
     {
         return $this->is_percentage;
     }
@@ -150,7 +150,7 @@ class NumberFormatSection {
      * @param  bool $prepend_minus_sign
      * @return $this
      */
-    public function setPrependMinusSign($prepend_minus_sign)
+    public function setPrependMinusSign(bool $prepend_minus_sign): self
     {
         $this->prepend_minus_sign = $prepend_minus_sign;
         return $this;
@@ -159,7 +159,7 @@ class NumberFormatSection {
     /**
      * @return bool
      */
-    public function prependMinusSign()
+    public function prependMinusSign(): bool
     {
         return $this->prepend_minus_sign;
     }
@@ -168,7 +168,7 @@ class NumberFormatSection {
      * @param  int $thousands_scale
      * @return $this
      */
-    public function setThousandsScale($thousands_scale)
+    public function setThousandsScale(int $thousands_scale): self
     {
         $this->thousands_scale = $thousands_scale;
         return $this;
@@ -177,7 +177,7 @@ class NumberFormatSection {
     /**
      * @return int
      */
-    public function getThousandsScale()
+    public function getThousandsScale(): int
     {
         return $this->thousands_scale;
     }
@@ -186,7 +186,7 @@ class NumberFormatSection {
      * @param  bool $use_thousands_separators
      * @return $this
      */
-    public function setUseThousandsSeparators($use_thousands_separators)
+    public function setUseThousandsSeparators(bool $use_thousands_separators): self
     {
         $this->use_thousands_separators = $use_thousands_separators;
         return $this;
@@ -195,7 +195,7 @@ class NumberFormatSection {
     /**
      * @return bool
      */
-    public function useThousandsSeparators()
+    public function useThousandsSeparators(): bool
     {
         return $this->use_thousands_separators;
     }
@@ -204,7 +204,7 @@ class NumberFormatSection {
      * @param  string $decimal_format
      * @return $this
      */
-    public function setDecimalFormat($decimal_format)
+    public function setDecimalFormat(string $decimal_format): self
     {
         $this->decimal_format = $decimal_format;
         return $this;
@@ -213,7 +213,7 @@ class NumberFormatSection {
     /**
      * @return string
      */
-    public function getDecimalFormat()
+    public function getDecimalFormat(): string
     {
         return $this->decimal_format;
     }
@@ -222,7 +222,7 @@ class NumberFormatSection {
      * @param  string $format_left
      * @return $this
      */
-    public function setFormatLeft($format_left)
+    public function setFormatLeft(string $format_left): self
     {
         $this->format_left = $format_left;
         return $this;
@@ -231,7 +231,7 @@ class NumberFormatSection {
     /**
      * @return string
      */
-    public function getFormatLeft()
+    public function getFormatLeft(): string
     {
         return $this->format_left;
     }
@@ -240,7 +240,7 @@ class NumberFormatSection {
      * @param  string $format_right
      * @return $this
      */
-    public function setFormatRight($format_right)
+    public function setFormatRight(string $format_right): self
     {
         $this->format_right = $format_right;
         return $this;
@@ -249,7 +249,7 @@ class NumberFormatSection {
     /**
      * @return string
      */
-    public function getFormatRight()
+    public function getFormatRight(): string
     {
         return $this->format_right;
     }
@@ -258,7 +258,7 @@ class NumberFormatSection {
      * @param  string $exponent_format
      * @return $this
      */
-    public function setExponentFormat($exponent_format)
+    public function setExponentFormat(string $exponent_format): self
     {
         $this->exponent_format = $exponent_format;
         return $this;
@@ -267,7 +267,7 @@ class NumberFormatSection {
     /**
      * @return string
      */
-    public function getExponentFormat()
+    public function getExponentFormat(): string
     {
         return $this->exponent_format;
     }
@@ -276,7 +276,7 @@ class NumberFormatSection {
      * @param  string $whole_values_format
      * @return $this
      */
-    public function setWholeValuesFormat($whole_values_format)
+    public function setWholeValuesFormat(string $whole_values_format): self
     {
         $this->whole_values_format = $whole_values_format;
         return $this;
@@ -285,7 +285,7 @@ class NumberFormatSection {
     /**
      * @return string
      */
-    public function getWholeValuesFormat()
+    public function getWholeValuesFormat(): string
     {
         return $this->whole_values_format;
     }

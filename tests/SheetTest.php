@@ -5,7 +5,6 @@ namespace Aspera\Spreadsheet\XLSX\Tests;
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Exception;
-use Aspera\Spreadsheet\XLSX\Worksheet;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Aspera\Spreadsheet\XLSX\Reader;
 
@@ -42,7 +41,6 @@ class SheetTest extends PHPUnitTestCase
             'Third Sheet'
         );
         $sheet_name_list = array();
-        /** @var Worksheet $worksheet */
         foreach ($this->reader->getSheets() as $worksheet) {
             $sheet_name_list[] = $worksheet->getName();
         }
@@ -58,7 +56,6 @@ class SheetTest extends PHPUnitTestCase
      */
     public function testChangeSheetFunction()
     {
-        /** @var Worksheet $worksheet */
         foreach ($this->reader->getSheets() as $index => $worksheet) {
             $sheet_name_in_sheet_data = $worksheet->getName();
             self::assertTrue(

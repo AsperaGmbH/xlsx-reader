@@ -7,40 +7,96 @@ use InvalidArgumentException;
 /** Configuration options to control reader behavior. */
 class ReaderConfiguration
 {
-    /** @var string */
-    private $temp_dir = '';
+    /**
+     * Full path to directory to write temporary work files to. Default: sys_get_temp_dir()
+     *
+     * @var string
+     */
+    private $temp_dir;
 
-    /** @var int */
+    /**
+     * Configuration of empty cell output. Use ReaderSkipConfiguration constants to configure.
+     *
+     * @var int
+     */
     private $skip_empty_cells = ReaderSkipConfiguration::SKIP_NONE;
 
-    /** @var int */
+    /**
+     * Configuration of empty row output. Use ReaderSkipConfiguration constants to configure.
+     *
+     * @var int
+     */
     private $skip_empty_rows = ReaderSkipConfiguration::SKIP_NONE;
 
-    /** @var bool */
+    /**
+     * If true, output will use Excel-style column names (A-ZZ) instead of numbers as column keys.
+     *
+     * @var bool
+     */
     private $output_column_names = false;
 
-    /** @var SharedStringsConfiguration */
+    /**
+     * Configuration options to control shared string reading and caching behaviour.
+     *
+     * @var SharedStringsConfiguration
+     */
     private $shared_strings_configuration;
 
-    /** @var array */
+    /**
+     * A list of user-defined formats, overriding those given in the XLSX file itself.
+     * Given as key_value pairs of format: [format_index (int)] => format_code (string)
+     *
+     * @var array
+     */
     private $custom_formats = array();
 
-    /** @var string|null */
+    /**
+     * Format to use when outputting dates, regardless of originally set formatting.
+     * See setForceDateFormat() for more information.
+     *
+     * @var string|null
+     */
     private $force_date_format;
 
-    /** @var string|null */
+    /**
+     * Format to use when outputting time values, regardless of originally set formatting.
+     * See setForceTimeFormat() for more information.
+     *
+     * @var string|null
+     */
     private $force_time_format;
 
-    /** @var string|null */
+    /**
+     * Format to use when outputting datetime values, regardless of originally set formatting.
+     * See setForceDateTimeFormat() for more information.
+     *
+     * @var string|null
+     */
     private $force_date_time_format;
 
-    /** @var bool */
+    /**
+     * If true, do not format anything. Returns numbers as-is. (e.g. 42967 25% => 25)
+     * See setReturnUnformatted() for more information.
+     *
+     * @var bool
+     */
     private $return_unformatted = false;
 
-    /** @var bool */
+    /**
+     * If true, percentage values will be returned as decimal point values. (e.g. 0-100% => 0-1, 25% => 0.25)
+     * Takes precedence over the value of $return_unformatted.
+     * See setReturnPercentageDecimal() for more information.
+     *
+     * @var bool
+     */
     private $return_percentage_decimal = false;
 
-    /** @var bool */
+    /**
+     * If true, return date/time values as PHP DateTime objects, not strings.
+     * Takes precedence over the value of $return_unformatted.
+     *
+     * @var bool
+     */
     private $return_date_time_objects = false;
 
     public function __construct()
@@ -54,14 +110,9 @@ class ReaderConfiguration
      *
      * @param  string $temp_dir
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setTempDir($temp_dir)
+    public function setTempDir(string $temp_dir): self
     {
-        if (!is_string($temp_dir)) {
-            throw new InvalidArgumentException('TempDir needs to be a string.');
-        }
         $this->temp_dir = $temp_dir;
 
         return $this;
@@ -73,14 +124,9 @@ class ReaderConfiguration
      *
      * @param  int $skip_empty_cells A ReaderSkipConfiguration constant.
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setSkipEmptyCells($skip_empty_cells)
+    public function setSkipEmptyCells(int $skip_empty_cells): self
     {
-        if (!is_numeric($skip_empty_cells)) {
-            throw new InvalidArgumentException('SkipEmptyCells needs to be a ReaderSkipConfiguration constant.');
-        }
         $this->skip_empty_cells = $skip_empty_cells;
 
         return $this;
@@ -92,14 +138,9 @@ class ReaderConfiguration
      *
      * @param  int $skip_empty_rows A ReaderSkipConfiguration constant.
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setSkipEmptyRows($skip_empty_rows)
+    public function setSkipEmptyRows(int $skip_empty_rows): self
     {
-        if (!is_numeric($skip_empty_rows)) {
-            throw new InvalidArgumentException('SkipEmptyRows needs to be a ReaderSkipConfiguration constant.');
-        }
         $this->skip_empty_rows = $skip_empty_rows;
 
         return $this;
@@ -110,14 +151,9 @@ class ReaderConfiguration
      *
      * @param  bool $output_column_names
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setOutputColumnNames($output_column_names)
+    public function setOutputColumnNames(bool $output_column_names): self
     {
-        if (!is_bool($output_column_names)) {
-            throw new InvalidArgumentException('OutputColumnNames needs to be a boolean.');
-        }
         $this->output_column_names = $output_column_names;
 
         return $this;
@@ -128,16 +164,9 @@ class ReaderConfiguration
      *
      * @param  SharedStringsConfiguration $shared_strings_configuration
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setSharedStringsConfiguration($shared_strings_configuration)
+    public function setSharedStringsConfiguration(SharedStringsConfiguration $shared_strings_configuration): self
     {
-        if (!($shared_strings_configuration instanceof SharedStringsConfiguration)) {
-            throw new InvalidArgumentException(
-                'SharedStringsConfiguration needs to be an instance of SharedStringsConfiguration.'
-            );
-        }
         $this->shared_strings_configuration = $shared_strings_configuration;
 
         return $this;
@@ -152,11 +181,8 @@ class ReaderConfiguration
      *
      * @throws InvalidArgumentException
      */
-    public function setCustomFormats($custom_formats)
+    public function setCustomFormats(array $custom_formats): self
     {
-        if (!is_array($custom_formats)) {
-            throw new InvalidArgumentException('CustomFormats needs to be an array.');
-        }
         foreach ($custom_formats as $key => $value) {
             if (!is_numeric($key) || !is_string($value)) {
                 throw new InvalidArgumentException(
@@ -177,14 +203,9 @@ class ReaderConfiguration
      *
      * @param  string|null $force_date_format
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setForceDateFormat($force_date_format)
+    public function setForceDateFormat(string $force_date_format = null): self
     {
-        if (!is_string($force_date_format) && $force_date_format !== null) {
-            throw new InvalidArgumentException('ForceDateFormat needs to be a string (or null to unset).');
-        }
         $this->force_date_format = $force_date_format;
 
         return $this;
@@ -198,14 +219,9 @@ class ReaderConfiguration
      *
      * @param  string|null $force_time_format
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setForceTimeFormat($force_time_format)
+    public function setForceTimeFormat(string $force_time_format = null): self
     {
-        if (!is_string($force_time_format) && $force_time_format !== null) {
-            throw new InvalidArgumentException('ForceTimeFormat needs to be a string (or null to unset).');
-        }
         $this->force_time_format = $force_time_format;
 
         return $this;
@@ -219,14 +235,9 @@ class ReaderConfiguration
      *
      * @param  string|null $force_date_time_format
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setForceDateTimeFormat($force_date_time_format)
+    public function setForceDateTimeFormat(string $force_date_time_format = null): self
     {
-        if (!is_string($force_date_time_format) && $force_date_time_format !== null) {
-            throw new InvalidArgumentException('ForceDateTimeFormat needs to be a string (or null to unset).');
-        }
         $this->force_date_time_format = $force_date_time_format;
 
         return $this;
@@ -243,14 +254,9 @@ class ReaderConfiguration
      *
      * @param  bool $return_unformatted
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setReturnUnformatted($return_unformatted)
+    public function setReturnUnformatted(bool $return_unformatted): self
     {
-        if (!is_bool($return_unformatted)) {
-            throw new InvalidArgumentException('ReturnUnformatted needs to be a bool.');
-        }
         $this->return_unformatted = $return_unformatted;
 
         return $this;
@@ -266,14 +272,9 @@ class ReaderConfiguration
      *
      * @param  bool $return_percentage_decimal
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setReturnPercentageDecimal($return_percentage_decimal)
+    public function setReturnPercentageDecimal(bool $return_percentage_decimal): self
     {
-        if (!is_bool($return_percentage_decimal)) {
-            throw new InvalidArgumentException('ReturnPercentageDecimal needs to be a bool.');
-        }
         $this->return_percentage_decimal = $return_percentage_decimal;
 
         return $this;
@@ -285,14 +286,9 @@ class ReaderConfiguration
      *
      * @param  bool $return_date_time_objects
      * @return self
-     *
-     * @throws InvalidArgumentException
      */
-    public function setReturnDateTimeObjects($return_date_time_objects)
+    public function setReturnDateTimeObjects(bool $return_date_time_objects): self
     {
-        if (!is_bool($return_date_time_objects)) {
-            throw new InvalidArgumentException('ReturnDateTimeObjects needs to be a bool.');
-        }
         $this->return_date_time_objects = $return_date_time_objects;
 
         return $this;
@@ -301,7 +297,7 @@ class ReaderConfiguration
     /**
      * @return string
      */
-    public function getTempDir()
+    public function getTempDir(): string
     {
         return $this->temp_dir;
     }
@@ -309,7 +305,7 @@ class ReaderConfiguration
     /**
      * @return int
      */
-    public function getSkipEmptyCells()
+    public function getSkipEmptyCells(): int
     {
         return $this->skip_empty_cells;
     }
@@ -317,7 +313,7 @@ class ReaderConfiguration
     /**
      * @return int
      */
-    public function getSkipEmptyRows()
+    public function getSkipEmptyRows(): int
     {
         return $this->skip_empty_rows;
     }
@@ -325,7 +321,7 @@ class ReaderConfiguration
     /**
      * @return bool
      */
-    public function getOutputColumnNames()
+    public function getOutputColumnNames(): bool
     {
         return $this->output_column_names;
     }
@@ -333,7 +329,7 @@ class ReaderConfiguration
     /**
      * @return SharedStringsConfiguration
      */
-    public function getSharedStringsConfiguration()
+    public function getSharedStringsConfiguration(): SharedStringsConfiguration
     {
         return $this->shared_strings_configuration;
     }
@@ -341,7 +337,7 @@ class ReaderConfiguration
     /**
      * @return array
      */
-    public function getCustomFormats()
+    public function getCustomFormats(): array
     {
         return $this->custom_formats;
     }
@@ -373,7 +369,7 @@ class ReaderConfiguration
     /**
      * @return bool
      */
-    public function getReturnUnformatted()
+    public function getReturnUnformatted(): bool
     {
         return $this->return_unformatted;
     }
@@ -381,7 +377,7 @@ class ReaderConfiguration
     /**
      * @return bool
      */
-    public function getReturnPercentageDecimal()
+    public function getReturnPercentageDecimal(): bool
     {
         return $this->return_percentage_decimal;
     }
@@ -389,7 +385,7 @@ class ReaderConfiguration
     /**
      * @return bool
      */
-    public function getReturnDateTimeObjects()
+    public function getReturnDateTimeObjects(): bool
     {
         return $this->return_date_time_objects;
     }

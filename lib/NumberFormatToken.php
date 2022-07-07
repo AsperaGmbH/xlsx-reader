@@ -17,7 +17,7 @@ class NumberFormatToken
     /**
      * @param string $code
      */
-    public function __construct($code)
+    public function __construct(string $code)
     {
         $this->code = $code;
     }
@@ -26,7 +26,7 @@ class NumberFormatToken
      * @param  string $code
      * @return $this
      */
-    public function setCode($code)
+    public function setCode(string $code): self
     {
         $this->code = $code;
         return $this;
@@ -35,7 +35,7 @@ class NumberFormatToken
     /**
      * @param string $code
      */
-    public function appendCode($code)
+    public function appendCode(string $code)
     {
         $this->code .= $code;
     }
@@ -43,7 +43,7 @@ class NumberFormatToken
     /**
      * @return string
      */
-    public function getCode()
+    public function getCode(): string
     {
         return $this->code;
     }
@@ -52,7 +52,7 @@ class NumberFormatToken
      * @param  bool $is_quoted
      * @return $this
      */
-    public function setIsQuoted($is_quoted)
+    public function setIsQuoted(bool $is_quoted): self
     {
         $this->is_quoted = $is_quoted;
         return $this;
@@ -61,7 +61,7 @@ class NumberFormatToken
     /**
      * @return bool
      */
-    public function isQuoted()
+    public function isQuoted(): bool
     {
         return $this->is_quoted;
     }
@@ -70,7 +70,7 @@ class NumberFormatToken
      * @param  int|null $square_bracket_index
      * @return $this
      */
-    public function setSquareBracketIndex($square_bracket_index)
+    public function setSquareBracketIndex($square_bracket_index): self
     {
         $this->square_bracket_index = $square_bracket_index;
         return $this;
@@ -87,7 +87,7 @@ class NumberFormatToken
     /**
      * @return bool
      */
-    public function isInSquareBrackets()
+    public function isInSquareBrackets(): bool
     {
         return $this->square_bracket_index !== null;
     }
@@ -95,7 +95,7 @@ class NumberFormatToken
     /**
      * @return bool
      */
-    public function isScientificNotationE()
+    public function isScientificNotationE(): bool
     {
         return preg_match('{^[Ee][+-]$}', $this->code);
     }

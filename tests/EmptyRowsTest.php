@@ -25,7 +25,7 @@ class EmptyRowsTest extends TestCase
      *
      * @throws Exception
      */
-    public function testCellContent($skip_config, $expected_values)
+    public function testCellContent(int $skip_config, array $expected_values)
     {
         $reader = new Reader(
             (new ReaderConfiguration())
@@ -46,9 +46,9 @@ class EmptyRowsTest extends TestCase
     }
 
     /**
-     * @return array
+     * @return array[]
      */
-    public function dataProviderCellContent()
+    public function dataProviderCellContent(): array
     {
         return array(
             'SKIP_NONE'           => array(

@@ -20,7 +20,7 @@ class CellFormatConfigTest extends TestCase
      *
      * @throws Exception
      */
-    public function dataProviderForFormatConfiguration()
+    public function dataProviderForFormatConfiguration(): array
     {
         $return_base = array('', '08-20-17', '22:30', '8/20/17 22:30', '25.50%', '0.50%');
 
@@ -134,7 +134,7 @@ class CellFormatConfigTest extends TestCase
      *
      * @throws Exception
      */
-    public function testCellFormatConfiguration($config, $expected)
+    public function testCellFormatConfiguration(ReaderConfiguration $config, array $expected)
     {
         $reader = new Reader($config);
         $reader->open(self::TEST_FILE);

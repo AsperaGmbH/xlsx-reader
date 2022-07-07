@@ -26,9 +26,9 @@ class SharedStringsTest extends TestCase
     const CACHE_MAX_SIZE_KB = 2048; // 2 MB should be enough for the entire shared string file in all supported PHP versions
 
     /**
-     * @return array
+     * @return array[]
      */
-    public function dataProviderForTestValues()
+    public function dataProviderForTestValues(): array
     {
         return array(
             'via cache'          => array(true, true),
@@ -47,30 +47,39 @@ class SharedStringsTest extends TestCase
      *
      * @throws  Exception
      */
-    public function testValues($use_cache, $use_optimized_files)
+    public function testValues(bool $use_cache, bool $use_optimized_files)
     {
-        $xlsx_reader = new Reader((new ReaderConfiguration())
-            ->setSharedStringsConfiguration((new SharedStringsConfiguration())
-                ->setUseCache($use_cache)
-                ->setUseOptimizedFiles($use_optimized_files)
-                ->setCacheSizeKilobyte(self::CACHE_MAX_SIZE_KB))
+        $xlsx_reader = new Reader(
+            (new ReaderConfiguration())
+                ->setSharedStringsConfiguration(
+                    (new SharedStringsConfiguration())
+                        ->setUseCache($use_cache)
+                        ->setUseOptimizedFiles($use_optimized_files)
+                        ->setCacheSizeKilobyte(self::CACHE_MAX_SIZE_KB)
+                )
         );
 
         $xlsx_reader->open(self::FILE_PATH);
 
         // Check values; A1 contains a shared string, B1 contains an inline string.
         $test_row = $xlsx_reader->current();
-        self::assertSame('shared string', $test_row[0],
-            'Could not read shared string. Found value: [' . $test_row[0] . ']');
-        self::assertSame('inline string', $test_row[1],
-            'Could not read inline string. Found value: [' . $test_row[1] . ']');
+        self::assertSame(
+            'shared string',
+            $test_row[0],
+            'Could not read shared string. Found value: [' . $test_row[0] . ']'
+        );
+        self::assertSame(
+            'inline string',
+            $test_row[1],
+            'Could not read inline string. Found value: [' . $test_row[1] . ']'
+        );
         $xlsx_reader->close();
     }
 
     /**
-     * @return array
+     * @return array[]
      */
-    public function dataProviderForTestMemoryConfiguration()
+    public function dataProviderForTestMemoryConfiguration(): array
     {
         return array(
             'no cache'    => array(false, true),
@@ -89,7 +98,7 @@ class SharedStringsTest extends TestCase
      *
      * @throws Exception
      */
-    public function testMemoryConfiguration($use_cache, $use_large_cache)
+    public function testMemoryConfiguration(bool $use_cache, bool $use_large_cache)
     {
         // Pick configuration values based on test data set
         if ($use_large_cache) {
@@ -110,11 +119,13 @@ class SharedStringsTest extends TestCase
         }
 
         // Initialize reader
-        $xlsx_reader = new Reader((new ReaderConfiguration())
-            ->setSharedStringsConfiguration((new SharedStringsConfiguration())
-                ->setUseCache($use_cache)
-                ->setCacheSizeKilobyte($cache_size_kb)
-            )
+        $xlsx_reader = new Reader(
+            (new ReaderConfiguration())
+                ->setSharedStringsConfiguration(
+                    (new SharedStringsConfiguration())
+                        ->setUseCache($use_cache)
+                        ->setCacheSizeKilobyte($cache_size_kb)
+                )
         );
         $xlsx_reader->open(self::FILE_PATH);
 
@@ -150,9 +161,9 @@ class SharedStringsTest extends TestCase
     }
 
     /**
-     * @return array
+     * @return array[]
      */
-    public function dataProviderForTestOptimizedFileConfiguration()
+    public function dataProviderForTestOptimizedFileConfiguration(): array
     {
         return array(
             'do not use optimized files' => array(false, false),
@@ -171,19 +182,21 @@ class SharedStringsTest extends TestCase
      *
      * @throws Exception
      */
-    public function testOptimizedFileConfiguration($use_optimized_files, $use_many_entries_per_file)
+    public function testOptimizedFileConfiguration(bool $use_optimized_files, bool $use_many_entries_per_file)
     {
         // Pick configuration values based on test data set
         $entries_per_file = $use_many_entries_per_file ? 5000 : 500;
         $expected_file_count = ceil(self::SHARED_STRING_ENTRY_COUNT / $entries_per_file);
 
         // Initialize reader
-        $xlsx_reader = new Reader((new ReaderConfiguration())
-            ->setSharedStringsConfiguration((new SharedStringsConfiguration())
-                ->setUseCache(false)
-                ->setUseOptimizedFiles($use_optimized_files)
-                ->setOptimizedFileEntryCount($entries_per_file)
-            )
+        $xlsx_reader = new Reader(
+            (new ReaderConfiguration())
+                ->setSharedStringsConfiguration(
+                    (new SharedStringsConfiguration())
+                        ->setUseCache(false)
+                        ->setUseOptimizedFiles($use_optimized_files)
+                        ->setOptimizedFileEntryCount($entries_per_file)
+                )
         );
         $xlsx_reader->open(self::FILE_PATH);
 
@@ -221,7 +234,7 @@ class SharedStringsTest extends TestCase
      *
      * @throws ReflectionException
      */
-    private static function getAccessibleProperty($target_object, $target_property_name)
+    private static function getAccessibleProperty($target_object, string $target_property_name)
     {
         $reflection = new ReflectionClass(get_class($target_object));
         $internal_property = $reflection->getProperty($target_property_name);

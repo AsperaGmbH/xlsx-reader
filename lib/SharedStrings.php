@@ -7,7 +7,7 @@ use LogicException;
 use RuntimeException;
 use SplFixedArray;
 
-/** Class to handle strings inside of XLSX files which are put to a specific shared strings file. */
+/** Class to handle strings from XLSX files which are put to a specific shared strings file. */
 class SharedStrings
 {
     /**
@@ -18,27 +18,27 @@ class SharedStrings
      */
     const SHARED_STRING_CACHE_ARRAY_SIZE_STEP = 100;
 
-    /** @var string Filename (without path) of the shared strings XML file. */
+    /** @var string|null Filename (without path) of the shared strings XML file. */
     private $shared_strings_filename;
 
-    /** @var string Path to the directory containing all shared strings files used by this instance. Includes trailing slash. */
+    /** @var string|null Path to the directory containing all shared strings files used by this instance. Includes trailing slash. */
     private $shared_strings_directory;
 
-    /** @var OoxmlReader XML reader object for the shared strings XML file */
-    private $shared_strings_reader;
+    /** @var OoxmlReader|null XML reader object for the shared strings XML file */
+    private $shared_strings_reader = null;
 
-    /** @var SharedStringsConfiguration Configuration of shared string reading and caching behaviour. */
+    /** @var SharedStringsConfiguration|null Configuration of shared string reading and caching behaviour. */
     private $shared_strings_configuration;
 
-    /** @var SplFixedArray Shared strings cache, if the number of shared strings is low enough */
+    /** @var SplFixedArray|null Shared strings cache, if the number of shared strings is low enough */
     private $shared_string_cache;
 
     /**
-     * Array of SharedStringsOptimizedFile instances containing filenames and associated data for shared strings that
-     * were not saved to $shared_string_cache. Files contain values in seek-optimized format. (one entry per line, JSON encoded)
+     * Filenames and associated data for shared strings that were not saved to $shared_string_cache.
+     * Files contain values in seek-optimized format. (Meaning: One entry per line, JSON encoded.)
      * Key per element: the index of the first string contained within the file.
      *
-     * @var array
+     * @var SharedStringsOptimizedFile[]
      */
     private $prepared_shared_string_files = array();
 
@@ -62,13 +62,13 @@ class SharedStrings
      * @throws  RuntimeException
      */
     public function __construct(
-        $shared_strings_directory,
-        $shared_strings_filename,
+        string $shared_strings_directory,
+        string $shared_strings_filename,
         SharedStringsConfiguration $shared_strings_configuration
     ) {
-        $this->shared_strings_configuration = $shared_strings_configuration;
         $this->shared_strings_directory = $shared_strings_directory;
         $this->shared_strings_filename = $shared_strings_filename;
+        $this->shared_strings_configuration = $shared_strings_configuration;
         if (is_readable($this->shared_strings_directory . $this->shared_strings_filename)) {
             $this->prepareSharedStrings();
         }
@@ -79,11 +79,11 @@ class SharedStrings
      */
     public function close()
     {
-        if ($this->shared_strings_reader && $this->shared_strings_reader instanceof OoxmlReader) {
+        if ($this->shared_strings_reader) {
             $this->shared_strings_reader->close();
             $this->shared_strings_reader = null;
         }
-        /** @var SharedStringsOptimizedFile $file_data */
+
         foreach ($this->prepared_shared_string_files as $file_data) {
             $file_data->closeHandle();
             @unlink($file_data->getFile());
@@ -112,7 +112,7 @@ class SharedStrings
      *
      * @throws  Exception
      */
-    public function getSharedString($target_index)
+    public function getSharedString(int $target_index): string
     {
         if ($this->shared_strings_filename === null) {
             throw new LogicException('SharedStrings instance was already closed.');
@@ -149,7 +149,7 @@ class SharedStrings
      *
      * @throws  RuntimeException
      */
-    private function getStringFromOptimizedFile($target_index)
+    private function getStringFromOptimizedFile(int $target_index)
     {
         // Determine the target file to read from, given the smallest index obtainable from it.
         $index_of_target_file = null;
@@ -163,7 +163,6 @@ class SharedStrings
             return null;
         }
 
-        /** @var SharedStringsOptimizedFile $file_data */
         $file_data = $this->prepared_shared_string_files[$index_of_target_file];
 
         // Determine our target line in the target file
@@ -213,9 +212,9 @@ class SharedStrings
      * Retrieves a shared string from the original shared strings XML file.
      *
      * @param   int $target_index
-     * @return  null|string
+     * @return  string
      */
-    private function getStringFromOriginalSharedStringFile($target_index)
+    private function getStringFromOriginalSharedStringFile(int $target_index): string
     {
         // If the desired index equals the current, return cached result.
         if ($target_index === $this->shared_string_index && $this->last_shared_string_value !== null) {
@@ -317,8 +316,6 @@ class SharedStrings
      * Loads shared string data into RAM up to the configured memory limit. Stores additional shared string data
      * in seek-optimized additional files on the filesystem in order to lower seek times.
      *
-     * @return void
-     *
      * @throws RuntimeException
      */
     private function prepareSharedStrings()
@@ -393,7 +390,6 @@ class SharedStrings
         $this->shared_strings_reader->close();
         $this->shared_strings_reader = null;
 
-        /** @var SharedStringsOptimizedFile $file_data */
         foreach ($this->prepared_shared_string_files as $file_data) {
             $file_data->closeHandle();
         }
@@ -409,7 +405,7 @@ class SharedStrings
      *
      * @throws  RuntimeException
      */
-    private function prepareSingleSharedString($index, $string, $write_to_cache = false)
+    private function prepareSingleSharedString(int $index, string $string, bool $write_to_cache = false)
     {
         if ($write_to_cache) {
             // Caching enabled and there's still memory available; Write to internal cache.
@@ -431,7 +427,6 @@ class SharedStrings
         /** @var SharedStringsOptimizedFile $newest_file_data */
         $newest_file_data = null;
         $newest_file_is_full = false;
-        $shared_string_file_index = null;
         if (count($this->prepared_shared_string_files) > 0) {
             $shared_string_file_index = max(array_keys($this->prepared_shared_string_files));
             $newest_file_data = $this->prepared_shared_string_files[$shared_string_file_index];

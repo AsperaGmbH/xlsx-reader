@@ -14,7 +14,7 @@ class Worksheet
     /**
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -22,7 +22,7 @@ class Worksheet
     /**
      * @param string $name
      */
-    public function setName($name)
+    public function setName(string $name)
     {
         $this->name = $name;
     }
@@ -30,7 +30,7 @@ class Worksheet
     /**
      * @return string
      */
-    public function getRelationshipId()
+    public function getRelationshipId(): string
     {
         return $this->relationship_id;
     }
@@ -38,7 +38,7 @@ class Worksheet
     /**
      * @param string $relationship_id
      */
-    public function setRelationshipId($relationship_id)
+    public function setRelationshipId(string $relationship_id)
     {
         $this->relationship_id = $relationship_id;
     }

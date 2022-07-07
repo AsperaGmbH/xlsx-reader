@@ -4,7 +4,6 @@ namespace Aspera\Spreadsheet\XLSX;
 
 use Exception;
 use RuntimeException;
-use InvalidArgumentException;
 use DateTime;
 use DateTimeZone;
 use DateInterval;
@@ -106,8 +105,10 @@ class NumberFormat
 
     /**
      * @param ReaderConfiguration $configuration
+     *
+     * @throws Exception
      */
-    public function __construct($configuration)
+    public function __construct(ReaderConfiguration $configuration)
     {
         $this->configuration = $configuration;
         self::initBaseDate();
@@ -115,17 +116,17 @@ class NumberFormat
     }
 
     /**
-     * @param array $xf_num_fmt_ids
+     * @param array $xf_num_fmt_ids List of ids; a null value indicates "do not format anything"
      */
-    public function injectXfNumFmtIds($xf_num_fmt_ids)
+    public function injectXfNumFmtIds(array $xf_num_fmt_ids)
     {
         $this->xf_num_fmt_ids = $xf_num_fmt_ids;
     }
 
     /**
-     * @param array $number_formats
+     * @param string[] $number_formats
      */
-    public function injectNumberFormats($number_formats)
+    public function injectNumberFormats(array $number_formats)
     {
         $this->number_formats = $number_formats;
     }
@@ -137,7 +138,7 @@ class NumberFormat
      *
      * @throws Exception
      */
-    public function tryFormatValue($value, $xf_id)
+    public function tryFormatValue(string $value, int $xf_id)
     {
         if ($value !== '' && $xf_id && isset($this->xf_num_fmt_ids[$xf_id])) {
             return $this->formatValue($value, $xf_id);
@@ -150,13 +151,13 @@ class NumberFormat
     /**
      * Formats the value according to the index.
      *
-     * @param   string $value
-     * @param   int    $xf_id
-     * @return  string
+     * @param  string $value
+     * @param  int    $xf_id
+     * @return mixed
      *
-     * @throws  Exception
+     * @throws Exception
      */
-    public function formatValue($value, $xf_id)
+    public function formatValue(string $value, int $xf_id)
     {
         $num_fmt_id = 0;
         if (isset($this->xf_num_fmt_ids[$xf_id]) && $this->xf_num_fmt_ids[$xf_id] !== null) {
@@ -185,11 +186,11 @@ class NumberFormat
         }
 
         if ($section->getNumberType() === 'decimal') {
-            return $this->applyDecimalFormat($value, $section);
+            return $this->applyDecimalFormat((float) $value, $section);
         }
 
         if ($section->getNumberType() === 'fraction') {
-            return $this->applyFractionFormat($value, $section);
+            return $this->applyFractionFormat((float) $value, $section);
         }
 
         if ($section->getDateTimeType()) {
@@ -202,10 +203,10 @@ class NumberFormat
     /**
      * Applies the "general" format (format id = 0) to the value.
      *
-     * @param  mixed $value
-     * @return mixed
+     * @param  string $value
+     * @return string
      */
-    private function applyGeneralFormat($value)
+    private function applyGeneralFormat(string $value): string
     {
         if (preg_match('/\d+(?:\.\d+)E[+-]\d+?/u', $value) === 1) {
             // Values stored using e-notation should be converted to decimals for display.
@@ -223,11 +224,11 @@ class NumberFormat
     /**
      * Applies requested formatting to values that do not contain any decimal, fraction or date/time format information.
      *
-     * @param  mixed               $value
+     * @param  string              $value
      * @param  NumberFormatSection $section
      * @return string
      */
-    private function applyTextFormat($value, $section)
+    private function applyTextFormat(string $value, NumberFormatSection $section): string
     {
         // Apply format to value, going token by token.
         $output = '';
@@ -251,11 +252,11 @@ class NumberFormat
     /**
      * Included subtypes: Scientific format, currency format
      *
-     * @param  mixed               $value
+     * @param  float               $value
      * @param  NumberFormatSection $section
      * @return string
      */
-    private function applyDecimalFormat($value, $section)
+    private function applyDecimalFormat(float $value, NumberFormatSection $section): string
     {
         // If scientific formatting is expected, multiply/divide value up/down to the correct exponent.
         $e_exponent = null;
@@ -379,7 +380,7 @@ class NumberFormat
                     );
                     $offset_in_section_decimal_format += $format_left_length_diff + 1;
 
-                    // Decimal format may have added thousand separators (commas), causing incongruencies in character amounts.
+                    // Decimal format may have added thousand separators (commas), causing incongruities in character amounts.
                     // If we just picked up commas in $decimal_part, add this many additional digits to the output, too.
                     $num_commas_in_decimal_part = strlen(preg_replace('{[^,]}', '', $decimal_part));
                     while ($num_commas_in_decimal_part > 0) {
@@ -419,7 +420,7 @@ class NumberFormat
             $output_part .= substr($token_code, $formatter_offset);
 
             // Handle @ symbol.
-            $output .= str_replace('@', $value, $output_part);
+            $output .= str_replace('@', (string) $value, $output_part);
         }
 
         if ($section->prependMinusSign() && $value < 0) {
@@ -432,11 +433,11 @@ class NumberFormat
     /**
      * Determines the correct multiplication exponent to fit the given value into the given format optimally.
      *
-     * @param  mixed $value
+     * @param  float               $value
      * @param  NumberFormatSection $section
      * @return int
      */
-    private function getExponentForValueAndSection($value, $section)
+    private function getExponentForValueAndSection(float $value, NumberFormatSection $section): int
     {
         $e_exponent = 0;
         if ($value < 1) {
@@ -450,45 +451,43 @@ class NumberFormat
         // Any value: Fill all spaces to the left of the decimal point optimally.
         $num_pre_decimal_digits_in_format = strlen($section->getFormatLeft()); // Note: Can be 0. (e.g. [.00E+0])
         $num_pre_decimal_digits_in_value = strlen(abs(floor($value)));
-        $e_exponent = $e_exponent + ($num_pre_decimal_digits_in_value - $num_pre_decimal_digits_in_format);
+        $e_exponent += $num_pre_decimal_digits_in_value - $num_pre_decimal_digits_in_format;
 
         return $e_exponent;
     }
 
     /**
-     * Applies the given, semantical decimal format info (read: not the included token codes) to the given number.
+     * Applies the given, semantic decimal format info (read: not the included token codes) to the given number.
      * Does not consider parts of the format that aren't directly related to decimal formatting.
      * e.g.: For the format [000"m" 000"k" 000.00], only [000000000.00] is considered.
      *
-     * @param  mixed               $number
+     * @param  float               $number
      * @param  NumberFormatSection $section
      * @return string
      */
-    private function formatDecimalValue($number, $section)
+    private function formatDecimalValue(float $number, NumberFormatSection $section): string
     {
         $format_left = str_replace(',', '', $section->getFormatLeft());
         $format_right = str_replace(',', '', $section->getFormatRight());
 
-        $formatted_number = $number;
-
         // Handle thousands scaling.
         if ($section->getThousandsScale() > 0) {
-            $formatted_number /= pow(1000, $section->getThousandsScale());
+            $number /= pow(1000, $section->getThousandsScale());
         }
 
         // Apply maximum characters behind decimal symbol limit.
-        $formatted_number = number_format((float) $formatted_number, strlen($format_right), '.', '');
+        $number = number_format((float) $number, strlen($format_right), '.', '');
 
         // Remove minus sign for now, as it requires explicit handling.
-        $formatted_number = str_replace('-', '', $formatted_number);
+        $number = str_replace('-', '', $number);
 
         // Remove insignificant zeroes for now, we will (re-)add them based on format_info next.
-        if (strpos($formatted_number, '.') !== false) {
-            $formatted_number = rtrim($formatted_number, '0');
+        if (strpos($number, '.') !== false) {
+            $number = rtrim($number, '0');
         }
 
         // Split number into pre-decimal and post-decimal.
-        $number_parts = explode('.', $formatted_number);
+        $number_parts = explode('.', $number);
 
         // Handle left side of decimal point.
         $number_left = $this->mergeValueIntoNumericalFormat($number_parts[0], $format_left);
@@ -513,11 +512,11 @@ class NumberFormat
             }
         }
 
-        $formatted_number = $number_left . ($number_right !== '' ? ('.' . $number_right) : '');
+        $number = $number_left . ($number_right !== '' ? ('.' . $number_right) : '');
 
         // Place thousands separators.
         if ($section->useThousandsSeparators()) {
-            $number_parts = explode('.', $formatted_number);
+            $number_parts = explode('.', $number);
             $number_left = $number_parts[0];
             $number_left_with_separators = '';
             while (strlen($number_left) > 3) {
@@ -532,28 +531,30 @@ class NumberFormat
             }
             $number_left_with_separators = $number_left . $number_left_with_separators;
             if (count($number_parts) > 1) {
-                $formatted_number = $number_left_with_separators . '.' . $number_parts[1];
+                $number = $number_left_with_separators . '.' . $number_parts[1];
             } else {
-                $formatted_number = $number_left_with_separators;
+                $number = $number_left_with_separators;
             }
         }
 
         // Edge-case: Commas at start of decimal format are non-functional and must be output as-is.
         if (preg_match('{^(,+)}', $section->getFormatLeft(), $matches)) {
-            $formatted_number = $matches[1] . $formatted_number;
+            $number = $matches[1] . $number;
         }
 
-        return $formatted_number;
+        return $number;
     }
 
     /**
      * Apply the given fraction format to the given value.
      *
-     * @param  mixed               $value
+     * @param  float               $value
      * @param  NumberFormatSection $section
      * @return string
+     *
+     * @throws RuntimeException
      */
-    private function applyFractionFormat($value, $section)
+    private function applyFractionFormat(float $value, NumberFormatSection $section): string
     {
         // Note: abs() to ease minus-sign handling. Minus sign will be added manually later.
         $fraction_parts = $this->convertNumberToFraction(abs($value), $section);
@@ -579,7 +580,7 @@ class NumberFormat
                 $section->getWholeValuesFormat()
             );
         }
-        $whole_value_len_diff = strlen($section->getWholeValuesFormat()) - strlen((string) $whole_value_formatted);
+        $whole_value_len_diff = strlen($section->getWholeValuesFormat()) - strlen($whole_value_formatted);
 
         // There may be no output on whole-value despite there being a format for it. This may trigger a lot of
         // the original format (including unrelated content) to be dropped from output.
@@ -780,7 +781,7 @@ class NumberFormat
                         break;
                     default:
                         // This should never happen.
-                        throw new Exception('Invalid value for $current_state: [' . $current_state . ']');
+                        throw new RuntimeException('Invalid value for $current_state: [' . $current_state . ']');
                 }
             }
 
@@ -798,7 +799,7 @@ class NumberFormat
             }
 
             // Handle @ symbol.
-            $output .= str_replace('@', $value, $code_formatted);
+            $output .= str_replace('@', (string) $value, $code_formatted);
         }
 
         if ($section->prependMinusSign() && $value < 0) {
@@ -812,11 +813,11 @@ class NumberFormat
      * Converts the given value to a fraction and returns the individual parts of this fraction.
      * Does not apply any formatting, but already performs whole-value extraction if the format requires it.
      *
-     * @param  mixed               $value
+     * @param  float               $value
      * @param  NumberFormatSection $section
-     * @return array               Keys: whole, numerator, denominator
+     * @return int[]               Keys: 'whole', 'numerator', 'denominator'
      */
-    private function convertNumberToFraction($value, $section)
+    private function convertNumberToFraction(float $value, NumberFormatSection $section): array
     {
         if ($value == (int) $value) {
             // Value is a whole number. Only check to do here is whether to extract it from the fraction or not.
@@ -855,7 +856,7 @@ class NumberFormat
         if ($section->getWholeValuesFormat() !== '' && $value > 1) {
             return array(
                 'whole' => (int) floor($value),
-                'numerator' => (int) ($numerator % $denominator),
+                'numerator' => $numerator % $denominator,
                 'denominator' => (int) $denominator
             );
         }
@@ -869,15 +870,15 @@ class NumberFormat
     /**
      * Formats the given value as a Date/Time value, as requested by the given $section.
      *
-     * @param  mixed               $value
+     * @param  string              $value
      * @param  NumberFormatSection $section
      * @return DateTime|string
      *
      * @throws Exception
      */
-    private function applyDateTimeFormat($value, $section)
+    private function applyDateTimeFormat(string $value, NumberFormatSection $section)
     {
-        $datetime = $this->convertNumberToDateTime($value);
+        $datetime = $this->convertNumberToDateTime((float) $value);
 
         // Return DateTime objects as-is?
         if ($this->configuration->getReturnDateTimeObjects()) {
@@ -908,7 +909,7 @@ class NumberFormat
 
         // Check returnUnformatted HERE, so that returnDateTimeObjects and force...Format can take precedence.
         if ($this->configuration->getReturnUnformatted()) {
-            return $value;
+            return $value; // float value, but as a string.
         }
 
         $output = '';
@@ -928,12 +929,12 @@ class NumberFormat
     /**
      * Converts XLSX-style datetime data (a plain decimal number) to a DateTime object.
      *
-     * @param  mixed $value
+     * @param  float $value
      * @return DateTime
      *
      * @throws Exception
      */
-    private function convertNumberToDateTime($value)
+    private function convertNumberToDateTime(float $value): DateTime
     {
         // Determine days. (value = amount of days since base date)
         $days = (int) $value;
@@ -946,7 +947,7 @@ class NumberFormat
         $seconds = 0;
         if ($time) {
             // Workaround against precision loss: set low precision will round up milliseconds
-            $seconds = (int) round($time * 86400, 0);
+            $seconds = (int) round($time * 86400);
         }
 
         $datetime = clone self::$base_date;
@@ -969,11 +970,11 @@ class NumberFormat
      * $value=5, $format='##?' -> '5'
      * Note: Not to be used for entire decimal formats, e.g. '0.00'
      *
-     * @param  mixed  $value
-     * @param  string $format
+     * @param  string|int  $value
+     * @param  string      $format
      * @return string
      */
-    private function mergeValueIntoNumericalFormat($value, $format)
+    private function mergeValueIntoNumericalFormat($value, string $format): string
     {
         if ($format === '' && $value == 0) { // Note: Non-typesafe for $value, as this may be string or float.
             return '';
@@ -1004,7 +1005,7 @@ class NumberFormat
      *
      * @throws RuntimeException
      */
-    private function getFormatSectionForValue($value, $format_index)
+    private function getFormatSectionForValue(string $value, int $format_index): NumberFormatSection
     {
         foreach ($this->getFormatSections($format_index) as $section) {
             switch ($section->getPurpose()) {
@@ -1065,7 +1066,7 @@ class NumberFormat
      *
      * @throws RuntimeException
      */
-    private function getFormatSections($format_index)
+    private function getFormatSections(int $format_index): array
     {
         if (isset($this->parsed_format_cache[$format_index])) {
             return $this->parsed_format_cache[$format_index];
@@ -1101,7 +1102,7 @@ class NumberFormat
      * @param   int $int_2
      * @return  int Greatest common divisor
      */
-    private static function GCD($int_1, $int_2)
+    private static function GCD(int $int_1, int $int_2): int
     {
         $int_1 = (int) abs($int_1);
         $int_2 = (int) abs($int_2);
@@ -1129,6 +1130,6 @@ class NumberFormat
         self::$base_date = new DateTime();
         self::$base_date->setTimezone(new DateTimeZone('UTC'));
         self::$base_date->setDate(1900, 1, 0);
-        self::$base_date->setTime(0, 0, 0);
+        self::$base_date->setTime(0, 0);
     }
 }

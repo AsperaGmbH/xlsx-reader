@@ -12,43 +12,43 @@ use InvalidArgumentException;
 /** Class for reading XLSX file contents. */
 class Reader implements Iterator
 {
-    /** @var NumberFormat */
-    private $number_format;
-
-    /** @var ReaderConfiguration */
+    /** @var ReaderConfiguration The provided configuration data. */
     private $configuration;
+
+    /** @var NumberFormat Singleton for formatting methods. Also stores the provided formatting configuration. */
+    private $number_format;
 
     /**
      * Full path to the directory that should be used for all file operations.
      * Not to be confused with ReaderConfiguration::$temp_dir, which is the user-supplied temporary directory,
-     * which is a parent directory of $temp_dir_reader.
+     * which is a parent directory of $temp_dir_for_reader.
      *
      * @var string
      */
-    private $temp_dir_reader = '';
+    private $temp_dir_for_reader = '';
 
     /** @var array Temporary files created while reading the document. */
     private $temp_files = array();
 
-    /** @var RelationshipData File paths and -identifiers to all relevant parts of the read XLSX file */
+    /** @var RelationshipData|null File paths and -identifiers to all relevant parts of the read XLSX file */
     private $relationship_data;
-
-    /** @var array Data about separate sheets in the file. */
-    private $sheets = false;
-
-    /** @var SharedStrings Shared strings handler. */
-    private $shared_strings;
 
     /** @var string Path to the current worksheet XML file. */
     private $worksheet_path;
 
-    /** @var OoxmlReader XML reader object for the current worksheet XML file. */
-    private $worksheet_reader = false;
+    /** @var array Data about separate sheets in the file. */
+    private $sheets;
+
+    /** @var OoxmlReader|null XML reader object for the current worksheet XML file. */
+    private $worksheet_reader = null;
+
+    /** @var SharedStrings|null Shared strings handler. */
+    private $shared_strings = null;
 
     /** @var bool Whether the reader has been initialized with open() yet. */
     private $reader_is_open = false;
 
-    /** @var bool Internal storage for the result of the valid() method related to the Iterator interface. */
+    /** @var bool true when the current Iterator position is valid. An "invalid" position indicates EOF. */
     private $valid = false;
 
     /** @var bool Whether the reader is currently pointing at a starting <row> node. */
@@ -57,13 +57,13 @@ class Reader implements Iterator
     /** @var bool If true, current row output was already adjusted by a previous call to current(). */
     private $row_output_adjusted = false;
 
-    /** @var int Current row number in the file. */
-    private $row_number = 0;
+    /** @var int Current row number in the file. Identical to the <row>'s "r" attribute. 1-based. */
+    private $row_number = 0; // Initially 0 to indicate that the first row hasn't been read yet.
 
     /** @var int Amount of rows skipped due to lookahead. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
     private $skipped_empty_rows = 0;
 
-    /** @var array|null Contents of last read row. */
+    /** @var array|null Contents of last read row. null when no row has been read yet. */
     private $current_row = null;
 
     /** @var array|null Contents of next filled row. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
@@ -73,7 +73,7 @@ class Reader implements Iterator
     private $empty_row_structure = array();
 
     /**
-     * @param array $configuration Reader configuration. See documentation of ReaderConfiguration for details.
+     * @param  ReaderConfiguration $configuration
      *
      * @throws Exception
      */
@@ -96,30 +96,30 @@ class Reader implements Iterator
     /**
      * Open the given file and prepare everything for the reading of data.
      *
-     * @param   string  $file_path
+     * @param  string  $file_path
      *
-     * @throws  Exception
+     * @throws Exception
      */
-    public function open($file_path)
+    public function open(string $file_path)
     {
         if ($this->reader_is_open) {
             throw new LogicException('Reader was already opened.');
         }
 
         if (!is_readable($file_path)) {
-            throw new RuntimeException('XLSXReader: File not readable (' . $file_path . ')');
+            throw new RuntimeException('File not readable (' . $file_path . ')');
         }
 
-        if (!mkdir($this->temp_dir_reader, 0777, true) || !file_exists($this->temp_dir_reader)) {
+        if (!mkdir($this->temp_dir_for_reader, 0777, true) || !file_exists($this->temp_dir_for_reader)) {
             throw new RuntimeException(
-                'XLSXReader: Could neither create nor confirm existance of temporary directory (' . $this->temp_dir_reader . ')'
+                'Could neither create nor confirm existence of temporary directory (' . $this->temp_dir_for_reader . ')'
             );
         }
 
         $zip = new ZipArchive;
         $status = $zip->open($file_path);
         if ($status !== true) {
-            throw new RuntimeException('XLSXReader: File not readable (' . $file_path . ') (Error ' . $status . ')');
+            throw new RuntimeException('File not readable (' . $file_path . ') (Error ' . $status . ')');
         }
 
         // Mark as initialized *now*; The following methods expect this.
@@ -139,12 +139,12 @@ class Reader implements Iterator
      */
     public function close()
     {
-        if ($this->worksheet_reader && $this->worksheet_reader instanceof OoxmlReader) {
+        if ($this->worksheet_reader) {
             $this->worksheet_reader->close();
             $this->worksheet_reader = null;
         }
 
-        if ($this->shared_strings && $this->shared_strings instanceof SharedStrings) {
+        if ($this->shared_strings) {
             // Closing the shared string handler will also close all still opened shared string temporary work files.
             $this->shared_strings->close();
             $this->shared_strings = null;
@@ -163,11 +163,11 @@ class Reader implements Iterator
     /**
      * Retrieves an array with information about sheets in the current file
      *
-     * @return array List of sheets (key is sheet index, value is of type Worksheet). Sheet's index starts with 0.
+     * @return Worksheet[] List of sheets. Sheet index (0-based) is used as the key of each element.
      *
      * @throws LogicException
      */
-    public function getSheets()
+    public function getSheets(): array
     {
         if (!$this->reader_is_open) {
             throw new LogicException('Reader was not intialized via open() yet.');
@@ -179,13 +179,12 @@ class Reader implements Iterator
     /**
      * Changes the current sheet in the file to the sheet with the given index.
      *
-     * @param   int     $sheet_index
+     * @param  int     $sheet_index
+     * @return bool    True if sheet was changed successfully, false otherwise.
      *
-     * @return  bool    True if sheet was successfully changed, false otherwise.
-     *
-     * @throws  Exception
+     * @throws Exception
      */
-    public function changeSheet($sheet_index)
+    public function changeSheet(int $sheet_index): bool
     {
         if (!$this->reader_is_open) {
             throw new LogicException('Reader was not intialized via open() yet.');
@@ -195,12 +194,11 @@ class Reader implements Iterator
         if (!isset($sheets[$sheet_index])) {
             return false;
         }
-        /** @var Worksheet $target_sheet */
+
         $target_sheet = $sheets[$sheet_index];
 
         // The path to the target worksheet file can be obtained via the relationship id reference.
         $target_relationship_id = $target_sheet->getRelationshipId();
-        /** @var RelationshipElement $relationship_worksheet */
         foreach ($this->relationship_data->getWorksheets() as $relationship_worksheet) {
             if ($relationship_worksheet->getId() === $target_relationship_id) {
                 $worksheet_path = $relationship_worksheet->getAccessPath();
@@ -218,11 +216,8 @@ class Reader implements Iterator
         return true;
     }
 
-    // !Iterator interface methods
-
     /**
-     * Rewind the Iterator to the first element.
-     * Similar to the reset() function for arrays in PHP.
+     * Rewind the reader to the first row.
      *
      * @throws Exception
      */
@@ -233,7 +228,7 @@ class Reader implements Iterator
             throw new LogicException('Reader was not intialized via open() yet.');
         }
 
-        if ($this->worksheet_reader instanceof OoxmlReader) {
+        if ($this->worksheet_reader) {
             $this->worksheet_reader->close();
         } else {
             $this->worksheet_reader = new OoxmlReader();
@@ -256,29 +251,7 @@ class Reader implements Iterator
     }
 
     /**
-     * Return the current element.
-     *
-     * @return mixed current element from the collection
-     *
-     * @throws Exception
-     */
-    #[\ReturnTypeWillChange]
-    public function current()
-    {
-        if (!$this->valid()) {
-            throw new LogicException('Invalid reader state. Check valid() before using current().');
-        }
-
-        if (!$this->row_output_adjusted) {
-            $this->current_row = self::adjustRowOutput($this->current_row);
-            $this->row_output_adjusted = true;
-        }
-
-        return $this->current_row;
-    }
-
-    /**
-     * Move forward to next element.
+     * Move to the next row.
      *
      * @throws Exception
      */
@@ -485,7 +458,7 @@ class Reader implements Iterator
         }
 
         /* If configured: Return empty strings for empty values.
-         * Only empty cells inbetween and on the left side are added. */
+         * Only empty cells in-between and on the left side are added. */
         if (    $max_index + 1 > $cell_count
             &&  $this->configuration->getSkipEmptyCells() !== ReaderSkipConfiguration::SKIP_EMPTY
         ) {
@@ -505,32 +478,13 @@ class Reader implements Iterator
     }
 
     /**
-     * Return the identifying key of the current element.
+     * Returns whether the iterator is pointing at a valid position (read: before EOF) right now.
      *
-     * @return mixed either an integer or a string
-     *
-     * @throws Exception
-     */
-    #[\ReturnTypeWillChange]
-    public function key()
-    {
-        if (!$this->valid()) {
-            throw new LogicException('Invalid reader state. Check valid() before using key().');
-        }
-
-        return $this->row_number;
-    }
-
-    /**
-     * Check if there is a current element after calls to rewind() or next().
-     * Used to check if we've iterated to the end of the collection.
-     *
-     * @return boolean FALSE if there's nothing more to iterate over
+     * @return bool
      *
      * @throws LogicException
      */
-    #[\ReturnTypeWillChange]
-    public function valid()
+    public function valid(): bool
     {
         if (!$this->reader_is_open) {
             throw new LogicException('Reader was not intialized via open() yet.');
@@ -540,12 +494,52 @@ class Reader implements Iterator
     }
 
     /**
+     * Returns the current row, previously iterated to via next().
+     *
+     * @return array Current row contents.
+     *
+     * @throws LogicException
+     */
+    public function current(): array
+    {
+        if (!$this->valid()) {
+            throw new LogicException('Invalid reader state. Check valid() before using key().');
+        }
+
+        // Lazy output adjustment. Doing this here allows faster iteration via repeated next() calls.
+        if (!$this->row_output_adjusted) {
+            $this->current_row = self::adjustRowOutput($this->current_row);
+            $this->row_output_adjusted = true;
+        }
+
+        return $this->current_row;
+    }
+
+    /**
+     * Return the current row number.
+     *
+     * @return int
+     *
+     * @throws LogicException
+     */
+    public function key(): int
+    {
+        if (!$this->valid()) {
+            throw new LogicException('Invalid reader state. Check valid() before using key().');
+        }
+
+        return $this->row_number;
+    }
+
+    /**
      * Takes the column letter and converts it to a numerical index (0-based)
      *
-     * @param   string  $letter Letter(s) to convert
-     * @return  mixed   Numeric index (0-based) or boolean false if it cannot be calculated
+     * @param  string  $letter Letter(s) to convert
+     * @return int     Numeric index (0-based)
+     *
+     * @throws InvalidArgumentException Thrown when the given $letter includes non-letter characters.
      */
-    public static function indexFromColumnLetter($letter)
+    public static function indexFromColumnLetter(string $letter): int
     {
         $letter = strtoupper($letter);
         $result = 0;
@@ -553,7 +547,9 @@ class Reader implements Iterator
             $ord = ord($letter[$i]) - 64;
             if ($ord > 26) {
                 // This does not seem to be a letter. Someone must have given us an invalid value.
-                return false;
+                throw new InvalidArgumentException(
+                    'The given ASCII ' . ($ord + 64) . ' does not represent a letter character.'
+                );
             }
             $result += $ord * (26 ** $j);
         }
@@ -564,10 +560,10 @@ class Reader implements Iterator
     /**
      * Converts the given column index to an XLSX-style [A-Z] column identifier string.
      *
-     * @param   int $index
-     * @return  string
+     * @param  int $index
+     * @return string
      */
-    public static function columnLetterFromIndex($index)
+    public static function columnLetterFromIndex(int $index): string
     {
         $dividend = $index + 1; // Internal counting starts at 0; For easy calculation, it needs to start at 1.
         $output_string = '';
@@ -583,10 +579,10 @@ class Reader implements Iterator
      * If configured, replaces numeric column identifiers in output array with XLSX-style [A-Z] column identifiers.
      * If not configured, returns the input array unchanged.
      *
-     * @param   array $column_values
-     * @return  array
+     * @param  array $column_values
+     * @return array
      */
-    private function adjustRowOutput($column_values)
+    private function adjustRowOutput(array $column_values): array
     {
         if (!$this->configuration->getOutputColumnNames()) {
             // Column names not desired in output; Nothing to do here.
@@ -606,31 +602,33 @@ class Reader implements Iterator
      * A new folder will be created within the given directory, which will contain all work files,
      * and which will be cleaned up after the process have finished.
      *
-     * @param string $base_temp_dir
+     * @param  string $base_temp_dir
+     *
+     * @throws RuntimeException
      */
-    private function initTempDir($base_temp_dir)
+    private function initTempDir(string $base_temp_dir)
     {
         if (!is_writable($base_temp_dir)) {
-            throw new RuntimeException('XLSXReader: Temporary directory (' . $base_temp_dir . ') is not writable');
+            throw new RuntimeException('Temporary directory (' . $base_temp_dir . ') is not writable');
         }
         $base_temp_dir = rtrim($base_temp_dir, DIRECTORY_SEPARATOR);
 
         /** @noinspection NonSecureUniqidUsageInspection */
-        $this->temp_dir_reader = $base_temp_dir . DIRECTORY_SEPARATOR . uniqid() . DIRECTORY_SEPARATOR;
+        $this->temp_dir_for_reader = $base_temp_dir . DIRECTORY_SEPARATOR . uniqid() . DIRECTORY_SEPARATOR;
     }
 
     /**
      * Read general workbook information from the given zip into memory.
      *
-     * @param   ZipArchive  $zip
+     * @param  ZipArchive  $zip
      *
-     * @throws  Exception
+     * @throws Exception
      */
     private function initWorkbookData(ZipArchive $zip)
     {
         $workbook = $this->relationship_data->getWorkbook();
         if (!$workbook) {
-            throw new Exception('workbook data not found in XLSX file');
+            throw new RuntimeException('workbook data not found in XLSX file');
         }
         $workbook_xml = $zip->getFromName($workbook->getOriginalPath());
 
@@ -662,7 +660,9 @@ class Reader implements Iterator
     /**
      * Extract worksheet files to temp directory and set the first worksheet as active.
      *
-     * @param ZipArchive $zip
+     * @param  ZipArchive $zip
+     *
+     * @throws Exception
      */
     private function initWorksheets(ZipArchive $zip)
     {
@@ -671,12 +671,11 @@ class Reader implements Iterator
 
         // Extract worksheets to temporary work directory
         foreach ($this->relationship_data->getWorksheets() as $worksheet) {
-            /** @var RelationshipElement $worksheet */
             $worksheet_path_zip = $worksheet->getOriginalPath();
             $worksheet_path_conv = str_replace(RelationshipData::ZIP_DIR_SEP, DIRECTORY_SEPARATOR, $worksheet_path_zip);
-            $worksheet_path_unzipped = $this->temp_dir_reader . $worksheet_path_conv;
-            if (!$zip->extractTo($this->temp_dir_reader, $worksheet_path_zip)) {
-                $message = 'XLSXReader: Could not extract file [' . $worksheet_path_zip . '] to directory [' . $this->temp_dir_reader . '].';
+            $worksheet_path_unzipped = $this->temp_dir_for_reader . $worksheet_path_conv;
+            if (!$zip->extractTo($this->temp_dir_for_reader, $worksheet_path_zip)) {
+                $message = 'Could not extract file [' . $worksheet_path_zip . '] to directory [' . $this->temp_dir_for_reader . '].';
                 $this->reportZipExtractionFailure($zip, $message);
             }
             $worksheet->setAccessPath($worksheet_path_unzipped);
@@ -685,7 +684,7 @@ class Reader implements Iterator
 
         // Set first sheet as current sheet
         if (!$this->changeSheet(0)) {
-            throw new RuntimeException('XLSXReader: Sheet cannot be changed.');
+            throw new RuntimeException('Sheet cannot be changed.');
         }
     }
 
@@ -693,8 +692,10 @@ class Reader implements Iterator
      * Read shared strings data from the given zip into memory as configured via the given configuration object
      * and potentially create temporary work files for easy retrieval of shared string data.
      *
-     * @param ZipArchive                 $zip
-     * @param SharedStringsConfiguration $shared_strings_configuration
+     * @param  ZipArchive                 $zip
+     * @param  SharedStringsConfiguration $shared_strings_configuration
+     *
+     * @throws Exception
      */
     private function initSharedStrings(
         ZipArchive $zip,
@@ -704,20 +705,18 @@ class Reader implements Iterator
         if (count($shared_strings) > 0) {
             /* Currently, documents with multiple shared strings files are not supported.
             *  Only the first shared string file will be used. */
-            /** @var RelationshipElement $first_shared_string_element */
             $first_shared_string_element = $shared_strings[0];
 
             // Determine target directory and path for the extracted file
             $inzip_path = $first_shared_string_element->getOriginalPath();
             $inzip_path_for_outzip = str_replace(RelationshipData::ZIP_DIR_SEP, DIRECTORY_SEPARATOR, $inzip_path);
-            $dir_of_extracted_file = $this->temp_dir_reader . dirname($inzip_path_for_outzip) . DIRECTORY_SEPARATOR;
+            $dir_of_extracted_file = $this->temp_dir_for_reader . dirname($inzip_path_for_outzip) . DIRECTORY_SEPARATOR;
             $filename_of_extracted_file = basename($inzip_path_for_outzip);
             $path_to_extracted_file = $dir_of_extracted_file . $filename_of_extracted_file;
 
             // Extract file and note it in relevant variables
-            if (!$zip->extractTo($this->temp_dir_reader, $inzip_path)) {
-                $message = 'XLSXReader: Could not extract file [' . $inzip_path . ']'
-                    . ' to directory [' . $this->temp_dir_reader . '].';
+            if (!$zip->extractTo($this->temp_dir_for_reader, $inzip_path)) {
+                $message = 'Could not extract file [' . $inzip_path . '] to directory [' . $this->temp_dir_for_reader . '].';
                 $this->reportZipExtractionFailure($zip, $message);
             }
 
@@ -736,7 +735,9 @@ class Reader implements Iterator
     /**
      * Reads and prepares information on styles declared by the document for later usage.
      *
-     * @param ZipArchive $zip
+     * @param  ZipArchive $zip
+     *
+     * @throws Exception
      */
     private function initStyles(ZipArchive $zip)
     {
@@ -744,7 +745,6 @@ class Reader implements Iterator
         if (count($styles) > 0) {
             /* Currently, documents with multiple styles files are not supported.
             *  Only the first styles file will be used. */
-            /** @var RelationshipElement $first_styles_element */
             $first_styles_element = $styles[0];
 
             $styles_xml = $zip->getFromName($first_styles_element->getOriginalPath());
@@ -828,12 +828,13 @@ class Reader implements Iterator
         foreach ($this->temp_files as $temp_file) {
             @unlink($temp_file);
         }
+        $this->temp_files = array();
 
         // Better safe than sorry - shouldn't try deleting '.' or '/', or '..'.
-        if (strlen($this->temp_dir_reader) > 2) {
-            @rmdir($this->temp_dir_reader . 'xl' . DIRECTORY_SEPARATOR . 'worksheets');
-            @rmdir($this->temp_dir_reader . 'xl');
-            @rmdir($this->temp_dir_reader);
+        if (strlen($this->temp_dir_for_reader) > 2) {
+            @rmdir($this->temp_dir_for_reader . 'xl' . DIRECTORY_SEPARATOR . 'worksheets');
+            @rmdir($this->temp_dir_for_reader . 'xl');
+            @rmdir($this->temp_dir_for_reader);
         }
     }
 
@@ -845,7 +846,7 @@ class Reader implements Iterator
      *
      * @throws  RuntimeException
      */
-    private function reportZipExtractionFailure($zip, $message = '')
+    private function reportZipExtractionFailure(ZipArchive $zip, string $message = '')
     {
         $status_code = $zip->status;
         $status_message = $zip->getStatusString();

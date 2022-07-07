@@ -7,10 +7,9 @@ use InvalidArgumentException;
 /**
  * Extension of XMLReader to ease parsing of XML files of the OOXML specification.
  *
- * Depending on edition, namespaceUris in OOXML documents can be entirely different. Besides adding extra
- * matching overhead, this makes custom-made documents that are employing their own namespace rules a bit
- * complicated to read correctly. To mitigate the impact of that, this wrapper of XMLReader supplies methods
- * that deal with these issues automatically.
+ * OOXML documents use different namespaceUris for different editions.
+ * This makes reading custom-made documents that are employing their own namespace rules difficult.
+ * To mitigate the impact of that, this wrapper of XMLReader supplies methods that deal with these issues automatically.
  */
 class OoxmlReader extends XMLReader
 {
@@ -73,7 +72,7 @@ class OoxmlReader extends XMLReader
      *
      * @throws  InvalidArgumentException
      */
-    public function setDefaultNamespaceIdentifierElements($namespace_identifier)
+    public function setDefaultNamespaceIdentifierElements(string $namespace_identifier)
     {
         if (!isset($this->namespace_list[$namespace_identifier])) {
             throw new InvalidArgumentException('unknown namespace identifier [' . $namespace_identifier . ']');
@@ -89,7 +88,7 @@ class OoxmlReader extends XMLReader
      *
      * @throws  InvalidArgumentException
      */
-    public function setDefaultNamespaceIdentifierAttributes($namespace_identifier)
+    public function setDefaultNamespaceIdentifierAttributes(string $namespace_identifier)
     {
         if (!isset($this->namespace_list[$namespace_identifier])) {
             throw new InvalidArgumentException('unknown namespace identifier [' . $namespace_identifier . ']');
@@ -107,7 +106,7 @@ class OoxmlReader extends XMLReader
      *
      * @throws  InvalidArgumentException
      */
-    public function matchesElement($local_name, $namespace_identifier = null)
+    public function matchesElement(string $local_name, string $namespace_identifier = null): bool
     {
         return $this->localName === $local_name
             && $this->matchesNamespace($namespace_identifier);
@@ -117,10 +116,10 @@ class OoxmlReader extends XMLReader
      * Checks if any of the given list of elements is matched by the current element.
      * Returns the array key of the element that matched, or false if none matched.
      *
-     * @param   array   $list_of_elements   Format: array([MATCH_1_ID] => array(LOCAL_NAME_1, NAMESPACE_ID_1), ...)
-     * @return  mixed|false If no match was found: false. Otherwise, the parameter array's key of the element definition that matched.
+     * @param   array $list_of_elements   Format: array([MATCH_1_ID] => array(LOCAL_NAME_1, NAMESPACE_ID_1), ...)
+     * @return  mixed If no match was found: false. Otherwise, the parameter array's key of the element definition that matched.
      */
-    public function matchesOneOfList($list_of_elements)
+    public function matchesOneOfList(array $list_of_elements)
     {
         foreach ($list_of_elements as $one_element_key => $one_element) {
             $parameter_count = count($one_element);
@@ -150,7 +149,7 @@ class OoxmlReader extends XMLReader
      *
      * @throws  InvalidArgumentException
      */
-    public function matchesNamespace($namespace_identifier = null, $for_attribute = false)
+    public function matchesNamespace(string $namespace_identifier = null, bool $for_attribute = false): bool
     {
         return in_array(
             $this->namespaceURI,
@@ -164,8 +163,9 @@ class OoxmlReader extends XMLReader
      *
      * @return bool
      */
-    public function isClosingTag() {
-        return $this->nodeType === OoxmlReader::END_ELEMENT;
+    public function isClosingTag(): bool
+    {
+        return $this->nodeType === XMLReader::END_ELEMENT;
     }
 
     /**
@@ -173,11 +173,11 @@ class OoxmlReader extends XMLReader
      *
      * @param   string      $local_name
      * @param   string|null $namespace_identifier   NULL = Fallback to $this->default_namespace_identifier_elements
-     * @return  NULL|string
+     * @return  string|null
      *
      * @throws  InvalidArgumentException
      */
-    public function getAttributeNsId($local_name, $namespace_identifier = null)
+    public function getAttributeNsId(string $local_name, string $namespace_identifier = null)
     {
         $namespace_identifier = $this->validateNamespaceIdentifier($namespace_identifier, true);
 
@@ -203,7 +203,7 @@ class OoxmlReader extends XMLReader
      * @param   string|null $namespace_identifier
      * @return  bool
      */
-    public function nextNsId($local_name, $namespace_identifier = null)
+    public function nextNsId(string $local_name, string $namespace_identifier = null): bool
     {
         while ($this->next($local_name)) {
             if ($this->matchesNamespace($namespace_identifier)) {
@@ -215,17 +215,19 @@ class OoxmlReader extends XMLReader
     }
 
     /**
-     * Checks if the given namespace_identifier is valid. If null is given, will try to fallback to
+     * Checks if the given namespace_identifier is valid. If null is given, will try to fall back to
      * $this->default_namespace_identifier_elements. Returns the correct namespace_identifier for further usage.
      *
      * @param   string|null $namespace_identifier
-     * @param   bool        $for_attribute          Determines the default namespace_identifier to fallback to.
+     * @param   bool        $for_attribute          Determines the default namespace_identifier to fall back to.
      * @return  string
      *
      * @throws  InvalidArgumentException
      */
-    private function validateNamespaceIdentifier($namespace_identifier, $for_attribute = false)
-    {
+    private function validateNamespaceIdentifier(
+        string $namespace_identifier = null,
+        bool $for_attribute = false
+    ): string {
         if ($namespace_identifier === null) {
             $default_namespace_identifier = ($for_attribute)
                 ? $this->default_namespace_identifier_attributes

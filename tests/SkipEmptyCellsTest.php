@@ -6,7 +6,6 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use Exception;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
-use Aspera\Spreadsheet\XLSX\Worksheet;
 use Aspera\Spreadsheet\XLSX\Reader;
 use Aspera\Spreadsheet\XLSX\ReaderConfiguration;
 use Aspera\Spreadsheet\XLSX\ReaderSkipConfiguration;
@@ -19,22 +18,22 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
     /**
      * Make sure that the SkipEmptyCells option is properly considered by the reader.
      *
-     * @param int $skip_empty_cells
-     * @param int $exp_num_cols
+     * @param int   $skip_empty_cells
+     * @param int[] $exp_num_cols
      *
      * @dataProvider dataProviderEmptyCells
      *
      * @throws Exception
      */
-    public function testSkipEmptyCellsOption($skip_empty_cells, $exp_num_cols)
+    public function testSkipEmptyCellsOption(int $skip_empty_cells, array $exp_num_cols)
     {
-        $reader = new Reader((new ReaderConfiguration())
-            ->setSkipEmptyCells($skip_empty_cells)
+        $reader = new Reader(
+            (new ReaderConfiguration())
+                ->setSkipEmptyCells($skip_empty_cells)
         );
         $reader->open(self::FILE_PATH);
 
         $sheet_index = null;
-        /** @var Worksheet $worksheet */
         foreach ($reader->getSheets() as $index => $worksheet) {
             if ($worksheet->getName() == 'EmptyCellsSheet') {
                 $sheet_index = $index;
@@ -55,9 +54,9 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
     }
 
     /**
-     * @return array
+     * @return array[]
      */
-    public function dataProviderEmptyCells()
+    public function dataProviderEmptyCells(): array
     {
         return array(
             'SKIP_NONE' => array(
