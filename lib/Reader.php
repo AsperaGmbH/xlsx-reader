@@ -3,6 +3,7 @@
 namespace Aspera\Spreadsheet\XLSX;
 
 use Iterator;
+use LogicException;
 use RuntimeException;
 use ZipArchive;
 use Exception;
@@ -39,10 +40,13 @@ class Reader implements Iterator
     private $shared_strings;
 
     /** @var string Path to the current worksheet XML file. */
-    private $worksheet_path = false;
+    private $worksheet_path;
 
     /** @var OoxmlReader XML reader object for the current worksheet XML file. */
     private $worksheet_reader = false;
+
+    /** @var bool Whether the reader has been initialized with open() yet. */
+    private $reader_is_open = false;
 
     /** @var bool Internal storage for the result of the valid() method related to the Iterator interface. */
     private $valid = false;
@@ -59,11 +63,11 @@ class Reader implements Iterator
     /** @var int Amount of rows skipped due to lookahead. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
     private $skipped_empty_rows = 0;
 
-    /** @var bool|array Contents of last read row. */
-    private $current_row = false;
+    /** @var array|null Contents of last read row. */
+    private $current_row = null;
 
-    /** @var bool|array Contents of next filled row. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
-    private $next_filled_row = false;
+    /** @var array|null Contents of next filled row. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
+    private $next_filled_row = null;
 
     /** @var array Structure of an empty row for this document. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
     private $empty_row_structure = array();
@@ -71,7 +75,7 @@ class Reader implements Iterator
     /**
      * @param array $configuration Reader configuration. See documentation of ReaderConfiguration for details.
      *
-     * @throws RuntimeException
+     * @throws Exception
      */
     public function __construct(ReaderConfiguration $configuration = null)
     {
@@ -98,6 +102,10 @@ class Reader implements Iterator
      */
     public function open($file_path)
     {
+        if ($this->reader_is_open) {
+            throw new LogicException('Reader was already opened.');
+        }
+
         if (!is_readable($file_path)) {
             throw new RuntimeException('XLSXReader: File not readable (' . $file_path . ')');
         }
@@ -114,11 +122,14 @@ class Reader implements Iterator
             throw new RuntimeException('XLSXReader: File not readable (' . $file_path . ') (Error ' . $status . ')');
         }
 
+        // Mark as initialized *now*; The following methods expect this.
+        $this->reader_is_open = true;
+
         $this->relationship_data = new RelationshipData($zip);
         $this->initWorkbookData($zip);
-        $this->initWorksheets($zip);
         $this->initSharedStrings($zip, $this->configuration->getSharedStringsConfiguration());
         $this->initStyles($zip);
+        $this->initWorksheets($zip);
 
         $zip->close();
     }
@@ -141,16 +152,27 @@ class Reader implements Iterator
 
         $this->deleteTempfiles();
 
-        $this->worksheet_path = null;
+        $this->worksheet_path = '';
+        $this->sheets = array();
+        $this->relationship_data = null;
+        $this->current_row = null;
+
+        $this->reader_is_open = false;
     }
 
     /**
      * Retrieves an array with information about sheets in the current file
      *
      * @return array List of sheets (key is sheet index, value is of type Worksheet). Sheet's index starts with 0.
+     *
+     * @throws LogicException
      */
     public function getSheets()
     {
+        if (!$this->reader_is_open) {
+            throw new LogicException('Reader was not intialized via open() yet.');
+        }
+
         return array_values($this->sheets);
     }
 
@@ -160,9 +182,15 @@ class Reader implements Iterator
      * @param   int     $sheet_index
      *
      * @return  bool    True if sheet was successfully changed, false otherwise.
+     *
+     * @throws  Exception
      */
     public function changeSheet($sheet_index)
     {
+        if (!$this->reader_is_open) {
+            throw new LogicException('Reader was not intialized via open() yet.');
+        }
+
         $sheets = $this->getSheets(); // Note: Realigns indexes to an auto increment.
         if (!isset($sheets[$sheet_index])) {
             return false;
@@ -186,6 +214,7 @@ class Reader implements Iterator
         // Initialize the determined target sheet as the new current sheet
         $this->worksheet_path = $worksheet_path;
         $this->rewind();
+
         return true;
     }
 
@@ -194,10 +223,16 @@ class Reader implements Iterator
     /**
      * Rewind the Iterator to the first element.
      * Similar to the reset() function for arrays in PHP.
+     *
+     * @throws Exception
      */
     #[\ReturnTypeWillChange]
     public function rewind()
     {
+        if (!$this->reader_is_open) {
+            throw new LogicException('Reader was not intialized via open() yet.');
+        }
+
         if ($this->worksheet_reader instanceof OoxmlReader) {
             $this->worksheet_reader->close();
         } else {
@@ -208,10 +243,16 @@ class Reader implements Iterator
 
         $this->worksheet_reader->open($this->worksheet_path);
 
-        $this->valid = true;
+        // Reset read-relevant internal variables to their initial values to avoid conflicts between subsequent rewinds.
         $this->reader_points_at_new_row = false;
-        $this->current_row = false;
+        $this->row_output_adjusted = false;
         $this->row_number = 0;
+        $this->skipped_empty_rows = 0;
+        $this->current_row = null;
+        $this->next_filled_row = null;
+        $this->empty_row_structure = array();
+
+        $this->next();
     }
 
     /**
@@ -224,8 +265,8 @@ class Reader implements Iterator
     #[\ReturnTypeWillChange]
     public function current()
     {
-        if ($this->row_number === 0 && $this->current_row === false) {
-            $this->next();
+        if (!$this->valid()) {
+            throw new LogicException('Invalid reader state. Check valid() before using current().');
         }
 
         if (!$this->row_output_adjusted) {
@@ -244,6 +285,10 @@ class Reader implements Iterator
     #[\ReturnTypeWillChange]
     public function next()
     {
+        if (!$this->reader_is_open) {
+            throw new LogicException('Reader was not intialized via open() yet.');
+        }
+
         $this->current_row = array();
         $this->row_output_adjusted = false;
 
@@ -254,10 +299,10 @@ class Reader implements Iterator
             $this->skipped_empty_rows--;
             return;
         }
-        if ($this->next_filled_row) {
+        if ($this->next_filled_row !== null) {
             $this->row_number++;
             $this->current_row = $this->next_filled_row;
-            $this->next_filled_row = false;
+            $this->next_filled_row = null;
             return;
         }
 
@@ -463,10 +508,16 @@ class Reader implements Iterator
      * Return the identifying key of the current element.
      *
      * @return mixed either an integer or a string
+     *
+     * @throws Exception
      */
     #[\ReturnTypeWillChange]
     public function key()
     {
+        if (!$this->valid()) {
+            throw new LogicException('Invalid reader state. Check valid() before using key().');
+        }
+
         return $this->row_number;
     }
 
@@ -475,10 +526,16 @@ class Reader implements Iterator
      * Used to check if we've iterated to the end of the collection.
      *
      * @return boolean FALSE if there's nothing more to iterate over
+     *
+     * @throws LogicException
      */
     #[\ReturnTypeWillChange]
     public function valid()
     {
+        if (!$this->reader_is_open) {
+            throw new LogicException('Reader was not intialized via open() yet.');
+        }
+
         return $this->valid;
     }
 

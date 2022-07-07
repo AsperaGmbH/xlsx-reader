@@ -61,15 +61,15 @@ class IteratorTest extends PHPUnitTestCase
     public function testPositioningFunctions()
     {
         $row_number = $this->reader->key();
-        self::assertEquals(0, $row_number, 'Row number should be zero');
+        self::assertEquals(1, $row_number, 'Row number should be 1');
 
         $this->reader->next();
         $current_row_number = $this->reader->key();
-        self::assertEquals($row_number + 1, $current_row_number, 'Row number should be one');
+        self::assertEquals(2, $current_row_number, 'Row number should be 2');
 
         $this->reader->rewind();
         $current_row_number = $this->reader->key();
-        self::assertEquals(0, $current_row_number, 'Row number should be zero due to rewind()');
+        self::assertEquals(1, $current_row_number, 'Row number should be 1 due to rewind()');
     }
 
     /**
@@ -81,11 +81,11 @@ class IteratorTest extends PHPUnitTestCase
     public function testFunctionValid()
     {
         $read_file = array();
-        while (is_array($this->reader->current()) && $this->reader->valid()) {
+        while ($this->reader->valid()) {
             $read_file[] = $this->reader->current();
             $this->reader->next();
         }
-        self::assertFalse($this->reader->valid(), 'File reading has finished and it is still valid');
+        self::assertFalse($this->reader->valid(), 'File reading has finished but current position is still valid.');
         self::assertEquals($this->getExpectedArray(), $read_file, 'File has not been read correctly');
     }
 
