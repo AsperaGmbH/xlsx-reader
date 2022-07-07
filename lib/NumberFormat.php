@@ -903,7 +903,7 @@ class NumberFormat
                 break;
             default:
                 // Note: Should never happen. Exception is just to be safe.
-                throw new RuntimeException('Specific datetime_type for format_index [' . $num_fmt_id . '] is unknown.');
+                throw new RuntimeException('Unknown datetime_type.');
         }
 
         // Check returnUnformatted HERE, so that returnDateTimeObjects and force...Format can take precedence.
