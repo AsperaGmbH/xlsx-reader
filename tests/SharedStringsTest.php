@@ -136,8 +136,8 @@ class SharedStringsTest extends TestCase
 
         // Check against configured values
         if ($use_cache) {
-            self::assertNotEmpty(
-                $shared_strings_cache_count,
+            self::assertTrue(
+                $shared_strings_cache_count > 0,
                 'Cache is enabled but contents are empty.'
             );
             self::assertTrue(
@@ -153,7 +153,8 @@ class SharedStringsTest extends TestCase
                 . ' Actual entry count is ' . $shared_strings_cache_count . '.'
             );
         } else {
-            self::assertEmpty(
+            self::assertEquals(
+                0,
                 $shared_strings_cache_count,
                 'Cache is disabled but still contains contents.'
             );
@@ -207,8 +208,8 @@ class SharedStringsTest extends TestCase
 
         // Check number of created prepared files
         if ($use_optimized_files) {
-            self::assertNotEmpty(
-                $prepared_files_count,
+            self::assertTrue(
+                $prepared_files_count > 0,
                 'No optimized shared string files were created, despite the configuration requesting it.'
             );
             self::assertEquals(
@@ -219,7 +220,8 @@ class SharedStringsTest extends TestCase
                 . ' found ' . $prepared_files_count . '.'
             );
         } else {
-            self::assertEmpty(
+            self::assertEquals(
+                0,
                 $prepared_files_count,
                 'Optimized shared string files were created, despite the configuration denying it.'
             );
