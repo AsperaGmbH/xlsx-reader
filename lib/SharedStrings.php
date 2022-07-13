@@ -16,21 +16,21 @@ class SharedStrings
      *
      * @var int
      */
-    const SHARED_STRING_CACHE_ARRAY_SIZE_STEP = 100;
+    public const SHARED_STRING_CACHE_ARRAY_SIZE_STEP = 100;
 
-    /** @var string|null Filename (without path) of the shared strings XML file. */
+    /** @var ?string Filename (without path) of the shared strings XML file. */
     private $shared_strings_filename;
 
-    /** @var string|null Path to the directory containing all shared strings files used by this instance. Includes trailing slash. */
+    /** @var ?string Path to the directory containing all shared strings files used by this instance. Includes trailing slash. */
     private $shared_strings_directory;
 
-    /** @var OoxmlReader|null XML reader object for the shared strings XML file */
+    /** @var ?OoxmlReader XML reader object for the shared strings XML file */
     private $shared_strings_reader = null;
 
-    /** @var SharedStringsConfiguration|null Configuration of shared string reading and caching behaviour. */
+    /** @var ?SharedStringsConfiguration Configuration of shared string reading and caching behaviour. */
     private $shared_strings_configuration;
 
-    /** @var SplFixedArray|null Shared strings cache, if the number of shared strings is low enough */
+    /** @var ?SplFixedArray Shared strings cache, if the number of shared strings is low enough */
     private $shared_string_cache;
 
     /**
@@ -48,7 +48,7 @@ class SharedStrings
     /** @var int The shared string index the shared string reader is currently pointing at. */
     private $shared_string_index = 0;
 
-    /** @var string|null Temporary cache for the last value that was read from the shared strings xml file. */
+    /** @var ?string Temporary cache for the last value that was read from the shared strings xml file. */
     private $last_shared_string_value;
 
     /**
@@ -77,7 +77,7 @@ class SharedStrings
     /**
      * Closes all file pointers and deletes all temporary files created by this SharedStrings instance.
      */
-    public function close()
+    public function close(): void
     {
         if ($this->shared_strings_reader) {
             $this->shared_strings_reader->close();
@@ -99,7 +99,7 @@ class SharedStrings
     /**
      * @param SharedStringsConfiguration $configuration
      */
-    public function setSharedStringsConfiguration(SharedStringsConfiguration $configuration)
+    public function setSharedStringsConfiguration(SharedStringsConfiguration $configuration): void
     {
         $this->shared_strings_configuration = $configuration;
     }
@@ -145,11 +145,11 @@ class SharedStrings
      * May return null if unsuccessful.
      *
      * @param   int $target_index
-     * @return  null|string
+     * @return  ?string
      *
      * @throws  RuntimeException
      */
-    private function getStringFromOptimizedFile(int $target_index)
+    private function getStringFromOptimizedFile(int $target_index): ?string
     {
         // Determine the target file to read from, given the smallest index obtainable from it.
         $index_of_target_file = null;
@@ -301,7 +301,7 @@ class SharedStrings
      * Initializes the shared strings XML reader object with the proper settings.
      * Also initializes all related tracking properties.
      */
-    private function initSharedStringsReader()
+    private function initSharedStringsReader(): void
     {
         $this->shared_strings_reader = new OoxmlReader();
         $this->shared_strings_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_XLSX_MAIN);
@@ -318,7 +318,7 @@ class SharedStrings
      *
      * @throws RuntimeException
      */
-    private function prepareSharedStrings()
+    private function prepareSharedStrings(): void
     {
         $this->initSharedStringsReader();
 
@@ -405,7 +405,7 @@ class SharedStrings
      *
      * @throws  RuntimeException
      */
-    private function prepareSingleSharedString(int $index, string $string, bool $write_to_cache = false)
+    private function prepareSingleSharedString(int $index, string $string, bool $write_to_cache = false): void
     {
         if ($write_to_cache) {
             // Caching enabled and there's still memory available; Write to internal cache.

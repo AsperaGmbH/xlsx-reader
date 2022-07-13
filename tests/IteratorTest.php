@@ -11,7 +11,7 @@ use Aspera\Spreadsheet\XLSX\Reader;
 /** Tests ensuring that the Reader properly implements the Iterator interface */
 class IteratorTest extends PHPUnitTestCase
 {
-    const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
+    private const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
 
     /** @var Reader */
     private $reader;
@@ -19,13 +19,13 @@ class IteratorTest extends PHPUnitTestCase
     /**
      * @throws Exception
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->reader = new Reader();
         $this->reader->open(self::FILE_PATH);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->reader->close();
     }
@@ -35,7 +35,7 @@ class IteratorTest extends PHPUnitTestCase
      *
      * @throws Exception
      */
-    public function testIterationFunctions()
+    public function testIterationFunctions(): void
     {
         $first_row_content = $this->reader->current();
         $this->reader->next();
@@ -73,7 +73,7 @@ class IteratorTest extends PHPUnitTestCase
      * @depends testIterationFunctions
      * @throws  Exception
      */
-    public function testPositioningFunctions()
+    public function testPositioningFunctions(): void
     {
         $row_number = $this->reader->key();
         self::assertEquals(1, $row_number, 'Row number should be 1');
@@ -93,7 +93,7 @@ class IteratorTest extends PHPUnitTestCase
      * @depends testIterationFunctions
      * @throws  Exception
      */
-    public function testFunctionValid()
+    public function testFunctionValid(): void
     {
         $read_file = array();
         while ($this->reader->valid()) {

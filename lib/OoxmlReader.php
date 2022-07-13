@@ -22,10 +22,10 @@ class OoxmlReader extends XMLReader
      * @var array XMLNS_RELATIONSHIPS_DOCUMENTLEVEL Namespace used for references to relationship documents.
      * @var array XMLNS_RELATIONSHIPS_PACKAGELEVEL Root namespace used within relationship documents.
      */
-    const NS_NONE = '';
-    const NS_XLSX_MAIN = 'xlsx_main';
-    const NS_RELATIONSHIPS_DOCUMENTLEVEL = 'relationships_documentlevel';
-    const NS_RELATIONSHIPS_PACKAGELEVEL = 'relationships_packagelevel';
+    public const NS_NONE = '';
+    public const NS_XLSX_MAIN = 'xlsx_main';
+    public const NS_RELATIONSHIPS_DOCUMENTLEVEL = 'relationships_documentlevel';
+    public const NS_RELATIONSHIPS_PACKAGELEVEL = 'relationships_packagelevel';
 
     /** @var array Format: $namespace_list[-XMLNS_IDENTIFIER-][-INTRODUCING_EDITION_OF_SPECIFICATION-] = -NAMESPACE_URI- */
     private $namespace_list;
@@ -45,7 +45,7 @@ class OoxmlReader extends XMLReader
     /**
      * Initialize $this->namespace_list.
      */
-    private function initNamespaceList()
+    private function initNamespaceList(): void
     {
         $this->namespace_list = array(
             self::NS_NONE => array(''),
@@ -72,7 +72,7 @@ class OoxmlReader extends XMLReader
      *
      * @throws  InvalidArgumentException
      */
-    public function setDefaultNamespaceIdentifierElements(string $namespace_identifier)
+    public function setDefaultNamespaceIdentifierElements(string $namespace_identifier): void
     {
         if (!isset($this->namespace_list[$namespace_identifier])) {
             throw new InvalidArgumentException('unknown namespace identifier [' . $namespace_identifier . ']');
@@ -88,7 +88,7 @@ class OoxmlReader extends XMLReader
      *
      * @throws  InvalidArgumentException
      */
-    public function setDefaultNamespaceIdentifierAttributes(string $namespace_identifier)
+    public function setDefaultNamespaceIdentifierAttributes(string $namespace_identifier): void
     {
         if (!isset($this->namespace_list[$namespace_identifier])) {
             throw new InvalidArgumentException('unknown namespace identifier [' . $namespace_identifier . ']');
@@ -100,8 +100,8 @@ class OoxmlReader extends XMLReader
      * Checks if the element the reader is currently pointed at is of the given local_name with a namespace_uri
      * that matches the list of namespaces identified by the given namespace_identifier constant.
      *
-     * @param   string      $local_name
-     * @param   string|null $namespace_identifier   NULL = Fallback to $this->default_namespace_identifier_elements
+     * @param   string  $local_name
+     * @param   ?string $namespace_identifier   NULL = Fallback to $this->default_namespace_identifier_elements
      * @return  bool
      *
      * @throws  InvalidArgumentException
@@ -143,13 +143,13 @@ class OoxmlReader extends XMLReader
      * Checks if the element the reader is currently pointed at contains an element with a namespace_uri
      * that matches the list of namespaces identified by the given namespace_identifier constant.
      *
-     * @param   string|null $namespace_identifier   NULL = Fallback to $this->default_namespace_identifier_elements
-     * @param   bool        $for_attribute          Determines the scope of validation; true: attribute, false: element tag
+     * @param   ?string $namespace_identifier   NULL = Fallback to $this->default_namespace_identifier_elements
+     * @param   bool    $for_attribute          Determines the scope of validation; true: attribute, false: element tag
      * @return  bool
      *
      * @throws  InvalidArgumentException
      */
-    public function matchesNamespace(string $namespace_identifier = null, bool $for_attribute = false): bool
+    public function matchesNamespace(?string $namespace_identifier, bool $for_attribute = false): bool
     {
         return in_array(
             $this->namespaceURI,
@@ -171,13 +171,13 @@ class OoxmlReader extends XMLReader
     /**
      * Extension of getAttributeNs that checks with a namespace_identifier rather than a specific namespace_uri.
      *
-     * @param   string      $local_name
-     * @param   string|null $namespace_identifier   NULL = Fallback to $this->default_namespace_identifier_elements
-     * @return  string|null
+     * @param   string  $local_name
+     * @param   ?string $namespace_identifier   NULL = Fallback to $this->default_namespace_identifier_elements
+     * @return  ?string
      *
      * @throws  InvalidArgumentException
      */
-    public function getAttributeNsId(string $local_name, string $namespace_identifier = null)
+    public function getAttributeNsId(string $local_name, string $namespace_identifier = null): ?string
     {
         $namespace_identifier = $this->validateNamespaceIdentifier($namespace_identifier, true);
 
@@ -199,8 +199,8 @@ class OoxmlReader extends XMLReader
     /**
      * Moves to the next node matching the given criteria.
      *
-     * @param   string      $local_name
-     * @param   string|null $namespace_identifier
+     * @param   string  $local_name
+     * @param   ?string $namespace_identifier
      * @return  bool
      */
     public function nextNsId(string $local_name, string $namespace_identifier = null): bool
@@ -218,15 +218,15 @@ class OoxmlReader extends XMLReader
      * Checks if the given namespace_identifier is valid. If null is given, will try to fall back to
      * $this->default_namespace_identifier_elements. Returns the correct namespace_identifier for further usage.
      *
-     * @param   string|null $namespace_identifier
-     * @param   bool        $for_attribute          Determines the default namespace_identifier to fall back to.
+     * @param   ?string $namespace_identifier
+     * @param   bool    $for_attribute          Determines the default namespace_identifier to fall back to.
      * @return  string
      *
      * @throws  InvalidArgumentException
      */
     private function validateNamespaceIdentifier(
-        string $namespace_identifier = null,
-        bool $for_attribute = false
+        ?string $namespace_identifier,
+        bool $for_attribute
     ): string {
         if ($namespace_identifier === null) {
             $default_namespace_identifier = ($for_attribute)

@@ -13,7 +13,7 @@ use Aspera\Spreadsheet\XLSX\ReaderSkipConfiguration;
 /** Make sure the SkipEmptyCells option works how it should. */
 class SkipEmptyCellsTest extends PHPUnitTestCase
 {
-    const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
+    private const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
 
     /**
      * Make sure that the SkipEmptyCells option is properly considered by the reader.
@@ -25,7 +25,7 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
      *
      * @throws Exception
      */
-    public function testSkipEmptyCellsOption(int $skip_empty_cells, array $exp_num_cols)
+    public function testSkipEmptyCellsOption(int $skip_empty_cells, array $exp_num_cols): void
     {
         $reader = new Reader(
             (new ReaderConfiguration())

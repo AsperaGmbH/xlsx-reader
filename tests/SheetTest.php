@@ -11,7 +11,7 @@ use Aspera\Spreadsheet\XLSX\Reader;
 /** Tests regarding basic worksheet handling functionality. */
 class SheetTest extends PHPUnitTestCase
 {
-    const FILE_PATH = __DIR__ . '/input_files/multiple_sheets_test.xlsx';
+    private const FILE_PATH = __DIR__ . '/input_files/multiple_sheets_test.xlsx';
 
     /** @var Reader */
     private $reader;
@@ -19,13 +19,13 @@ class SheetTest extends PHPUnitTestCase
     /**
      * @throws Exception
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->reader = new Reader();
         $this->reader->open(self::FILE_PATH);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->reader->close();
     }
@@ -33,7 +33,7 @@ class SheetTest extends PHPUnitTestCase
     /**
      * Checks if the reader is capable of reading the names of worksheets correctly.
      */
-    public function testGetSheetsFunction()
+    public function testGetSheetsFunction(): void
     {
         $exp_sheets = array(
             'First Sheet',
@@ -54,7 +54,7 @@ class SheetTest extends PHPUnitTestCase
      *
      * @throws  Exception
      */
-    public function testChangeSheetFunction()
+    public function testChangeSheetFunction(): void
     {
         foreach ($this->reader->getSheets() as $index => $worksheet) {
             $sheet_name_in_sheet_data = $worksheet->getName();
@@ -65,8 +65,8 @@ class SheetTest extends PHPUnitTestCase
 
             // For testing, the sheet name is written in each sheet's first cell of the first line
             $content = $this->reader->current();
-            self::assertTrue(
-                is_array($content) && !empty($content),
+            self::assertNotEmpty(
+                $content,
                 'No content found in sheet [' . $index . '] => [' . $sheet_name_in_sheet_data . ']'
             );
             $sheet_name_in_cell = $content[0];

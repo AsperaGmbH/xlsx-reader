@@ -30,7 +30,7 @@ class RelationshipElement
     /**
      * @param string $id
      */
-    public function setId(string $id)
+    public function setId(string $id): void
     {
         $this->id = $id;
     }
@@ -46,7 +46,7 @@ class RelationshipElement
     /**
      * @param bool $is_valid
      */
-    public function setIsValid(bool $is_valid)
+    public function setIsValid(bool $is_valid): void
     {
         $this->is_valid = $is_valid;
     }
@@ -62,7 +62,7 @@ class RelationshipElement
     /**
      * @param string $original_path
      */
-    public function setOriginalPath(string $original_path)
+    public function setOriginalPath(string $original_path): void
     {
         $this->original_path = $original_path;
     }
@@ -78,7 +78,7 @@ class RelationshipElement
     /**
      * @param string $access_path
      */
-    public function setAccessPath(string $access_path)
+    public function setAccessPath(string $access_path): void
     {
         $this->access_path = $access_path;
     }
@@ -88,8 +88,10 @@ class RelationshipElement
      *
      * @param ZipArchive $zip
      */
-    public function setValidityViaZip(ZipArchive $zip)
+    public function setValidityViaZip(ZipArchive $zip): void
     {
-        $this->setIsValid($zip->locateName($this->getOriginalPath()) !== false);
+        $this->setIsValid(
+            $zip->locateName($this->getOriginalPath()) !== false
+        );
     }
 }

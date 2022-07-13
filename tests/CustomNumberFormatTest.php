@@ -22,7 +22,7 @@ class CustomNumberFormatTest extends TestCase
      *
      * @throws Exception
      */
-    public function testGeneralFormat(string $value, string $expected_output)
+    public function testGeneralFormat(string $value, string $expected_output): void
     {
         $cell_format = new NumberFormat(new ReaderConfiguration());
         $cell_format->injectXfNumFmtIds(
@@ -59,7 +59,7 @@ class CustomNumberFormatTest extends TestCase
      *
      * @throws Exception
      */
-    public function testFormat(string $value, string $format, string $expected_output)
+    public function testFormat(string $value, string $format, string $expected_output): void
     {
         $cell_format = new NumberFormat(new ReaderConfiguration());
         $cell_format->injectXfNumFmtIds(

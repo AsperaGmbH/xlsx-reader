@@ -13,7 +13,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 class CellFormatConfigTest extends TestCase
 {
-    const TEST_FILE = __DIR__ . '/input_files/cell_format_config_test.xlsx';
+    private const TEST_FILE = __DIR__ . '/input_files/cell_format_config_test.xlsx';
 
     /**
      * @return array[]
@@ -134,7 +134,7 @@ class CellFormatConfigTest extends TestCase
      *
      * @throws Exception
      */
-    public function testCellFormatConfiguration(ReaderConfiguration $config, array $expected)
+    public function testCellFormatConfiguration(ReaderConfiguration $config, array $expected): void
     {
         $reader = new Reader($config);
         $reader->open(self::TEST_FILE);

@@ -17,13 +17,13 @@ use PHPUnit\Framework\TestCase;
 class SharedStringsTest extends TestCase
 {
     /** @var string FILE_PATH Path to the test file. */
-    const FILE_PATH = __DIR__ . '/input_files/shared_strings_test.xlsx';
+    private const FILE_PATH = __DIR__ . '/input_files/shared_strings_test.xlsx';
 
     /** @var int SHARED_STRING_ENTRY_COUNT Total number of shared strings in the test file's shared string list. */
-    const SHARED_STRING_ENTRY_COUNT = 25005;
+    private const SHARED_STRING_ENTRY_COUNT = 25005;
 
     /** @var int CACHE_MAX_SIZE_KB Required cache size in KB to store the entire shared strings table from the test file in memory. */
-    const CACHE_MAX_SIZE_KB = 2048; // 2 MB should be enough for the entire shared string file in all supported PHP versions
+    private const CACHE_MAX_SIZE_KB = 2048; // 2 MB should be enough for the entire shared string file in all supported PHP versions
 
     /**
      * @return array[]
@@ -47,7 +47,7 @@ class SharedStringsTest extends TestCase
      *
      * @throws  Exception
      */
-    public function testValues(bool $use_cache, bool $use_optimized_files)
+    public function testValues(bool $use_cache, bool $use_optimized_files): void
     {
         $xlsx_reader = new Reader(
             (new ReaderConfiguration())
@@ -98,7 +98,7 @@ class SharedStringsTest extends TestCase
      *
      * @throws Exception
      */
-    public function testMemoryConfiguration(bool $use_cache, bool $use_large_cache)
+    public function testMemoryConfiguration(bool $use_cache, bool $use_large_cache): void
     {
         // Pick configuration values based on test data set
         if ($use_large_cache) {
@@ -132,7 +132,7 @@ class SharedStringsTest extends TestCase
         // Get shared strings cache from shared strings object
         $shared_strings = self::getAccessibleProperty($xlsx_reader, 'shared_strings');
         $shared_strings_cache = self::getAccessibleProperty($shared_strings, 'shared_string_cache');
-        $shared_strings_cache_count = count($shared_strings_cache);
+        $shared_strings_cache_count = $shared_strings_cache === null ? 0 : count($shared_strings_cache);
 
         // Check against configured values
         if ($use_cache) {
@@ -183,7 +183,7 @@ class SharedStringsTest extends TestCase
      *
      * @throws Exception
      */
-    public function testOptimizedFileConfiguration(bool $use_optimized_files, bool $use_many_entries_per_file)
+    public function testOptimizedFileConfiguration(bool $use_optimized_files, bool $use_many_entries_per_file): void
     {
         // Pick configuration values based on test data set
         $entries_per_file = $use_many_entries_per_file ? 5000 : 500;

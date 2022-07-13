@@ -30,7 +30,7 @@ class Reader implements Iterator
     /** @var array Temporary files created while reading the document. */
     private $temp_files = array();
 
-    /** @var RelationshipData|null File paths and -identifiers to all relevant parts of the read XLSX file */
+    /** @var ?RelationshipData File paths and -identifiers to all relevant parts of the read XLSX file */
     private $relationship_data;
 
     /** @var string Path to the current worksheet XML file. */
@@ -39,10 +39,10 @@ class Reader implements Iterator
     /** @var array Data about separate sheets in the file. */
     private $sheets;
 
-    /** @var OoxmlReader|null XML reader object for the current worksheet XML file. */
+    /** @var ?OoxmlReader XML reader object for the current worksheet XML file. */
     private $worksheet_reader = null;
 
-    /** @var SharedStrings|null Shared strings handler. */
+    /** @var ?SharedStrings Shared strings handler. */
     private $shared_strings = null;
 
     /** @var bool Whether the reader has been initialized with open() yet. */
@@ -63,17 +63,17 @@ class Reader implements Iterator
     /** @var int Amount of rows skipped due to lookahead. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
     private $skipped_empty_rows = 0;
 
-    /** @var array|null Contents of last read row. null when no row has been read yet. */
+    /** @var ?array Contents of last read row. null when no row has been read yet. */
     private $current_row = null;
 
-    /** @var array|null Contents of next filled row. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
+    /** @var ?array Contents of next filled row. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
     private $next_filled_row = null;
 
     /** @var array Structure of an empty row for this document. Only used when skippedRows = SKIP_TRAILING_EMPTY. */
     private $empty_row_structure = array();
 
     /**
-     * @param  ReaderConfiguration $configuration
+     * @param  ?ReaderConfiguration $configuration
      *
      * @throws Exception
      */
@@ -100,7 +100,7 @@ class Reader implements Iterator
      *
      * @throws Exception
      */
-    public function open(string $file_path)
+    public function open(string $file_path): void
     {
         if ($this->reader_is_open) {
             throw new LogicException('Reader was already opened.');
@@ -137,7 +137,7 @@ class Reader implements Iterator
     /**
      * Free all connected resources.
      */
-    public function close()
+    public function close(): void
     {
         if ($this->worksheet_reader) {
             $this->worksheet_reader->close();
@@ -221,8 +221,7 @@ class Reader implements Iterator
      *
      * @throws Exception
      */
-    #[\ReturnTypeWillChange]
-    public function rewind()
+    public function rewind(): void
     {
         if (!$this->reader_is_open) {
             throw new LogicException('Reader was not intialized via open() yet.');
@@ -255,8 +254,7 @@ class Reader implements Iterator
      *
      * @throws Exception
      */
-    #[\ReturnTypeWillChange]
-    public function next()
+    public function next(): void
     {
         if (!$this->reader_is_open) {
             throw new LogicException('Reader was not intialized via open() yet.');
@@ -324,7 +322,7 @@ class Reader implements Iterator
      *
      * @throws Exception
      */
-    private function read_next_row()
+    private function read_next_row(): void
     {
         $this->row_number++;
 
@@ -606,7 +604,7 @@ class Reader implements Iterator
      *
      * @throws RuntimeException
      */
-    private function initTempDir(string $base_temp_dir)
+    private function initTempDir(string $base_temp_dir): void
     {
         if (!is_writable($base_temp_dir)) {
             throw new RuntimeException('Temporary directory (' . $base_temp_dir . ') is not writable');
@@ -624,7 +622,7 @@ class Reader implements Iterator
      *
      * @throws Exception
      */
-    private function initWorkbookData(ZipArchive $zip)
+    private function initWorkbookData(ZipArchive $zip): void
     {
         $workbook = $this->relationship_data->getWorkbook();
         if (!$workbook) {
@@ -664,7 +662,7 @@ class Reader implements Iterator
      *
      * @throws Exception
      */
-    private function initWorksheets(ZipArchive $zip)
+    private function initWorksheets(ZipArchive $zip): void
     {
         // Sheet order determining value: relative sheet positioning within the document (rId)
         ksort($this->sheets);
@@ -700,7 +698,7 @@ class Reader implements Iterator
     private function initSharedStrings(
         ZipArchive $zip,
         SharedStringsConfiguration $shared_strings_configuration
-    ) {
+    ): void {
         $shared_strings = $this->relationship_data->getSharedStrings();
         if (count($shared_strings) > 0) {
             /* Currently, documents with multiple shared strings files are not supported.
@@ -739,7 +737,7 @@ class Reader implements Iterator
      *
      * @throws Exception
      */
-    private function initStyles(ZipArchive $zip)
+    private function initStyles(ZipArchive $zip): void
     {
         $styles = $this->relationship_data->getStyles();
         if (count($styles) > 0) {
@@ -824,7 +822,8 @@ class Reader implements Iterator
     /**
      * Delete all registered temporary work files and -directories.
      */
-    private function deleteTempfiles() {
+    private function deleteTempfiles(): void
+    {
         foreach ($this->temp_files as $temp_file) {
             @unlink($temp_file);
         }
@@ -846,7 +845,7 @@ class Reader implements Iterator
      *
      * @throws  RuntimeException
      */
-    private function reportZipExtractionFailure(ZipArchive $zip, string $message = '')
+    private function reportZipExtractionFailure(ZipArchive $zip, string $message = ''): void
     {
         $status_code = $zip->status;
         $status_message = $zip->getStatusString();

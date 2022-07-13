@@ -13,10 +13,10 @@ use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 class TempDirTest extends PHPUnitTestCase
 {
     /** @var string FILE_PATH XLSX File to be used for testing. */
-    const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
+    private const FILE_PATH = __DIR__ . '/input_files/iterator_test.xlsx';
 
     /** @var string TEMP_DIR_NAME Directory name of the temporary work directory. */
-    const TEMP_DIR_NAME = 'temp_new_folder';
+    private const TEMP_DIR_NAME = 'temp_new_folder';
 
     /** @var Reader $reader Reader used by all tests in this test class. */
     private static $reader;
@@ -28,7 +28,7 @@ class TempDirTest extends PHPUnitTestCase
      *
      * @throws Exception
      */
-    public function testPrepare()
+    public function testPrepare(): void
     {
         // Create target directory and configure reader to use it.
         $temp_dir_path = self::getTempDirPath();
@@ -47,7 +47,7 @@ class TempDirTest extends PHPUnitTestCase
      *
      * @throws Exception
      */
-    public function testOptionTempDir()
+    public function testOptionTempDir(): void
     {
         $temp_dir_path = self::getTempDirPath();
 
@@ -70,7 +70,7 @@ class TempDirTest extends PHPUnitTestCase
      *
      * @throws Exception
      */
-    public function testDeletionTemporaryFiles()
+    public function testDeletionTemporaryFiles(): void
     {
         $temp_dir_path = self::getTempDirPath();
 
@@ -92,7 +92,7 @@ class TempDirTest extends PHPUnitTestCase
      *
      * @throws Exception
      */
-    public function testCleanup()
+    public function testCleanup(): void
     {
         $temp_dir_path = self::getTempDirPath();
         if (file_exists($temp_dir_path)) {

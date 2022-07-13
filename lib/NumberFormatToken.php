@@ -11,7 +11,7 @@ class NumberFormatToken
     /** @var bool Is this token in quotes or escaped via a backslash, Y/N. If true, $code should be output as-is. */
     private $is_quoted = false;
 
-    /** @var int|null Index of the current square bracket section, starting at 0. null if this token is not in square brackets. */
+    /** @var ?int Index of the current square bracket section, starting at 0. null if this token is not in square brackets. */
     private $square_bracket_index;
 
     /**
@@ -35,7 +35,7 @@ class NumberFormatToken
     /**
      * @param string $code
      */
-    public function appendCode(string $code)
+    public function appendCode(string $code): void
     {
         $this->code .= $code;
     }
@@ -67,19 +67,19 @@ class NumberFormatToken
     }
 
     /**
-     * @param  int|null $square_bracket_index
+     * @param  ?int $square_bracket_index
      * @return $this
      */
-    public function setSquareBracketIndex($square_bracket_index): self
+    public function setSquareBracketIndex(?int $square_bracket_index): self
     {
         $this->square_bracket_index = $square_bracket_index;
         return $this;
     }
 
     /**
-     * @return int|null
+     * @return ?int
      */
-    public function getSquareBracketIndex()
+    public function getSquareBracketIndex(): ?int
     {
         return $this->square_bracket_index;
     }

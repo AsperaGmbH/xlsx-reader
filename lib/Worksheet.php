@@ -22,7 +22,7 @@ class Worksheet
     /**
      * @param string $name
      */
-    public function setName(string $name)
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
@@ -38,7 +38,7 @@ class Worksheet
     /**
      * @param string $relationship_id
      */
-    public function setRelationshipId(string $relationship_id)
+    public function setRelationshipId(string $relationship_id): void
     {
         $this->relationship_id = $relationship_id;
     }

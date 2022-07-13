@@ -54,7 +54,7 @@ class ReaderConfiguration
      * Format to use when outputting dates, regardless of originally set formatting.
      * See setForceDateFormat() for more information.
      *
-     * @var string|null
+     * @var ?string
      */
     private $force_date_format;
 
@@ -62,7 +62,7 @@ class ReaderConfiguration
      * Format to use when outputting time values, regardless of originally set formatting.
      * See setForceTimeFormat() for more information.
      *
-     * @var string|null
+     * @var ?string
      */
     private $force_time_format;
 
@@ -70,7 +70,7 @@ class ReaderConfiguration
      * Format to use when outputting datetime values, regardless of originally set formatting.
      * See setForceDateTimeFormat() for more information.
      *
-     * @var string|null
+     * @var ?string
      */
     private $force_date_time_format;
 
@@ -201,10 +201,10 @@ class ReaderConfiguration
      * Note that a cell's type is defined by its format, not content.
      * If a cell contains time information, but its format contains no time information, the value is considered a date.
      *
-     * @param  string|null $force_date_format
+     * @param  ?string $force_date_format
      * @return self
      */
-    public function setForceDateFormat(string $force_date_format = null): self
+    public function setForceDateFormat(?string $force_date_format): self
     {
         $this->force_date_format = $force_date_format;
 
@@ -217,10 +217,10 @@ class ReaderConfiguration
      * Note that a cell's type is defined by its format, not content.
      * If a cell contains time information, but its format contains no time information, the value is considered a date.
      *
-     * @param  string|null $force_time_format
+     * @param  ?string $force_time_format
      * @return self
      */
-    public function setForceTimeFormat(string $force_time_format = null): self
+    public function setForceTimeFormat(?string $force_time_format): self
     {
         $this->force_time_format = $force_time_format;
 
@@ -233,10 +233,10 @@ class ReaderConfiguration
      * Note that a cell's type is defined by its format, not content.
      * If a cell contains time information, but its format contains no time information, the value is considered a date.
      *
-     * @param  string|null $force_date_time_format
+     * @param  ?string $force_date_time_format
      * @return self
      */
-    public function setForceDateTimeFormat(string $force_date_time_format = null): self
+    public function setForceDateTimeFormat(?string $force_date_time_format): self
     {
         $this->force_date_time_format = $force_date_time_format;
 
@@ -343,25 +343,25 @@ class ReaderConfiguration
     }
 
     /**
-     * @return string|null
+     * @return ?string
      */
-    public function getForceDateFormat()
+    public function getForceDateFormat(): ?string
     {
         return $this->force_date_format;
     }
 
     /**
-     * @return string|null
+     * @return ?string
      */
-    public function getForceTimeFormat()
+    public function getForceTimeFormat(): ?string
     {
         return $this->force_time_format;
     }
 
     /**
-     * @return string|null
+     * @return ?string
      */
-    public function getForceDateTimeFormat()
+    public function getForceDateTimeFormat(): ?string
     {
         return $this->force_date_time_format;
     }

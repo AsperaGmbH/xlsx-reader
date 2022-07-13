@@ -13,7 +13,7 @@ class NumberFormatSection {
     /** @var string Section purpose. Can be a condition (e.g: >=-20) or a default_ definition. (e.g.: default_number) */
     private $purpose;
 
-    /** @var string|null Type of this number format. Possible values: null, 'decimal', 'fraction' */
+    /** @var ?string Type of this number format. Possible values: null, 'decimal', 'fraction' */
     private $number_type = null;
 
     /** @var string Specific date/time type value for this section. Possible values: date, time, datetime */
@@ -93,19 +93,19 @@ class NumberFormatSection {
     }
 
     /**
-     * @param  string|null $number_type
+     * @param  ?string $number_type
      * @return $this
      */
-    public function setNumberType(string $number_type = null): self
+    public function setNumberType(?string $number_type): self
     {
         $this->number_type = $number_type;
         return $this;
     }
 
     /**
-     * @return string|null
+     * @return ?string
      */
-    public function getNumberType()
+    public function getNumberType(): ?string
     {
         return $this->number_type;
     }

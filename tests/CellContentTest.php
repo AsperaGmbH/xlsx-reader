@@ -11,7 +11,7 @@ use Aspera\Spreadsheet\XLSX\ReaderConfiguration;
 
 class CellContentTest extends TestCase
 {
-    const TEST_FILE = __DIR__ . '/input_files/cell_content_test.xlsx';
+    private const TEST_FILE = __DIR__ . '/input_files/cell_content_test.xlsx';
 
     /**
      * Check if potentially problematic values are read correctly.
@@ -19,7 +19,7 @@ class CellContentTest extends TestCase
      *
      * @throws Exception
      */
-    public function testCellContent()
+    public function testCellContent(): void
     {
         $reader = new Reader(
             (new ReaderConfiguration())

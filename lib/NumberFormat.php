@@ -28,7 +28,7 @@ use DateInterval;
 class NumberFormat
 {
     /** @var array Base formats for XLSX documents, to be made available without former declaration. */
-    const BUILTIN_FORMATS = array(
+    private const BUILTIN_FORMATS = array(
         0 => '',
         1 => '0',
         2 => '0.00',
@@ -118,7 +118,7 @@ class NumberFormat
     /**
      * @param array $xf_num_fmt_ids List of ids; a null value indicates "do not format anything"
      */
-    public function injectXfNumFmtIds(array $xf_num_fmt_ids)
+    public function injectXfNumFmtIds(array $xf_num_fmt_ids): void
     {
         $this->xf_num_fmt_ids = $xf_num_fmt_ids;
     }
@@ -126,7 +126,7 @@ class NumberFormat
     /**
      * @param string[] $number_formats
      */
-    public function injectNumberFormats(array $number_formats)
+    public function injectNumberFormats(array $number_formats): void
     {
         $this->number_formats = $number_formats;
     }
@@ -1126,7 +1126,8 @@ class NumberFormat
      *
      * @throws Exception
      */
-    private static function initBaseDate() {
+    private static function initBaseDate(): void
+    {
         self::$base_date = new DateTime();
         self::$base_date->setTimezone(new DateTimeZone('UTC'));
         self::$base_date->setDate(1900, 1, 0);

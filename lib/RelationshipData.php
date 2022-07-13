@@ -17,7 +17,7 @@ class RelationshipData
      *
      * @var string ZIP_DIR_SEP
      */
-    const ZIP_DIR_SEP = '/';
+    public const ZIP_DIR_SEP = '/';
 
     /** @var RelationshipElement Workbook file meta information. Only one element exists per file. */
     private $workbook;
@@ -35,9 +35,9 @@ class RelationshipData
      * Returns the workbook relationship element, if a valid one has been obtained previously.
      * Returns null otherwise.
      *
-     * @return null|RelationshipElement
+     * @return ?RelationshipElement
      */
-    public function getWorkbook()
+    public function getWorkbook(): ?RelationshipElement
     {
         if (isset($this->workbook) && $this->workbook->isValid()) {
             return $this->workbook;
@@ -126,7 +126,7 @@ class RelationshipData
      *
      * @throws  RuntimeException
      */
-    private function evaluateRelationshipFromZip(ZipArchive $zip, string $file_zipname)
+    private function evaluateRelationshipFromZip(ZipArchive $zip, string $file_zipname): void
     {
         if ($zip->locateName($file_zipname) === false) {
             throw new RuntimeException('Could not read relationship data. File [' . $file_zipname . '] could not be found.');

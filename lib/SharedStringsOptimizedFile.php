@@ -33,7 +33,7 @@ class SharedStringsOptimizedFile
     /**
      * @param string $file
      */
-    public function setFile(string $file)
+    public function setFile(string $file): void
     {
         $this->file = $file;
     }
@@ -49,7 +49,7 @@ class SharedStringsOptimizedFile
     /**
      * @param resource $handle
      */
-    public function setHandle($handle)
+    public function setHandle($handle): void
     {
         $this->handle = $handle;
     }
@@ -65,7 +65,7 @@ class SharedStringsOptimizedFile
     /**
      * Increase current index of handle by 1.
      */
-    public function increaseHandleCurrentIndex()
+    public function increaseHandleCurrentIndex(): void
     {
         $this->handle_current_index++;
     }
@@ -81,7 +81,7 @@ class SharedStringsOptimizedFile
     /**
      * @param string $value_at_current_index
      */
-    public function setValueAtCurrentIndex(string $value_at_current_index)
+    public function setValueAtCurrentIndex(string $value_at_current_index): void
     {
         $this->value_at_current_index = $value_at_current_index;
     }
@@ -97,7 +97,7 @@ class SharedStringsOptimizedFile
     /**
      * Increase count of elements contained within the file by 1.
      */
-    public function increaseCount()
+    public function increaseCount(): void
     {
         $this->count++;
     }
@@ -127,7 +127,7 @@ class SharedStringsOptimizedFile
     /**
      * Properly closes the current file handle, if it is currently opened.
      */
-    public function closeHandle()
+    public function closeHandle(): void
     {
         if (!$this->handle) {
             return; // Nothing to close

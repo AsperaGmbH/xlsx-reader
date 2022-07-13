@@ -7,7 +7,7 @@ use RuntimeException;
 class NumberFormatTokenizer
 {
     /** @var array Conversion matrix to convert XLSX date formats to PHP date formats. */
-    const DATE_REPLACEMENTS = array(
+    private const DATE_REPLACEMENTS = array(
         'All' => array(
             '\\'    => '',
             'am/pm' => 'A',
@@ -480,7 +480,7 @@ class NumberFormatTokenizer
      *
      * @param NumberFormatSection $section
      */
-    private function removeColorsAndConditions(NumberFormatSection $section)
+    private function removeColorsAndConditions(NumberFormatSection $section): void
     {
         // Note: The color/conditions definitions are usually at the start of the section. e.g.: "[red][<1000]0,00"
         $tokens = $section->getTokens();
@@ -548,7 +548,7 @@ class NumberFormatTokenizer
      *
      * @param  NumberFormatSection $section
      */
-    private function prepareNumericFormat(NumberFormatSection $section)
+    private function prepareNumericFormat(NumberFormatSection $section): void
     {
         $format_left = ''; // For decimals: Characters before decimal. For fractions: Characters before slash.
         $format_right = ''; // For decimals: Characters after decimal. For fractions: Characters after slash.
@@ -577,7 +577,7 @@ class NumberFormatTokenizer
         $whole_value_or_format_left_part = '';
 
         $tokens = $section->getTokens();
-        foreach ($tokens as $token_index => $token) {
+        foreach ($tokens as $token) {
             if ($token->isQuoted()) {
                 if ($section->getNumberType() === 'fraction') {
                     // Fraction format is complex, and quoted sections need to be detected for correct formatting.
@@ -724,7 +724,7 @@ class NumberFormatTokenizer
      *
      * @param NumberFormatSection $section
      */
-    private function prepareDateTimeFormat(NumberFormatSection $section)
+    private function prepareDateTimeFormat(NumberFormatSection $section): void
     {
         // Determine if the contained time data should be displayed in 12h format.
         $time_12h = false;

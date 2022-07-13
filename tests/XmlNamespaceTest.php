@@ -17,7 +17,7 @@ class XmlNamespaceTest extends TestCase
      * - workbook.xml does not declare the relationship namespace in the root element. This is valid, but not commonly seen.
      * - workbook.xml uses edition 3 namespaces, while the rest of the document uses edition 1 namespaces. This should not cause issues.
      */
-    const TEST_FILE = __DIR__ . '/input_files/xml_namespace_test.xlsx';
+    private const TEST_FILE = __DIR__ . '/input_files/xml_namespace_test.xlsx';
 
     /**
      * Attempt reading a file that uses namespaces everywhere.
@@ -25,7 +25,7 @@ class XmlNamespaceTest extends TestCase
      *
      * @throws Exception
      */
-    public function testReadXmlWithNamespaces()
+    public function testReadXmlWithNamespaces(): void
     {
         $reader = new Reader();
         $reader->open(self::TEST_FILE);

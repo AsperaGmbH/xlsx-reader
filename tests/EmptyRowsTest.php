@@ -12,7 +12,7 @@ use Aspera\Spreadsheet\XLSX\Reader;
 
 class EmptyRowsTest extends TestCase
 {
-    const TEST_FILE = __DIR__ . '/input_files/empty_rows_test.xlsx';
+    private const TEST_FILE = __DIR__ . '/input_files/empty_rows_test.xlsx';
 
     /**
      * Check if empty rows are detected and reported correctly.
@@ -25,7 +25,7 @@ class EmptyRowsTest extends TestCase
      *
      * @throws Exception
      */
-    public function testCellContent(int $skip_config, array $expected_values)
+    public function testCellContent(int $skip_config, array $expected_values): void
     {
         $reader = new Reader(
             (new ReaderConfiguration())

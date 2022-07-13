@@ -11,7 +11,7 @@ use Aspera\Spreadsheet\XLSX\Reader;
 /** Ensure that the reader can work with files using a different internal file part structure than the commonly used one. */
 class FilepartLocationTest extends TestCase
 {
-    const TEST_FILE = __DIR__ . '/input_files/filepart_location_test.xlsx';
+    private const TEST_FILE = __DIR__ . '/input_files/filepart_location_test.xlsx';
 
     /**
      * Attempt reading a file that has none of its files in the usual folders, except for the ones that absolutely require it.
@@ -19,7 +19,7 @@ class FilepartLocationTest extends TestCase
      *
      * @throws Exception
      */
-    public function testReadDocumentWithUncommonFilepartPaths()
+    public function testReadDocumentWithUncommonFilepartPaths(): void
     {
         $reader = new Reader();
         $reader->open(self::TEST_FILE);
