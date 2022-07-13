@@ -1,7 +1,7 @@
 {
   "name": "aspera/xlsx-reader",
-  "description": "Spreadsheet reader library for Microsoft Excel XLSX files",
-  "keywords": ["spreadsheet", "xls", "xlsx", "excel"],
+  "description": "Spreadsheet reader library for XLSX files",
+  "keywords": ["spreadsheet", "xlsx", "excel"],
   "homepage": "https://github.com/AsperaGmbH/xlsx-reader/",
   "type": "library",
   "license": ["MIT"],
@@ -10,11 +10,6 @@
       "name": "USU Technologies GmbH",
       "email": "info@usu.com",
       "homepage": "https://www.usu.com/"
-    },
-    {
-      "name": "Martins Pilsetnieks",
-      "email": "pilsetnieks@gmail.com",
-      "homepage": "http://www.nuovo.lv/"
     }
   ],
   "support": {
