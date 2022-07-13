@@ -9,7 +9,7 @@ As such, the library offers no support for XLSX capabilities that aren't strictl
 Only basic cell value formatting and shared string functionalities are supported.
 
 ### Requirements
-*  PHP 5.6.0 or newer, with at least the following optional features enabled:
+*  PHP 7.1.0 or newer, with at least the following optional features enabled:
     *  Zip (enabled by default; see <http://php.net/manual/en/zip.installation.php>)
     *  XMLReader (enabled by default; see <http://php.net/manual/en/xmlreader.installation.php>)
 
@@ -46,20 +46,18 @@ The method changeSheet($index) is used to switch between sheets to read.
 ```php
 <?php
 use Aspera\Spreadsheet\XLSX\Reader;
-use Aspera\Spreadsheet\XLSX\Worksheet;
 
 $reader = new Reader();
 $reader->open('example.xlsx');
-$sheets = $reader->getSheets();
 
-/** @var Worksheet $sheet_data */
+$sheets = $reader->getSheets();
 foreach ($sheets as $index => $sheet_data) {
     $reader->changeSheet($index);
     echo 'Sheet #' . $index . ': ' . $sheet_data->getName();
 
     // Note: Any call to changeSheet() resets the current read position to the beginning of the selected sheet.
-    foreach ($reader as $row) {
-        print_r($row);
+    foreach ($reader as $row_number => $row) {
+        echo 'Row #' . $row_number . ': ' . print_r($row, true);
     }
 }
 

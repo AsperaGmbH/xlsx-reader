@@ -1,12 +1,63 @@
+### v.1.0.0   ????-??-??
+**Summary:**
+- Minimum supported PHP version increased from 5.6 to 7.1.
+- Full support for PHP 8.1.
+- Iterator adjustments. (Details further below.)
+- General code cleanup and bugfixes.
+
+**Breaking changes:**
+- Type hints from PHP 7.0 and 7.1 were added. Take note of this if you happen to extend any of the reader's classes
+  in your code.
+- Trying to iterate through a document without first calling open() will now throw an exception.
+- The key of each row is 1-based now. This is to be in alignment with the values of the "r" attribute in the actual 
+  XLSX document, which this method represents.
+- The count() method was removed, as it didn't provide the intended functionality.
+  Its actual functionality, which is to count how many rows were read so far, can be easily emulated by incrementing 
+  a counter variable within the iteration loop.
+- Exception messages and -types in case of errors were adjusted.
+  If you rely on their exact types/wording in any way, make sure to adjust your exception handling accordingly.
+- The methods setDecimalSeparator() and setThousandsSeparator() were removed.
+  (This change was already communicated in a previous version, but not completely enforced yet.)
+- indexFromColumnLetter() no longer returns false on error. An exception is thrown instead.
+
+**Breaking changes for code addressing SharedStrings directly:**
+- SharedStrings now manages its own temporary files. Manual management from the outer scope is no longer necessary.
+- Attempting to read SharedStrings data after closing the SharedStrings instance will now throw an exception.
+- setHandleCurrentIndex() and setCount() have been removed from SharedStringsOptimizedFile, as they served no real
+  function.
+
+**Non-breaking changes:**
+- Calling close() now properly cleans up unnecessary resources from the reader that may have an impact its memory
+  consumption.
+- Documentation improvements.
+
+**Iterator adjustments:**
+
+The Iterator interface allows iteration through the document by using a foreach on the Reader instance.
+The previous implementation of the reader did not follow the Iterator interface rules correctly.
+The adjustments in this update rectify this. As a result, take note of the following changes:
+
+If you're using foreach on the Reader instance to read the document contents (like the example code in the readme):
+- Most things will work as before.
+- The key of each element now represents the actual row number, which, in XLSX, starts counting at 1.
+  (Previous versions started at 0.)
+
+If you're calling the methods current() or key() directly:
+- Do not call current() or key() without first checking the return value of valid(). 
+  Trying to access invalid positions will now throw an exception.
+- current() and key() both start at the first position now, regardless of the order in which they are called.
+- key() is 1-based now. This is to be in alignment with the values of the "r" attribute in the actual XLSX document, 
+  which this method represents.
+
 ### v.0.10.1  2021-10-26
 - Fixed an issue that made returnUnformatted overrule all configuration options for date/time values.
 
 ### v.0.10.0  2021-10-22
-Breaking changes:
+**Breaking changes:**
 - next() no longer returns the current row. Use current() instead.
 - SkipEmptyCells needs to be supplied as a ReaderSkipConfiguration constant now.
 
-Non-breaking changes:
+**Non-breaking changes:**
 - New configuration option "SkipEmptyRows".
   Use it to exclude either all empty rows or all empty rows at the end of the document from the output. 
   Use ReaderSkipConfiguration values to configure it.
@@ -19,7 +70,7 @@ Non-breaking changes:
 - Internal refactorings.
 
 ### v.0.9.0  2021-07-20
-Breaking changes:
+**Breaking changes:**
 - Reader configuration options must now be supplied to the Reader constructor via a ReaderConfiguration instance.
   Supplying configuration options via an array is no longer supported.
 - When the "ReturnUnformatted" option is set, percentage values are now returned as strings instead of numbers.
@@ -27,7 +78,7 @@ Breaking changes:
 - setDecimalSeparator() and setThousandsSeparator() methods have been removed, as they no longer had any function.
 - Forced date/time format '' (empty string) gets interpreted correctly now.
 
-Non-breaking changes:
+**Non-breaking changes:**
 - New configuration option "ReturnPercentageDecimal".
   When set to true, percentage values will be returned using their technical, internal representation ('50%' => '0.5')
   rather than how they are displayed within a document ('50%' => '50').
@@ -44,11 +95,12 @@ Non-breaking changes:
 - Added support for multi-range row span values, fixing issues caused by sheets that use them.
 
 ### v.0.8.0  2020-03-09
-Breaking changes:
+**Breaking changes:**
 - Public-facing method "setCurrencyCode" has been removed, as the currency_code value had no effect to begin with.
 
-Non-breaking changes:
-- New configuration option "ReturnUnformatted". If set to true, cell values will be returned without number formatting applied. (Note: Date/Time values are still controlled by the "ReturnDateTimeObjects" option.)
+**Non-breaking changes:**
+- New configuration option "ReturnUnformatted". If set to true, cell values will be returned without number formatting
+  applied. (Note: Date/Time values are still controlled by the "ReturnDateTimeObjects" option.)
 - Number format parsing has been improved. The reader is now capable of parsing more complex number formats.
 - General format now outputs cell values as-is, instead of attempting to cast them to a float.
 
@@ -64,8 +116,10 @@ Non-breaking changes:
 - Fixed a "continue in switch" warning in PHP 7.3.
 
 ### v.0.7.4  2019-05-07
-- Added the option to use alphabetical column names (A, B, AA, ZX) instead of numeric indexes in returned row contents, using the parameter "OutputColumnNames".
-- Fixed a bug that caused leading zeros in text cell content to get removed if the cell was set to text via an apostrophe prefix.
+- Added the option to use alphabetical column names (A, B, AA, ZX) instead of numeric indexes in returned row contents, 
+  using the parameter "OutputColumnNames".
+- Fixed a bug that caused leading zeros in text cell content to get removed if the cell was set to text via an
+  apostrophe prefix.
 
 ### v.0.7.3  2019-03-25
 - Fixed an issue that prevented empty rows from being properly output in all appropriate cases.
@@ -74,7 +128,8 @@ Non-breaking changes:
 - Fixed an issue that caused format parsing to cease working for some files.
 
 ### v.0.7.1  2019-02-27
-- New configuration parameters to control automatic re-formatting of found Date/Time values: forceDateFormat, forceTimeFormat, forceDateTimeFormat
+- New configuration parameters to control automatic re-formatting of found Date/Time values:
+  forceDateFormat, forceTimeFormat, forceDateTimeFormat
 - Improved handling of potential errors when working with subdirectories of the configured temporary directory
 - Fixed composer.json lacking ext-xmlreader requirement
 
@@ -87,7 +142,8 @@ Non-breaking changes:
 - Minor improvements in handling used document resources.
 
 ### v.0.6.3  2018-12-04
-- Bugfix: Check if current row, that is to be read, is also the one which the read() function takes, return empty row if not.
+- Bugfix: Check if current row, that is to be read, is also the one which the read() function takes,
+  return empty row if not.
 
 ### v.0.6.2  2018-11-20
 - Bugfix: differentiate between internal sheet ID and positioning ordering of the sheet within the document
@@ -97,13 +153,15 @@ Non-breaking changes:
 - Minor code quality improvements.
 
 ### v.0.6.0  2018-05-01
+- Initial fork of the original library. Only the XLSX-relevant parts of the code were inherited, the rest removed.
 - Added option 'SkipEmptyCells' in order to consider or not possible empty values in cells. 
 - Added option 'CustomFormats' to define and overwrite format values.
 - Ensure deletion of temporary files after run.
 - Fix: MAP Toolkit xlsx files can be parsed.
 - PHP 7 compliance.
 - Allow configuration of locale based values.
-- Include PHPUnit and tests for iterator, file location, shared strings, sheet handling, namespaces and temporary directories handling. 
+- Include PHPUnit and tests for iterator, file location, shared strings, sheet handling, namespaces and temporary
+  directories handling. 
 - Major structural refactoring and appliance of PSR1, PSR2 and PSR4 (namespace directory structure)
 
 ### v.0.5.11  2015-04-30
