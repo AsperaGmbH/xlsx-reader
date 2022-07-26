@@ -501,7 +501,7 @@ class Reader implements Iterator
     public function current(): array
     {
         if (!$this->valid()) {
-            throw new LogicException('Invalid reader state. Check valid() before using key().');
+            throw new LogicException('Invalid reader state. Check valid() before using current().');
         }
 
         // Lazy output adjustment. Doing this here allows faster iteration via repeated next() calls.
