@@ -1,5 +1,5 @@
 .DS_Store
 .idea
+external
 vendor
 composer.phar
-composer.lock
