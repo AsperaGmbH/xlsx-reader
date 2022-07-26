@@ -1,4 +1,4 @@
-### v.1.0.0   ????-??-??
+### v.1.0.0   2022-07-26
 **Summary:**
 - Minimum supported PHP version increased from 5.6 to 7.1.
 - Full support for PHP 8.1.
