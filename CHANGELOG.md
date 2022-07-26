@@ -27,7 +27,7 @@
   function.
 
 **Non-breaking changes:**
-- Calling close() now properly cleans up unnecessary resources from the reader that may have an impact its memory
+- Calling close() now properly cleans up unnecessary resources from the reader that may have an impact on its memory
   consumption.
 - Documentation improvements.
 
@@ -38,7 +38,6 @@ The previous implementation of the reader did not follow the Iterator interface 
 The adjustments in this update rectify this. As a result, take note of the following changes:
 
 If you're using foreach on the Reader instance to read the document contents (like the example code in the readme):
-- Most things will work as before.
 - The key of each element now represents the actual row number, which, in XLSX, starts counting at 1.
   (Previous versions started at 0.)
 
