@@ -235,7 +235,7 @@ class Reader implements Iterator
             $this->worksheet_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
         }
 
-        $this->worksheet_reader->open($this->worksheet_path);
+        $this->worksheet_reader->open($this->worksheet_path, null, $this->configuration->getReaderFlags());
 
         // Reset read-relevant internal variables to their initial values to avoid conflicts between subsequent rewinds.
         $this->reader_points_at_new_row = false;

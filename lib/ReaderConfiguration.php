@@ -99,6 +99,13 @@ class ReaderConfiguration
      */
     private $return_date_time_objects = false;
 
+    /**
+     * Sets the flags that will be passed to XmlReader::open.
+     *
+     * @var int
+     */
+    private $reader_flags = 0;
+
     public function __construct()
     {
         $this->temp_dir = sys_get_temp_dir();
@@ -295,6 +302,19 @@ class ReaderConfiguration
     }
 
     /**
+     * Sets the flags that will be passed to XmlReader::open.
+     *
+     * @param  int $flags
+     * @return self
+     */
+    public function setReaderFlags(int $flags): self
+    {
+        $this->reader_flags = $flags;
+
+        return $this;
+    }
+
+    /**
      * @return string
      */
     public function getTempDir(): string
@@ -388,5 +408,13 @@ class ReaderConfiguration
     public function getReturnDateTimeObjects(): bool
     {
         return $this->return_date_time_objects;
+    }
+
+    /**
+     * @return int
+     */
+    public function getReaderFlags(): bool
+    {
+        return $this->reader_flags;
     }
 }
