@@ -496,11 +496,12 @@ class NumberFormat
         $number_right = '';
         if (count($number_parts) > 1) {
             $right_side_chars = str_split($number_parts[1]);
-            if ($right_side_chars[0] === '') { // Side-effect of str_split('')
+
+            if (!empty($right_side_chars) && $right_side_chars[0] === '') { // Side-effect of str_split('') under PHP<=8.1
                 $right_side_chars = array();
             }
             $format_chars = str_split(str_replace('?', ' ', $format_right));
-            if ($format_chars[0] === '') { // Side-effect of str_split('')
+            if (!empty($right_side_chars) && $format_chars[0] === '') { // Side-effect of str_split('') under PHP<=8.1
                 $format_chars = array();
             }
             for ($i = 0; $i < strlen($format_right); $i++) {
