@@ -10,8 +10,8 @@ Only basic cell value formatting and shared string functionalities are supported
 
 ### Requirements
 *  PHP 7.1.0 or newer, with at least the following optional features enabled:
-    *  Zip (enabled by default; see <http://php.net/manual/en/zip.installation.php>)
-    *  XMLReader (enabled by default; see <http://php.net/manual/en/xmlreader.installation.php>)
+    *  Zip (see <http://php.net/manual/en/zip.installation.php>)
+    *  XMLReader (see <http://php.net/manual/en/xmlreader.installation.php>)
 
 ### Installation using Composer
 The package is available on [Packagist](https://packagist.org/packages/aspera/xlsx-reader).
