@@ -4,7 +4,7 @@ __xlsx-reader__ is licensed under the MIT License.
 
 Copyright for original project [spreadsheet-reader](https://github.com/nuovo/spreadsheet-reader) (c) 2012-2015 Martins Pilsetnieks
 
-Copyright for all further modifications (c) 2018-2022 USU Technologies GmbH
+Copyright for all further modifications (c) 2018-2023 USU GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
