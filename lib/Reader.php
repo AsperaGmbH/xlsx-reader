@@ -125,7 +125,7 @@ class Reader implements Iterator
         // Mark as initialized *now*; The following methods expect this.
         $this->reader_is_open = true;
 
-        $this->relationship_data = new RelationshipData($zip);
+        $this->relationship_data = new RelationshipData($zip, $this->configuration);
         $this->initWorkbookData($zip);
         $this->initSharedStrings($zip, $this->configuration->getSharedStringsConfiguration());
         $this->initStyles($zip);
@@ -235,7 +235,11 @@ class Reader implements Iterator
             $this->worksheet_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
         }
 
-        $this->worksheet_reader->open($this->worksheet_path, null, $this->configuration->getReaderFlags());
+        $this->worksheet_reader->open(
+            $this->worksheet_path,
+            null,
+            $this->configuration->getXmlReaderFlags()
+        );
 
         // Reset read-relevant internal variables to their initial values to avoid conflicts between subsequent rewinds.
         $this->reader_points_at_new_row = false;
@@ -634,7 +638,7 @@ class Reader implements Iterator
         $workbook_reader = new OoxmlReader();
         $workbook_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_XLSX_MAIN);
         $workbook_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
-        $workbook_reader->xml($workbook_xml);
+        $workbook_reader->xml($workbook_xml, null, $this->configuration->getXmlReaderFlags());
         while ($workbook_reader->read()) {
             if ($workbook_reader->matchesElement('sheet')) {
                 // <sheet/> - Read in data about this worksheet.
@@ -725,7 +729,8 @@ class Reader implements Iterator
             $this->shared_strings = new SharedStrings(
                 $dir_of_extracted_file,
                 $filename_of_extracted_file,
-                $shared_strings_configuration
+                $shared_strings_configuration,
+                $this->configuration
             );
         }
     }
@@ -751,7 +756,7 @@ class Reader implements Iterator
             $styles_reader = new OoxmlReader();
             $styles_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_XLSX_MAIN);
             $styles_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
-            $styles_reader->xml($styles_xml);
+            $styles_reader->xml($styles_xml, null, $this->configuration->getXmlReaderFlags());
             $current_scope_is_cell_xfs = false;
             $current_scope_is_num_fmts = false;
             $switchList = array(

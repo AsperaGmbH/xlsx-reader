@@ -104,7 +104,7 @@ class ReaderConfiguration
      *
      * @var int
      */
-    private $reader_flags = 0;
+    private $xml_reader_flags = 0;
 
     public function __construct()
     {
@@ -307,9 +307,9 @@ class ReaderConfiguration
      * @param  int $flags
      * @return self
      */
-    public function setReaderFlags(int $flags): self
+    public function setXmlReaderFlags(int $flags): self
     {
-        $this->reader_flags = $flags;
+        $this->xml_reader_flags = $flags;
 
         return $this;
     }
@@ -413,8 +413,8 @@ class ReaderConfiguration
     /**
      * @return int
      */
-    public function getReaderFlags(): bool
+    public function getXmlReaderFlags(): int
     {
-        return $this->reader_flags;
+        return $this->xml_reader_flags;
     }
 }

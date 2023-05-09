@@ -19,6 +19,9 @@ class RelationshipData
      */
     public const ZIP_DIR_SEP = '/';
 
+    /** @var ReaderConfiguration General reader configuration */
+    private $reader_configuration;
+
     /** @var RelationshipElement Workbook file meta information. Only one element exists per file. */
     private $workbook;
 
@@ -101,8 +104,10 @@ class RelationshipData
      *
      * @throws  RuntimeException
      */
-    public function __construct(ZipArchive $zip)
+    public function __construct(ZipArchive $zip, ReaderConfiguration $reader_configuration)
     {
+        $this->reader_configuration = $reader_configuration;
+
         // Start with root .rels file. It will point us towards the worksheet file.
         $root_rel_file = self::toRelsFilePath(''); // empty string returns root path
         $this->evaluateRelationshipFromZip($zip, $root_rel_file);
@@ -135,7 +140,11 @@ class RelationshipData
         $rels_reader = new OoxmlReader();
         $rels_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_RELATIONSHIPS_PACKAGELEVEL);
         $rels_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
-        $rels_reader->xml($zip->getFromName($file_zipname));
+        $rels_reader->xml(
+            $zip->getFromName($file_zipname),
+            null,
+            $this->reader_configuration->getXmlReaderFlags()
+        );
         while ($rels_reader->read() !== false) {
             if (!$rels_reader->matchesElement('Relationship') || $rels_reader->isClosingTag()) {
                 // This element is not important to us. Skip.

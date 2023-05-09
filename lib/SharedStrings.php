@@ -27,8 +27,11 @@ class SharedStrings
     /** @var ?OoxmlReader XML reader object for the shared strings XML file */
     private $shared_strings_reader = null;
 
-    /** @var ?SharedStringsConfiguration Configuration of shared string reading and caching behaviour. */
+    /** @var SharedStringsConfiguration Configuration of shared string reading and caching behaviour. */
     private $shared_strings_configuration;
+
+    /** @var ReaderConfiguration Configuration of general reader behaviour. */
+    private $reader_configuration;
 
     /** @var ?SplFixedArray Shared strings cache, if the number of shared strings is low enough */
     private $shared_string_cache;
@@ -64,11 +67,13 @@ class SharedStrings
     public function __construct(
         string $shared_strings_directory,
         string $shared_strings_filename,
-        SharedStringsConfiguration $shared_strings_configuration
+        SharedStringsConfiguration $shared_strings_configuration,
+        ReaderConfiguration $reader_configuration
     ) {
         $this->shared_strings_directory = $shared_strings_directory;
         $this->shared_strings_filename = $shared_strings_filename;
         $this->shared_strings_configuration = $shared_strings_configuration;
+        $this->reader_configuration = $reader_configuration;
         if (is_readable($this->shared_strings_directory . $this->shared_strings_filename)) {
             $this->prepareSharedStrings();
         }
@@ -306,7 +311,11 @@ class SharedStrings
         $this->shared_strings_reader = new OoxmlReader();
         $this->shared_strings_reader->setDefaultNamespaceIdentifierElements(OoxmlReader::NS_XLSX_MAIN);
         $this->shared_strings_reader->setDefaultNamespaceIdentifierAttributes(OoxmlReader::NS_NONE);
-        $this->shared_strings_reader->open($this->shared_strings_directory . $this->shared_strings_filename);
+        $this->shared_strings_reader->open(
+            $this->shared_strings_directory . $this->shared_strings_filename,
+            null,
+            $this->reader_configuration->getXmlReaderFlags()
+        );
         $this->shared_string_index = -1;
         $this->last_shared_string_value = null;
     }
