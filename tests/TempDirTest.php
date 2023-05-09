@@ -103,7 +103,6 @@ class TempDirTest extends PHPUnitTestCase
     /**
      * Return temporary work path used for this test. Already includes trailing slash.
      *
-     * @return string
      * @throws Exception
      */
     private static function getTempDirPath(): string

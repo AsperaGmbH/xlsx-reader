@@ -20,9 +20,6 @@ class EmptyRowsTest extends TestCase
      *
      * @dataProvider dataProviderCellContent
      *
-     * @param int   $skip_config
-     * @param array $expected_values
-     *
      * @throws Exception
      */
     public function testCellContent(int $skip_config, array $expected_values): void
@@ -45,9 +42,6 @@ class EmptyRowsTest extends TestCase
         );
     }
 
-    /**
-     * @return array[]
-     */
     public function dataProviderCellContent(): array
     {
         return array(

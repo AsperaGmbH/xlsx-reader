@@ -16,8 +16,6 @@ class CellFormatConfigTest extends TestCase
     private const TEST_FILE = __DIR__ . '/input_files/cell_format_config_test.xlsx';
 
     /**
-     * @return array[]
-     *
      * @throws Exception
      */
     public function dataProviderForFormatConfiguration(): array
@@ -128,9 +126,6 @@ class CellFormatConfigTest extends TestCase
      * Ensures that ReaderConfiguration values are considered and interpreted as expected.
      *
      * @dataProvider dataProviderForFormatConfiguration
-     *
-     * @param ReaderConfiguration $config
-     * @param array               $expected
      *
      * @throws Exception
      */

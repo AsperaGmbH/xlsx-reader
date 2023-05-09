@@ -68,8 +68,6 @@ class OoxmlReader extends XMLReader
      * Sets the default namespace_identifier for element tags,
      * to be used when methods requiring a namespace_identifier are not given one.
      *
-     * @param   string  $namespace_identifier
-     *
      * @throws  InvalidArgumentException
      */
     public function setDefaultNamespaceIdentifierElements(string $namespace_identifier): void
@@ -83,8 +81,6 @@ class OoxmlReader extends XMLReader
     /**
      * Sets the default namespace_identifier for element attributes,
      * to be used when methods requiring a namespace_identifier are not given one.
-     *
-     * @param   string  $namespace_identifier
      *
      * @throws  InvalidArgumentException
      */
@@ -160,8 +156,6 @@ class OoxmlReader extends XMLReader
 
     /**
      * Checks if the current element is a closing tag / END_ELEMENT.
-     *
-     * @return bool
      */
     public function isClosingTag(): bool
     {
@@ -198,10 +192,6 @@ class OoxmlReader extends XMLReader
 
     /**
      * Moves to the next node matching the given criteria.
-     *
-     * @param   string  $local_name
-     * @param   ?string $namespace_identifier
-     * @return  bool
      */
     public function nextNsId(string $local_name, string $namespace_identifier = null): bool
     {

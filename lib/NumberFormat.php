@@ -104,8 +104,6 @@ class NumberFormat
     private $parsed_format_cache = array();
 
     /**
-     * @param ReaderConfiguration $configuration
-     *
      * @throws Exception
      */
     public function __construct(ReaderConfiguration $configuration)
@@ -151,8 +149,6 @@ class NumberFormat
     /**
      * Formats the value according to the index.
      *
-     * @param  string $value
-     * @param  int    $xf_id
      * @return mixed
      *
      * @throws Exception
@@ -202,9 +198,6 @@ class NumberFormat
 
     /**
      * Applies the "general" format (format id = 0) to the value.
-     *
-     * @param  string $value
-     * @return string
      */
     private function applyGeneralFormat(string $value): string
     {
@@ -223,10 +216,6 @@ class NumberFormat
 
     /**
      * Applies requested formatting to values that do not contain any decimal, fraction or date/time format information.
-     *
-     * @param  string              $value
-     * @param  NumberFormatSection $section
-     * @return string
      */
     private function applyTextFormat(string $value, NumberFormatSection $section): string
     {
@@ -251,10 +240,6 @@ class NumberFormat
 
     /**
      * Included subtypes: Scientific format, currency format
-     *
-     * @param  float               $value
-     * @param  NumberFormatSection $section
-     * @return string
      */
     private function applyDecimalFormat(float $value, NumberFormatSection $section): string
     {
@@ -432,10 +417,6 @@ class NumberFormat
 
     /**
      * Determines the correct multiplication exponent to fit the given value into the given format optimally.
-     *
-     * @param  float               $value
-     * @param  NumberFormatSection $section
-     * @return int
      */
     private function getExponentForValueAndSection(float $value, NumberFormatSection $section): int
     {
@@ -460,10 +441,6 @@ class NumberFormat
      * Applies the given, semantic decimal format info (read: not the included token codes) to the given number.
      * Does not consider parts of the format that aren't directly related to decimal formatting.
      * e.g.: For the format [000"m" 000"k" 000.00], only [000000000.00] is considered.
-     *
-     * @param  float               $number
-     * @param  NumberFormatSection $section
-     * @return string
      */
     private function formatDecimalValue(float $number, NumberFormatSection $section): string
     {
@@ -548,10 +525,6 @@ class NumberFormat
 
     /**
      * Apply the given fraction format to the given value.
-     *
-     * @param  float               $value
-     * @param  NumberFormatSection $section
-     * @return string
      *
      * @throws RuntimeException
      */
@@ -814,9 +787,7 @@ class NumberFormat
      * Converts the given value to a fraction and returns the individual parts of this fraction.
      * Does not apply any formatting, but already performs whole-value extraction if the format requires it.
      *
-     * @param  float               $value
-     * @param  NumberFormatSection $section
-     * @return int[]               Keys: 'whole', 'numerator', 'denominator'
+     * @return int[] Keys: 'whole', 'numerator', 'denominator'
      */
     private function convertNumberToFraction(float $value, NumberFormatSection $section): array
     {
@@ -871,8 +842,6 @@ class NumberFormat
     /**
      * Formats the given value as a Date/Time value, as requested by the given $section.
      *
-     * @param  string              $value
-     * @param  NumberFormatSection $section
      * @return DateTime|string
      *
      * @throws Exception
@@ -929,9 +898,6 @@ class NumberFormat
 
     /**
      * Converts XLSX-style datetime data (a plain decimal number) to a DateTime object.
-     *
-     * @param  float $value
-     * @return DateTime
      *
      * @throws Exception
      */
@@ -1000,10 +966,6 @@ class NumberFormat
     /**
      * Gets the format section to be used for the given value with the given format_index.
      *
-     * @param  string $value
-     * @param  int    $format_index
-     * @return NumberFormatSection
-     *
      * @throws RuntimeException
      */
     private function getFormatSectionForValue(string $value, int $format_index): NumberFormatSection
@@ -1062,7 +1024,6 @@ class NumberFormat
     /**
      * Gets the format data for the given format index.
      *
-     * @param  int $format_index
      * @return NumberFormatSection[]
      *
      * @throws RuntimeException
@@ -1098,10 +1059,6 @@ class NumberFormat
 
     /**
      * Helper function for greatest common divisor calculation in case GMP extension is not enabled.
-     *
-     * @param   int $int_1
-     * @param   int $int_2
-     * @return  int Greatest common divisor
      */
     private static function GCD(int $int_1, int $int_2): int
     {

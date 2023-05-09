@@ -104,9 +104,6 @@ class IteratorTest extends PHPUnitTestCase
         self::assertEquals($this->getExpectedArray(), $read_file, 'File has not been read correctly');
     }
 
-    /**
-     * @return array[]
-     */
     private function getExpectedArray(): array
     {
         return array(

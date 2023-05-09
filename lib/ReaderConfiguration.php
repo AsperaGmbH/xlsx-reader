@@ -114,9 +114,6 @@ class ReaderConfiguration
 
     /**
      * Full path to directory to write temporary work files to. Default: sys_get_temp_dir()
-     *
-     * @param  string $temp_dir
-     * @return self
      */
     public function setTempDir(string $temp_dir): self
     {
@@ -130,7 +127,6 @@ class ReaderConfiguration
      * Use ReaderSkipConfiguration constants to configure.
      *
      * @param  int $skip_empty_cells A ReaderSkipConfiguration constant.
-     * @return self
      */
     public function setSkipEmptyCells(int $skip_empty_cells): self
     {
@@ -144,7 +140,6 @@ class ReaderConfiguration
      * Use ReaderSkipConfiguration constants to configure.
      *
      * @param  int $skip_empty_rows A ReaderSkipConfiguration constant.
-     * @return self
      */
     public function setSkipEmptyRows(int $skip_empty_rows): self
     {
@@ -155,9 +150,6 @@ class ReaderConfiguration
 
     /**
      * If true, output will use Excel-style column names (A-ZZ) instead of numbers as column keys.
-     *
-     * @param  bool $output_column_names
-     * @return self
      */
     public function setOutputColumnNames(bool $output_column_names): self
     {
@@ -168,9 +160,6 @@ class ReaderConfiguration
 
     /**
      * Configuration options to control shared string reading and caching behaviour.
-     *
-     * @param  SharedStringsConfiguration $shared_strings_configuration
-     * @return self
      */
     public function setSharedStringsConfiguration(SharedStringsConfiguration $shared_strings_configuration): self
     {
@@ -182,9 +171,6 @@ class ReaderConfiguration
     /**
      * A list of user-defined formats, overriding those given in the XLSX file itself.
      * Given as key_value pairs of format: [format_index (int)] => format_code (string)
-     *
-     * @param  array $custom_formats
-     * @return self
      *
      * @throws InvalidArgumentException
      */
@@ -207,9 +193,6 @@ class ReaderConfiguration
      *
      * Note that a cell's type is defined by its format, not content.
      * If a cell contains time information, but its format contains no time information, the value is considered a date.
-     *
-     * @param  ?string $force_date_format
-     * @return self
      */
     public function setForceDateFormat(?string $force_date_format): self
     {
@@ -223,9 +206,6 @@ class ReaderConfiguration
      *
      * Note that a cell's type is defined by its format, not content.
      * If a cell contains time information, but its format contains no time information, the value is considered a date.
-     *
-     * @param  ?string $force_time_format
-     * @return self
      */
     public function setForceTimeFormat(?string $force_time_format): self
     {
@@ -239,9 +219,6 @@ class ReaderConfiguration
      *
      * Note that a cell's type is defined by its format, not content.
      * If a cell contains time information, but its format contains no time information, the value is considered a date.
-     *
-     * @param  ?string $force_date_time_format
-     * @return self
      */
     public function setForceDateTimeFormat(?string $force_date_time_format): self
     {
@@ -258,9 +235,6 @@ class ReaderConfiguration
      * Note 2: Be aware that rounding errors introduced by popular spreadsheet editors may cause the
      * internally stored values to differ a lot from what would be shown as a result of formatting.
      * Be further advised that values may sometimes be stored using E-notation.
-     *
-     * @param  bool $return_unformatted
-     * @return self
      */
     public function setReturnUnformatted(bool $return_unformatted): self
     {
@@ -276,9 +250,6 @@ class ReaderConfiguration
      * Note: Be aware that rounding errors introduced by popular spreadsheet editors may cause the
      * internally stored values to differ a lot from what would be shown as a result of formatting.
      * Be further advised that values may sometimes be stored using E-notation.
-     *
-     * @param  bool $return_percentage_decimal
-     * @return self
      */
     public function setReturnPercentageDecimal(bool $return_percentage_decimal): self
     {
@@ -290,9 +261,6 @@ class ReaderConfiguration
     /**
      * If true, return date/time values as PHP DateTime objects, not strings.
      * Takes precedence over the value of $return_unformatted.
-     *
-     * @param  bool $return_date_time_objects
-     * @return self
      */
     public function setReturnDateTimeObjects(bool $return_date_time_objects): self
     {
@@ -303,9 +271,6 @@ class ReaderConfiguration
 
     /**
      * Sets the flags that will be passed to XmlReader::open.
-     *
-     * @param  int $flags
-     * @return self
      */
     public function setXmlReaderFlags(int $flags): self
     {
@@ -314,105 +279,66 @@ class ReaderConfiguration
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getTempDir(): string
     {
         return $this->temp_dir;
     }
 
-    /**
-     * @return int
-     */
     public function getSkipEmptyCells(): int
     {
         return $this->skip_empty_cells;
     }
 
-    /**
-     * @return int
-     */
     public function getSkipEmptyRows(): int
     {
         return $this->skip_empty_rows;
     }
 
-    /**
-     * @return bool
-     */
     public function getOutputColumnNames(): bool
     {
         return $this->output_column_names;
     }
 
-    /**
-     * @return SharedStringsConfiguration
-     */
     public function getSharedStringsConfiguration(): SharedStringsConfiguration
     {
         return $this->shared_strings_configuration;
     }
 
-    /**
-     * @return array
-     */
     public function getCustomFormats(): array
     {
         return $this->custom_formats;
     }
 
-    /**
-     * @return ?string
-     */
     public function getForceDateFormat(): ?string
     {
         return $this->force_date_format;
     }
 
-    /**
-     * @return ?string
-     */
     public function getForceTimeFormat(): ?string
     {
         return $this->force_time_format;
     }
 
-    /**
-     * @return ?string
-     */
     public function getForceDateTimeFormat(): ?string
     {
         return $this->force_date_time_format;
     }
 
-    /**
-     * @return bool
-     */
     public function getReturnUnformatted(): bool
     {
         return $this->return_unformatted;
     }
 
-    /**
-     * @return bool
-     */
     public function getReturnPercentageDecimal(): bool
     {
         return $this->return_percentage_decimal;
     }
 
-    /**
-     * @return bool
-     */
     public function getReturnDateTimeObjects(): bool
     {
         return $this->return_date_time_objects;
     }
 
-    /**
-     * @return int
-     */
     public function getXmlReaderFlags(): int
     {
         return $this->xml_reader_flags;

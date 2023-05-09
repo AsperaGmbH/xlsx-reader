@@ -53,9 +53,6 @@ class SkipEmptyCellsTest extends PHPUnitTestCase
         $reader->close();
     }
 
-    /**
-     * @return array[]
-     */
     public function dataProviderEmptyCells(): array
     {
         return array(

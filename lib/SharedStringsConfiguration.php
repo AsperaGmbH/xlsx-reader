@@ -47,9 +47,6 @@ class SharedStringsConfiguration
 
     /**
      * If true: Allow caching shared strings to RAM to increase performance.
-     *
-     * @param   bool $new_use_cache_value
-     * @return  self
      */
     public function setUseCache(bool $new_use_cache_value): self
     {
@@ -63,9 +60,6 @@ class SharedStringsConfiguration
      * Maximum allowed RAM consumption for shared string cache, in kilobyte. (Minimum: 8 KB)
      * Once exceeded, additional shared strings will not be written to RAM and instead get read from file as needed.
      * Note that this is a "soft" limit that only applies to the main cache. The application may slightly exceed it.
-     *
-     * @param   int $new_max_size
-     * @return  self
      *
      * @throws  InvalidArgumentException
      */
@@ -81,9 +75,6 @@ class SharedStringsConfiguration
 
     /**
      * If true: Allow creation of new files to reduce seek times for non-cached shared strings.
-     *
-     * @param   bool $new_use_files_value
-     * @return  self
      */
     public function setUseOptimizedFiles(bool $new_use_files_value): self
     {
@@ -100,9 +91,6 @@ class SharedStringsConfiguration
      *
      * Adjusting this value has no effect if the creation of optimized shared string files is disabled.
      *
-     * @param   int $new_entry_count
-     * @return  self
-     *
      * @throws  InvalidArgumentException
      */
     public function setOptimizedFileEntryCount(int $new_entry_count): self
@@ -118,9 +106,6 @@ class SharedStringsConfiguration
     /**
      * If true: file pointers to shared string files are kept open for more efficient reads.
      * Causes higher memory consumption, especially if $optimized_file_entry_count is low.
-     *
-     * @param   bool $new_keep_file_pointers_value
-     * @return  self
      */
     public function setKeepFileHandles(bool $new_keep_file_pointers_value): self
     {
@@ -129,41 +114,26 @@ class SharedStringsConfiguration
         return $this;
     }
 
-    /**
-     * @return bool
-     */
     public function getUseCache(): bool
     {
         return $this->use_cache;
     }
 
-    /**
-     * @return int
-     */
     public function getCacheSizeKilobyte(): int
     {
         return $this->cache_size_kilobyte;
     }
 
-    /**
-     * @return bool
-     */
     public function getUseOptimizedFiles(): bool
     {
         return $this->use_optimized_files;
     }
 
-    /**
-     * @return int
-     */
     public function getOptimizedFileEntryCount(): int
     {
         return $this->optimized_file_entry_count;
     }
 
-    /**
-     * @return bool
-     */
     public function getKeepFileHandles(): bool
     {
         return $this->keep_file_handles;

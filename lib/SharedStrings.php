@@ -101,9 +101,6 @@ class SharedStrings
         $this->prepared_shared_string_files = array();
     }
 
-    /**
-     * @param SharedStringsConfiguration $configuration
-     */
     public function setSharedStringsConfiguration(SharedStringsConfiguration $configuration): void
     {
         $this->shared_strings_configuration = $configuration;
@@ -148,9 +145,6 @@ class SharedStrings
     /**
      * Attempts to retrieve a string from the optimized shared string files.
      * May return null if unsuccessful.
-     *
-     * @param   int $target_index
-     * @return  ?string
      *
      * @throws  RuntimeException
      */
@@ -215,9 +209,6 @@ class SharedStrings
 
     /**
      * Retrieves a shared string from the original shared strings XML file.
-     *
-     * @param   int $target_index
-     * @return  string
      */
     private function getStringFromOriginalSharedStringFile(int $target_index): string
     {
@@ -407,10 +398,6 @@ class SharedStrings
     /**
      * Stores the given shared string either in internal cache or in a seek optimized file, depending on the
      * current configuration and status of the internal cache.
-     *
-     * @param   int     $index
-     * @param   string  $string
-     * @param   bool    $write_to_cache
      *
      * @throws  RuntimeException
      */

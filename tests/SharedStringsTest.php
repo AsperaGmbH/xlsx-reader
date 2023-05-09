@@ -25,9 +25,6 @@ class SharedStringsTest extends TestCase
     /** @var int CACHE_MAX_SIZE_KB Required cache size in KB to store the entire shared strings table from the test file in memory. */
     private const CACHE_MAX_SIZE_KB = 2048; // 2 MB should be enough for the entire shared string file in all supported PHP versions
 
-    /**
-     * @return array[]
-     */
     public function dataProviderForTestValues(): array
     {
         return array(
@@ -41,9 +38,6 @@ class SharedStringsTest extends TestCase
      * Check basic shared/inline string extraction using the configured execution path
      *
      * @dataProvider dataProviderForTestValues
-     *
-     * @param   bool $use_cache
-     * @param   bool $use_optimized_files
      *
      * @throws  Exception
      */
@@ -76,9 +70,6 @@ class SharedStringsTest extends TestCase
         $xlsx_reader->close();
     }
 
-    /**
-     * @return array[]
-     */
     public function dataProviderForTestMemoryConfiguration(): array
     {
         return array(
@@ -92,9 +83,6 @@ class SharedStringsTest extends TestCase
      * Check if the use_cache/max_cache_size configuration values are properly respected.
      *
      * @dataProvider dataProviderForTestMemoryConfiguration
-     *
-     * @param  bool $use_cache
-     * @param  bool $use_large_cache
      *
      * @throws Exception
      */
@@ -161,9 +149,6 @@ class SharedStringsTest extends TestCase
         }
     }
 
-    /**
-     * @return array[]
-     */
     public function dataProviderForTestOptimizedFileConfiguration(): array
     {
         return array(
@@ -177,9 +162,6 @@ class SharedStringsTest extends TestCase
      * Check if optimized shared string files are created/not created on demand
      *
      * @dataProvider dataProviderForTestOptimizedFileConfiguration
-     *
-     * @param  bool $use_optimized_files
-     * @param  bool $use_many_entries_per_file
      *
      * @throws Exception
      */

@@ -17,9 +17,6 @@ class CustomNumberFormatTest extends TestCase
      *
      * @dataProvider provideValuesForGeneralFormat
      *
-     * @param string $value
-     * @param string $expected_output
-     *
      * @throws Exception
      */
     public function testGeneralFormat(string $value, string $expected_output): void
@@ -36,9 +33,6 @@ class CustomNumberFormatTest extends TestCase
         );
     }
 
-    /**
-     * @return array
-     */
     public function provideValuesForGeneralFormat(): array
     {
         return array(
@@ -52,10 +46,6 @@ class CustomNumberFormatTest extends TestCase
 
     /**
      * @dataProvider provideFormats
-     *
-     * @param string $value
-     * @param string $format
-     * @param string $expected_output
      *
      * @throws Exception
      */
@@ -76,9 +66,6 @@ class CustomNumberFormatTest extends TestCase
         );
     }
 
-    /**
-     * @return array[]
-     */
     public function provideFormats(): array
     {
         // Note that language info ( [$€-THIS_RANDOM_INTEGER_RIGHT_HERE] ) is always ignored.

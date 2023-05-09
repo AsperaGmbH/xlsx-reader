@@ -37,8 +37,6 @@ class RelationshipData
     /**
      * Returns the workbook relationship element, if a valid one has been obtained previously.
      * Returns null otherwise.
-     *
-     * @return ?RelationshipElement
      */
     public function getWorkbook(): ?RelationshipElement
     {
@@ -126,9 +124,6 @@ class RelationshipData
      * Read through the .rels data of the given .rels file from the given zip handle
      * and save all included file data to internal variables.
      *
-     * @param   ZipArchive  $zip
-     * @param   string      $file_zipname
-     *
      * @throws  RuntimeException
      */
     private function evaluateRelationshipFromZip(ZipArchive $zip, string $file_zipname): void
@@ -198,9 +193,6 @@ class RelationshipData
     /**
      * Returns the path to the .rels file for the given file path.
      * Example: xl/workbook.xml => xl/_rels/workbook.xml.rels
-     *
-     * @param   string  $file_path
-     * @return  string
      */
     private static function toRelsFilePath(string $file_path): string
     {

@@ -94,8 +94,7 @@ class NumberFormatTokenizer
      * Splits the given number format string into sections. (Format for positive values, for negative values, etc.)
      * Does not identify the actual purpose of each section. (For example in case of conditional sections.)
      *
-     * @param  string $format_string
-     * @return array  List of found sections, as substrings of $format_string.
+     * @return array List of found sections, as substrings of $format_string.
      *
      * @throws RuntimeException
      */
@@ -477,8 +476,6 @@ class NumberFormatTokenizer
 
     /**
      * Removes tokens unnecessary for our particular parsing intentions from the given section.
-     *
-     * @param NumberFormatSection $section
      */
     private function removeColorsAndConditions(NumberFormatSection $section): void
     {
@@ -498,9 +495,6 @@ class NumberFormatTokenizer
 
     /**
      * Checks if the given section is a date- or time-format.
-     *
-     * @param  NumberFormatSection $section
-     * @return bool
      */
     private function isDateTimeFormat(NumberFormatSection $section): bool
     {
@@ -518,9 +512,6 @@ class NumberFormatTokenizer
 
     /**
      * Checks if the given section requests usage of percentage values.
-     *
-     * @param  NumberFormatSection $section
-     * @return bool
      */
     private function detectIfPercentage(NumberFormatSection $section): bool
     {
@@ -545,8 +536,6 @@ class NumberFormatTokenizer
      *  format_left: '#00,'
      *  format_right: '0,0?'
      *  thousands_scale: 1
-     *
-     * @param  NumberFormatSection $section
      */
     private function prepareNumericFormat(NumberFormatSection $section): void
     {
@@ -721,8 +710,6 @@ class NumberFormatTokenizer
     /**
      * Prepares the given date/time section data for easier parsing while reading values.
      * Also determines the more specific date/time/datetime type.
-     *
-     * @param NumberFormatSection $section
      */
     private function prepareDateTimeFormat(NumberFormatSection $section): void
     {

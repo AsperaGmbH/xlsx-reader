@@ -22,17 +22,11 @@ class SharedStringsOptimizedFile
     /** @var int Total number of shared strings contained within the file. */
     private $count = 0;
 
-    /**
-     * @return string
-     */
     public function getFile(): string
     {
         return $this->file;
     }
 
-    /**
-     * @param string $file
-     */
     public function setFile(string $file): void
     {
         $this->file = $file;
@@ -54,9 +48,6 @@ class SharedStringsOptimizedFile
         $this->handle = $handle;
     }
 
-    /**
-     * @return int
-     */
     public function getHandleCurrentIndex(): int
     {
         return $this->handle_current_index;
@@ -70,25 +61,16 @@ class SharedStringsOptimizedFile
         $this->handle_current_index++;
     }
 
-    /**
-     * @return string
-     */
     public function getValueAtCurrentIndex(): string
     {
         return $this->value_at_current_index;
     }
 
-    /**
-     * @param string $value_at_current_index
-     */
     public function setValueAtCurrentIndex(string $value_at_current_index): void
     {
         $this->value_at_current_index = $value_at_current_index;
     }
 
-    /**
-     * @return int
-     */
     public function getCount(): int
     {
         return $this->count;
@@ -106,7 +88,6 @@ class SharedStringsOptimizedFile
      * Opens a file handle to the file with the given file access mode.
      * If a file handle is currently still open, closes it first.
      *
-     * @param   string      $mode
      * @return  resource    The newly opened file handle
      *
      * @throws  RuntimeException

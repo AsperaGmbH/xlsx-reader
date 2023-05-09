@@ -73,8 +73,6 @@ class Reader implements Iterator
     private $empty_row_structure = array();
 
     /**
-     * @param  ?ReaderConfiguration $configuration
-     *
      * @throws Exception
      */
     public function __construct(ReaderConfiguration $configuration = null)
@@ -95,8 +93,6 @@ class Reader implements Iterator
 
     /**
      * Open the given file and prepare everything for the reading of data.
-     *
-     * @param  string  $file_path
      *
      * @throws Exception
      */
@@ -179,8 +175,7 @@ class Reader implements Iterator
     /**
      * Changes the current sheet in the file to the sheet with the given index.
      *
-     * @param  int     $sheet_index
-     * @return bool    True if sheet was changed successfully, false otherwise.
+     * @return bool True if sheet was changed successfully, false otherwise.
      *
      * @throws Exception
      */
@@ -482,8 +477,6 @@ class Reader implements Iterator
     /**
      * Returns whether the iterator is pointing at a valid position (read: before EOF) right now.
      *
-     * @return bool
-     *
      * @throws LogicException
      */
     public function valid(): bool
@@ -497,8 +490,6 @@ class Reader implements Iterator
 
     /**
      * Returns the current row, previously iterated to via next().
-     *
-     * @return array Current row contents.
      *
      * @throws LogicException
      */
@@ -519,8 +510,6 @@ class Reader implements Iterator
 
     /**
      * Return the current row number.
-     *
-     * @return int
      *
      * @throws LogicException
      */
@@ -561,9 +550,6 @@ class Reader implements Iterator
 
     /**
      * Converts the given column index to an XLSX-style [A-Z] column identifier string.
-     *
-     * @param  int $index
-     * @return string
      */
     public static function columnLetterFromIndex(int $index): string
     {
@@ -580,9 +566,6 @@ class Reader implements Iterator
     /**
      * If configured, replaces numeric column identifiers in output array with XLSX-style [A-Z] column identifiers.
      * If not configured, returns the input array unchanged.
-     *
-     * @param  array $column_values
-     * @return array
      */
     private function adjustRowOutput(array $column_values): array
     {
@@ -604,8 +587,6 @@ class Reader implements Iterator
      * A new folder will be created within the given directory, which will contain all work files,
      * and which will be cleaned up after the process have finished.
      *
-     * @param  string $base_temp_dir
-     *
      * @throws RuntimeException
      */
     private function initTempDir(string $base_temp_dir): void
@@ -621,8 +602,6 @@ class Reader implements Iterator
 
     /**
      * Read general workbook information from the given zip into memory.
-     *
-     * @param  ZipArchive  $zip
      *
      * @throws Exception
      */
@@ -662,8 +641,6 @@ class Reader implements Iterator
     /**
      * Extract worksheet files to temp directory and set the first worksheet as active.
      *
-     * @param  ZipArchive $zip
-     *
      * @throws Exception
      */
     private function initWorksheets(ZipArchive $zip): void
@@ -693,9 +670,6 @@ class Reader implements Iterator
     /**
      * Read shared strings data from the given zip into memory as configured via the given configuration object
      * and potentially create temporary work files for easy retrieval of shared string data.
-     *
-     * @param  ZipArchive                 $zip
-     * @param  SharedStringsConfiguration $shared_strings_configuration
      *
      * @throws Exception
      */
@@ -737,8 +711,6 @@ class Reader implements Iterator
 
     /**
      * Reads and prepares information on styles declared by the document for later usage.
-     *
-     * @param  ZipArchive $zip
      *
      * @throws Exception
      */
