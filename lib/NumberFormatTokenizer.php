@@ -735,7 +735,7 @@ class NumberFormatTokenizer
 
             // For currency/language info: Keep currency symbol, remove the rest.
             if ($token->isInSquareBrackets() && strpos($token->getCode(), '$') === 0) {
-                preg_match('{\$([^-]*)-\d+}', $token->getCode(), $matches);
+                preg_match('{\$([^-]*)-[0-9A-F]+}', $token->getCode(), $matches);
                 $token
                     ->setCode($matches[1])
                     ->setIsQuoted(true)
