@@ -102,7 +102,7 @@ class OoxmlReader extends XMLReader
      *
      * @throws  InvalidArgumentException
      */
-    public function matchesElement(string $local_name, string $namespace_identifier = null): bool
+    public function matchesElement(string $local_name, ?string $namespace_identifier = null): bool
     {
         return $this->localName === $local_name
             && $this->matchesNamespace($namespace_identifier);
@@ -171,7 +171,7 @@ class OoxmlReader extends XMLReader
      *
      * @throws  InvalidArgumentException
      */
-    public function getAttributeNsId(string $local_name, string $namespace_identifier = null): ?string
+    public function getAttributeNsId(string $local_name, ?string $namespace_identifier = null): ?string
     {
         $namespace_identifier = $this->validateNamespaceIdentifier($namespace_identifier, true);
 
@@ -193,7 +193,7 @@ class OoxmlReader extends XMLReader
     /**
      * Moves to the next node matching the given criteria.
      */
-    public function nextNsId(string $local_name, string $namespace_identifier = null): bool
+    public function nextNsId(string $local_name, ?string $namespace_identifier = null): bool
     {
         while ($this->next($local_name)) {
             if ($this->matchesNamespace($namespace_identifier)) {
