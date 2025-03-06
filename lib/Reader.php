@@ -75,7 +75,7 @@ class Reader implements Iterator
     /**
      * @throws Exception
      */
-    public function __construct(ReaderConfiguration $configuration = null)
+    public function __construct(?ReaderConfiguration $configuration = null)
     {
         if (!isset($configuration)) {
             $configuration = new ReaderConfiguration();
