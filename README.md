@@ -9,7 +9,7 @@ As such, the library offers no support for XLSX capabilities that aren't strictl
 Only basic cell value formatting and shared string functionalities are supported.
 
 ### Requirements
-*  PHP 7.1.0 or newer, with at least the following optional features enabled:
+*  PHP 8.1.0 or newer, with at least the following optional features enabled:
     *  Zip (see <http://php.net/manual/en/zip.installation.php>)
     *  XMLReader (see <http://php.net/manual/en/xmlreader.installation.php>)
 
