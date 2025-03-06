@@ -1,6 +1,7 @@
 <?php
 namespace Aspera\Spreadsheet\XLSX;
 
+use RuntimeException;
 use XMLReader;
 use InvalidArgumentException;
 
@@ -40,6 +41,31 @@ class OoxmlReader extends XMLReader
     {
         $this->initNamespaceList();
         // Note: No parent::__construct() - XMLReader does not have its own constructor.
+    }
+
+    /**
+     * Extends read() to handle XML parser warnings such as:
+     * "parser error : Excessive depth in document: 256 use XML_PARSE_HUGE option"
+     */
+    public function read(): bool
+    {
+        set_error_handler([OoxmlReader::class, 'libxml_parsehuge_warning_handler'], E_WARNING);
+        $ret = parent::read();
+        restore_error_handler();
+
+        return $ret;
+    }
+
+    /** Error handler for handling warnings thrown due to missing LIBXML_PARSEHUGE flag. */
+    public static function libxml_parsehuge_warning_handler(int $errno, string $error_msg): bool
+    {
+        if (str_contains($error_msg, 'Excessive depth in document')) {
+            throw new RuntimeException(
+                'An XML document within the XLSX has excessive depth.'
+                . ' Consider usage of ReaderConfiguration::setXmlReaderFlags(LIBXML_PARSEHUGE).'
+            );
+        }
+        return false;
     }
 
     /**
