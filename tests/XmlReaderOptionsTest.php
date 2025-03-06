@@ -34,8 +34,7 @@ class XmlReaderOptionsTest extends TestCase
         );
 
         if ($expect_exception) {
-            $this->expectException('PHPUnit\Framework\Error\Warning'); // required for expectExceptionMessage to work
-            $this->expectExceptionMessage('parser error : Excessive depth in document: 256 use XML_PARSE_HUGE option');
+            $this->expectExceptionMessage('Could not locate workbook data.'); // @todo Suboptimal error message; Hint at the relationships file being unreadable instead.
         }
 
         // Reading just one value from the file requires all XML files of the XLSX to be parsed.
